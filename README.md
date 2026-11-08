@@ -25,12 +25,16 @@ git clone https://github.com/Brain-Crumbs/IPTFantasyFootball.git .validation-sou
 git -C .validation-source checkout --detach 50ef51e7dd2443dd0cec644c04e8db1b7fd612f7
 git clone https://github.com/Brain-Crumbs/IPTFantasyFootball.git .validation-engine
 git -C .validation-engine checkout --detach fbc46888ce0bd2af454f471561911a913d32e6fc
+npm --prefix .validation-engine ci
+npm --prefix .validation-engine run build
 python -m pip install -r .validation-engine/schemas/requirements.txt
 python scripts/check_design.py --source .validation-source --engine .validation-engine
 python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-The same commands work in PowerShell; quote paths containing spaces. For the
+The same commands work in PowerShell; use `npm.cmd` if script execution policy
+blocks `npm.ps1`, and quote paths containing spaces. The pinned engine build is
+required because the design audit imports its compiled registry/DAG. For the
 separate source-engine regression checks, run `npm ci`, `npm run build`,
 `npm test`, `python schemas/validate_fixtures.py`,
 `python schemas/validate_repository_contracts.py` and
