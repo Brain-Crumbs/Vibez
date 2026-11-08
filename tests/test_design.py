@@ -60,11 +60,22 @@ class DesignTests(unittest.TestCase):
         inv=dict(revision=design.SOURCE,entries=[item])
         design.check_inventory(inv,blobs)
         variants=[dict(revision=design.SOURCE,entries=[]),dict(revision=design.SOURCE,entries=[item,item])]
-        for key,value in [('sha256','bad'),('sourceBlob','bad'),('category','unknown'),('destination','../escape'),('owner','')]:
+        edits = [('sha256','bad'),('sourceBlob','bad'),('category','unknown'),('owner','')]
+        edits += [('destination', p) for p in ('../escape','C:/outside/file.ts','..\\outside\\file.ts','.git/config','.GIT/config','.agent/state','nested/.git/config','','.','src//example.ts','./src/example.ts','src/example.ts/','/absolute/file.ts')]
+        for key,value in edits:
             changed=copy.deepcopy(inv); changed['entries'][0][key]=value; variants.append(changed)
         for changed in variants:
             with self.subTest(changed=changed),self.assertRaises(ValueError):
                 design.check_inventory(changed,blobs)
+
+    def test_inventory_case_alias_collision(self):
+        data=b'example\n'
+        blobs={p:('blob-id',data) for p in ('src/one.ts','src/two.ts')}
+        inv=dict(revision=design.SOURCE, entries=[
+            dict(source=p,sourceBlob='blob-id',sha256=design.digest(data),category='vibez',action='copy',destination=d,owner='MIG-003',testOwner='MIG-008')
+            for p,d in [('src/one.ts','src/example.ts'),('src/two.ts','SRC/EXAMPLE.ts')]])
+        with self.assertRaisesRegex(ValueError,'Destination collision'):
+            design.check_inventory(inv,blobs)
 
 if __name__ == '__main__':
     unittest.main()

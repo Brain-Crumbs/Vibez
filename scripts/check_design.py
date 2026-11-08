@@ -84,9 +84,13 @@ def check_inventory(inventory, source_blobs):
         if e['action'] == 'retain':
             require(d == 'source:'+e['source'], 'Retained source moved')
         else:
-            require(not d.startswith(('/', 'source:', '.agent/')) and '..' not in PurePosixPath(d).parts,
-                    'Unsafe destination')
-            destinations.append(d)
+            path = PurePosixPath(d)
+            require(bool(d) and d != '.' and not path.is_absolute()
+                    and str(path) == d and not any(c in d for c in ':\\')
+                    and not any(part.casefold() in ('..', '.git', '.agent') for part in path.parts),
+                    'Unsafe or noncanonical destination')
+            # Windows consumers must not see distinct allowlist entries alias.
+            destinations.append(d.casefold())
     require(len(destinations) == len(set(destinations)), 'Destination collision')
 
 def check_records(root, engine):
