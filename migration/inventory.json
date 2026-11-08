@@ -1,0 +1,2904 @@
+{
+  "version": 1,
+  "repository": "Brain-Crumbs/IPTFantasyFootball",
+  "revision": "50ef51e7dd2443dd0cec644c04e8db1b7fd612f7",
+  "entries": [
+    {
+      "source": ".gitattributes",
+      "sourceBlob": "6313b56c57848efce05faa7aa7e901ccfc2886ea",
+      "sha256": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": ".gitattributes",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": ".github/workflows/ci.yml",
+      "sourceBlob": "734145d01cd57fadd74d130e16440259a34bf27c",
+      "sha256": "4098aa23982e7671c21822c0340f57d290b98d61aaaf45c215dc23fa33558742",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": ".github/workflows/ci.yml",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": ".gitignore",
+      "sourceBlob": "c43da8e20d5960c4398af3dbf306d8c72da82c8e",
+      "sha256": "3a990273b9ee4bcf72322dc09251fe86078bd6cc0809a6131f6c4ebeab8e9f99",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": ".gitignore",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "AGENTS.md",
+      "sourceBlob": "4f9b6a36cf689a1c63e7479649a3585ac5cca18d",
+      "sha256": "c9a17d8f7eb77825ac7e1468a563cc7126c59c01a630b211c33eabdef38598d7",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "AGENTS.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "BOOTSTRAP.md",
+      "sourceBlob": "533f0ae7f8b77da92fccaa1456019256d760aa06",
+      "sha256": "178122abf4732d7eab2bfea678a22ad931018d50e82f9f6be270938062fe9291",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:BOOTSTRAP.md",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "BOOTSTRAP_VERSION",
+      "sourceBlob": "9faa0c3dbf055a46dbc37c5bc097e9449a5ec4f2",
+      "sha256": "e1e87ee3f25d0ec0a9da2ed9a3145b0161f66757f3aceabd2ca6e59d52e355ef",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:BOOTSTRAP_VERSION",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "CONSTITUTION.md",
+      "sourceBlob": "f73f252e72e4dc10179b61081b00bb3e1ffca7b1",
+      "sha256": "c0a841b3162c4677c79d129ff8dde6deeddf6d8c159d2248a0d72ecae6cedcc6",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "CONSTITUTION.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "README.md",
+      "sourceBlob": "7bbda1a70f0101bae455fc7b9e4c57ed2cf6dc29",
+      "sha256": "67119dc9c8d195f8f451c58cbd2db14d849b0c9785afd04ce3106b8a6ba5342c",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "bootstrap/README.md",
+      "sourceBlob": "36fef5a5cfeac9756d0e65e5e10bc0f04ab6dc11",
+      "sha256": "d279f011e04d3915b8a57bf42f09ff27a2a4d0561fc579333cb7bbc166964de2",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:bootstrap/README.md",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "bootstrap/canary-proof.txt",
+      "sourceBlob": "c4c25d58005ed6c32555972bbec0394d207b94b8",
+      "sha256": "976a6b9f7757ae28518eca1d98dab96285c49e6791040f091c543d601669bc11",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/fixtures/canary-proof.txt",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/MODULE_README_TEMPLATE.md",
+      "sourceBlob": "5abd1722147bb2e45dd0b9f567e719aeef79252c",
+      "sha256": "e42e9a7c32dc3a65b1d0f2d5a3598b65349c068e6263292edcac97547a4a848e",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/MODULE_README_TEMPLATE.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/README.md",
+      "sourceBlob": "418c88df342958d297202be3bf5434422b906a32",
+      "sha256": "585efadcd4ffd9ca43ca55a22ad1a946f3117d79a39e28442242258ba784514e",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/STANDARD.md",
+      "sourceBlob": "f4bb8a265e21d293bd9e594592f1c1f1173c33dc",
+      "sha256": "cd5afd7d084a581c28831f4ce43c3afb82688b38b937ac9d8ac69567b8de0a20",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/STANDARD.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/agent-provider/README.md",
+      "sourceBlob": "73c893a1d2304ba018e57a8133d025177d66ff35",
+      "sha256": "7ab06834d0473fcd6badeeb2914784fca00a443697e375fc13b87418ce9a2375",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/agent-provider/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/agent-provider/module-contract.json",
+      "sourceBlob": "3b881a4e8660ea69b460745fb9c53d5355d11e57",
+      "sha256": "d07ec7fcf225b043686fbb21a8697f3f09624c661d1cd8a767ee678ca49e6a33",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/agent-provider/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/architecture-review/README.md",
+      "sourceBlob": "0a1d1bebb430eec90d0d15a98e52f5d811cf344a",
+      "sha256": "93690ccda94382d0ae9f30cd34542aeb3509a4e0f79fd9eec85041977d14b65d",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/architecture-review/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/architecture-review/module-contract.json",
+      "sourceBlob": "e27adc4f4fc1d2b248068e65ed2572418661b8e1",
+      "sha256": "097188ad53fe1977537993ee91ecb7d94dd8b99015a20526ad14fd1838e151fa",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/architecture-review/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/assignment-lock/README.md",
+      "sourceBlob": "1c8c3ff635a6bdf79f045fa4279cdce815a652f0",
+      "sha256": "e7472c7f2c2b90949b539b6a45dcd8fb42d75673981f26af844b0a7e08ddf45e",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/assignment-lock/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/assignment-lock/module-contract.json",
+      "sourceBlob": "2161a9638171f8564d7805847cd38392e609997c",
+      "sha256": "011e08dea915cb5e8d0f877c007ff4aed82111caf7f69a18dcf362b54e0a6fa3",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/assignment-lock/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/ci-enforcement/README.md",
+      "sourceBlob": "8bcb927133cf0332de0e3fcf62ce25eb463464aa",
+      "sha256": "4460e1088f723177e8d5aef34a3298a8457adef018cb49314c09d22ba7b7b6a2",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/ci-enforcement/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/ci-enforcement/module-contract.json",
+      "sourceBlob": "4cd0b2bdf7e477c853adf556b8d0d0ef5ce1aba7",
+      "sha256": "fbbaf19ecf875072461b9c14ce1f09e0f56a7283c0c3b2a0db50c497cb756781",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/ci-enforcement/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/cli-shell/README.md",
+      "sourceBlob": "81c894cf51fefe0aa28cfdefe1faf62e55b37068",
+      "sha256": "d2322a3039047ed5245b5bf07f213e49d9930803d27aa88baed2975282516673",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/cli-shell/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/cli-shell/module-contract.json",
+      "sourceBlob": "d58c4ae9b6a001a40765a363d43e3af6522c9267",
+      "sha256": "5af529e050649f6372eafb6ab44efa7c194e281da0b68de1a50d36186a21fdf6",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/cli-shell/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/context-compiler/README.md",
+      "sourceBlob": "363197b52d704291f412032eaae013f5c4e27e11",
+      "sha256": "ee1e7dc196339d360dc9498affd30224cb49f6cd656d5a0be587d243eef4fc31",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/context-compiler/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/context-compiler/module-contract.json",
+      "sourceBlob": "6073bc888428f0f4f68a0258caa81a6e8c949541",
+      "sha256": "a418493e7ac580c2010d560574bfb853331a99b3ee410790ce10226ffa9d582a",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/context-compiler/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/controlled-merge/README.md",
+      "sourceBlob": "db9d0d730ca8c2890151c71410bcdadee9295cfb",
+      "sha256": "ca8dd31e30c4746956beebc89e4b94f43c7f23f9e977fd5bfb4448c0a3b3b050",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/controlled-merge/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/controlled-merge/module-contract.json",
+      "sourceBlob": "ab16458b3e76aa73862627134408113d1505ed4d",
+      "sha256": "e1d82b29649972a2a7aac9d006f78cab38c2f07a737482f41569def1bcb00884",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/controlled-merge/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/dependency-dag/README.md",
+      "sourceBlob": "ee50648a0de2da97366c5ec14362ce669fda6a7d",
+      "sha256": "ce72211d567948859322491f1f3c19e0c326266df1249caf69dc5d41b8abca5d",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/dependency-dag/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/dependency-dag/module-contract.json",
+      "sourceBlob": "1021b1608d63988671a57796248d69d444a98990",
+      "sha256": "7539cece6aff0e97ac4480fdf76df783a6e9ab37b318c4c5c2e4870bfdd3d49f",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/dependency-dag/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/dev-start/README.md",
+      "sourceBlob": "8592c5cf562204b0e4047cdc28b0d1590ecc7a46",
+      "sha256": "226960e205417f5b915cc9f729aff79aba000226990f1d5bbccf3947634c780d",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/dev-start/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/dev-start/module-contract.json",
+      "sourceBlob": "980fa8787baf7a00a5fc9162004bd167e5db436e",
+      "sha256": "a78adc6bb295ede16a4b69aa5513bb22643c7354210d16f9d530dec222c79749",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/dev-start/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/dev-validation/README.md",
+      "sourceBlob": "42cb3b09d390120a04c933cac94e28b2e8b66a55",
+      "sha256": "c6fd513c56bbee40e00f781ec678d650983b20dafec07bad86b2c09b16e3096b",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/dev-validation/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/dev-validation/module-contract.json",
+      "sourceBlob": "bec7c837675d556b48fff87b99a7543b61f54bf7",
+      "sha256": "e5e627011c968e755ca237f6f4f68dba6816c2e73f86f1981e6b9ebaa4fd7fce",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/dev-validation/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/evidence-store/README.md",
+      "sourceBlob": "ea4a67782ca2e0363a5074a32145ec77383b446c",
+      "sha256": "9716c051f1a538d764f384fb41452c36b26baef369a23f060451b037c5bd1918",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/evidence-store/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/evidence-store/module-contract.json",
+      "sourceBlob": "ab1d7fde6424de36619a6e8c618ccc6ec3a0006f",
+      "sha256": "980ea21f5fbf321de81979966dc09b29e15593d32d0e159315db79dd3112c05f",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/evidence-store/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/examples/alerting-consumer/README.md",
+      "sourceBlob": "83fdd5ec8cb9afc748fcd12d9a4233ce82886a81",
+      "sha256": "3946ec73802a8a081f6a7b3da0f39ee401b5b8e1eff91dbf5ea6b68a655bf0d5",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "contracts/examples/alerting-consumer/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/examples/alerting-consumer/module-contract.json",
+      "sourceBlob": "26e82d22a1c17f5c4a772a53faf0d8be352a7596",
+      "sha256": "6ae85e83289938f288f5279fb84b777d3580b62e9d91327817fc2a1235c31005",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "contracts/examples/alerting-consumer/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/examples/range-provider/README.md",
+      "sourceBlob": "e7a8bca42caedba10902db669aedd11b62a7676b",
+      "sha256": "544dae4559fec0c71ed6901fdf75485e48ddf421c04d79b21de6c30b4b92f545",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "contracts/examples/range-provider/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/examples/range-provider/module-contract.json",
+      "sourceBlob": "aca8be4b2062af5eb50de26d970d2858e8e5d58f",
+      "sha256": "74d00daf03d1ed1506171843ba785154158c67367b0ef178c71bc6c5dd5930a1",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "contracts/examples/range-provider/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/git-branch-lifecycle/README.md",
+      "sourceBlob": "5ea388996efb98f32ecef09d24919d5986008d95",
+      "sha256": "9602b64377e76e297caf5b8ba9cd711ccb3505c9421087e7a6874401b4abb7d3",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/git-branch-lifecycle/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/git-branch-lifecycle/module-contract.json",
+      "sourceBlob": "52694bca21d320940fa3eb514a2c538b06a7af5b",
+      "sha256": "d84a8f87bee34a31900b1f4fe7b8f24440ec64beb3e58d82457de44d1e776460",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/git-branch-lifecycle/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/lifecycle-state-machine/README.md",
+      "sourceBlob": "5c0c3a8931ef8a8badae25a80455ecbc6dba69c8",
+      "sha256": "a4b2efbbad3b30e6180c9bd7d8692ba3598d444a2307bdbbae4036180c9fdb51",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/lifecycle-state-machine/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/lifecycle-state-machine/module-contract.json",
+      "sourceBlob": "9e4bb56e5c8909c0df4fbe471f486d3b5fd399ea",
+      "sha256": "27f42234449225c9ec1ff1fb92c1a24bdc10a710cdfb6a22e598b84487dca25b",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/lifecycle-state-machine/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/local-agent-adapter/README.md",
+      "sourceBlob": "22171393729d59fbc3424bd94db38bbf6a9382f8",
+      "sha256": "7aa2a7e34fe93216842ca995608e6c9eeaf65294660f3ab0b0bf2d7cc320e9cd",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/local-agent-adapter/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/local-agent-adapter/module-contract.json",
+      "sourceBlob": "998f1555fb632a97639ca43d5bf97b21bb0737be",
+      "sha256": "94dcdbd77aeaa478899656639bfb69fa1d815d4b2a4af8ab8e70d1c091768dba",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/local-agent-adapter/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/merge-readiness/README.md",
+      "sourceBlob": "99da98a85d3ad3d78192b1a95811f4cffd18fdca",
+      "sha256": "a5a55f6de9d6a7d31487a41dbf6c251082a922cf3cad93a576f463d03705add3",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/merge-readiness/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/merge-readiness/module-contract.json",
+      "sourceBlob": "a1494cb6768d1f3caff1f820614f47b7cb1b8289",
+      "sha256": "165d991bd6a3820e010d5de3de7209488d3f2b5a86c5fc5080d7da1912334a5f",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/merge-readiness/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/next-task/README.md",
+      "sourceBlob": "d37222d84a8aa2963982432ad642e96c49b041fe",
+      "sha256": "890a9f365fac0c3dba9d213ff3a33c4deadc20fcd7e9cbd00a31a5c206803bdc",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/next-task/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/next-task/module-contract.json",
+      "sourceBlob": "0f6bf9ea8bee12db2e497ba4933ce2f3ffdca882",
+      "sha256": "562d9693cd42c3e3df9a25fbcbd0b00a46f0badbe564ab357a800cece4384192",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/next-task/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/orchestration-engine/README.md",
+      "sourceBlob": "4bb75edbcd5485656657c28ffcf61205af7d39d0",
+      "sha256": "213c5fee0e9b94fddb43f2befe01f051933879eb7a8e3de9def1a21181edd473",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/orchestration-engine/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/orchestration-engine/module-contract.json",
+      "sourceBlob": "a1bb11aa83d0d8500f09ed59341a6a3b9eef935f",
+      "sha256": "44d836928e85c851f4546f830bbe3af68bfc61225ee480d953b7c346093639ae",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/orchestration-engine/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/pr-lifecycle/README.md",
+      "sourceBlob": "70b50721594ff1b47851f79d5f5502e43bb02ee1",
+      "sha256": "9f590f6774cfc8d5aa26324fb5190f35f4890177462cf756684aea361f59a8dd",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/pr-lifecycle/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/pr-lifecycle/module-contract.json",
+      "sourceBlob": "75da64b8cf5911f3680a8886e799361b2372864f",
+      "sha256": "ffe18e600bb947c5b817295e5ef708810facdeba0160401119cb9aab38193ffa",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/pr-lifecycle/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/qa-review/README.md",
+      "sourceBlob": "78c8357542ae54a752261406b682b0a6385824a7",
+      "sha256": "fd3353c86a5bc1425b259c43d5cbc43a615c51464ff18125299772489a2ae470",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/qa-review/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/qa-review/module-contract.json",
+      "sourceBlob": "68c05d6c507f310af515795465934d08f2094b88",
+      "sha256": "c5a7fb0ff2d66b1d5b70132e652647df812da542da5a4483de885f3d49ccb56c",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/qa-review/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/recovery-tools/README.md",
+      "sourceBlob": "5d0558201eb6b130ce2069613ef80571b26f6378",
+      "sha256": "b9e52398ce8ffc4b433de8e503dcfc2cc74f87a5217de954cba632a16da8d51a",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/recovery-tools/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/recovery-tools/module-contract.json",
+      "sourceBlob": "d8d8db130cdb2933ad19b2050c04b1f9509d1ab1",
+      "sha256": "3e6c05ec800844412af5daa64db181f697a21d3215d86e20a4bf2a434d33b8b0",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/recovery-tools/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/review-framework/README.md",
+      "sourceBlob": "448a72bd9a0e2351f74bc047edbbb5e74871ff5e",
+      "sha256": "aac1edb5e3e6b1c701053692a4147269d99d4c2036bc7c8f732f9806b26d06c4",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/review-framework/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/review-framework/module-contract.json",
+      "sourceBlob": "a5ff5cc737d1ed92ce57dcd63ce8b4f917f2917e",
+      "sha256": "1598384a9554fb355562e3c09f5ccb82664d3f7e598fa9e7a56f372c7fdcf411",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/review-framework/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/review-rework/README.md",
+      "sourceBlob": "21c99eb245f5ec193e5f4971c9ed544db30f6b66",
+      "sha256": "e54fc39007c41fdc2d0d62081640dbf35a393e4da515e412fbabc45e78dfa9e6",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/review-rework/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/review-rework/module-contract.json",
+      "sourceBlob": "def91b9855d0f24d069dfbb878c4e41da752a105",
+      "sha256": "6a96698921da84d16b713c3e4a774d7aa6db7d4f24dc686e6870359c520c1ae3",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/review-rework/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/status-reporting/README.md",
+      "sourceBlob": "68debe168680baa201f48ae462178fa046a12988",
+      "sha256": "52389b44396e7636d0eae00ffad4f41d4315bd9f6276574f4e69dd2b4605a9bb",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/status-reporting/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/status-reporting/module-contract.json",
+      "sourceBlob": "a93d0b79bd7d8e24b0c45b48f137c34d3766e173",
+      "sha256": "c93bdfe060d68d671db925dc10dd9666c848752d32db489705568f42b785fae9",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/status-reporting/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/task-registry/README.md",
+      "sourceBlob": "cadd3255f1ab12a5eff2cc8946b9f1017137c9e0",
+      "sha256": "66ac7efc0f1ebbb7989e3c01e3a1ae07196c19d89eee22d71dcdf047fc6e68f4",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/task-registry/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/task-registry/module-contract.json",
+      "sourceBlob": "af2fa5c0f084dd36835485c64e088dcd59480879",
+      "sha256": "ddfa415be9752dfd933da08891dbd3c9ce8fb7a88ed2392c3ecc720771ba3d1c",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/task-registry/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/uat-review/README.md",
+      "sourceBlob": "5bbce91b270ce06ef3285b374965bbde7ce0af93",
+      "sha256": "5b5d2e9ce86fb84da9e2e959d1170ccbf28309926c1126152ee1aa2a8471e40b",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/uat-review/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/uat-review/module-contract.json",
+      "sourceBlob": "f2d9f2a197fd0e6b52e1f8d9f8f8e8282ef768c9",
+      "sha256": "8954799cd8dd7ccb4e337809c545cce9f1e5b2b1f211a8dc5894c4383b99d481",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/uat-review/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/validation-framework/README.md",
+      "sourceBlob": "89cbfae5dd1f3761aaf02a063678146a8df073d1",
+      "sha256": "8a5877a62bb185459d6af666bf30442ca9634f1a4205dbc6787a74465bec5185",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/validation-framework/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/validation-framework/module-contract.json",
+      "sourceBlob": "397ffc8b6099b2d53b1ce208a647fc4e28ecfcff",
+      "sha256": "a222461f0386bf165e0865d9b7d77b53d3bc49fd7ca94737b2403a934cd6e27e",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/validation-framework/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/workflow-diagnostics/README.md",
+      "sourceBlob": "38221054e7b689db011d13e57e615f72ccb3cb68",
+      "sha256": "7bc2693fbeeca322a5fd538089ea142465ec0bb4625b94d7c536aba45622442f",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/workflow-diagnostics/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "contracts/workflow-diagnostics/module-contract.json",
+      "sourceBlob": "5f8e0955f9ef31e6a8f04acf4568066ee7824c25",
+      "sha256": "391bca6d858a7b9f67d5462fd5b897299f682d8da6e372ab3fb8faa0c9c1df41",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "contracts/workflow-diagnostics/module-contract.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "docs/ADVERSARIAL_TESTS.md",
+      "sourceBlob": "0ebf0d1700a18786580c579ba2a36aea3d763ca8",
+      "sha256": "91b47c2851b27a062c3165e8c300a3fa43dde400177bf36bc33b651162010adf",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "docs/ADVERSARIAL_TESTS.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "docs/CANARY.md",
+      "sourceBlob": "d8474a8c8e813e4406d8624af2f151d50f4f7ed2",
+      "sha256": "6de0fd8cdfa53e1655a11f8fa17e794c2791ae2564360beb91586251171fca64",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:docs/CANARY.md",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "docs/CANARY_RETIREMENT.md",
+      "sourceBlob": "93957639afa582cc596d337c48100c2244583260",
+      "sha256": "eadd5c0034be818cfb6353f9d27ec8e8e6b330fb863037212a5bb05b481e8f36",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:docs/CANARY_RETIREMENT.md",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "docs/CI.md",
+      "sourceBlob": "326b3471ad115921f94c2145b2b067c748d694d4",
+      "sha256": "feebe68f36f71b441fe6f85502c4682f599dcadd4a97a9985b9871288b36bfd6",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "docs/CI.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "docs/CLI.md",
+      "sourceBlob": "5d5feecd7726c3a308ff1ec68e62b6e0db2e72ef",
+      "sha256": "b3cec0f31ae6116d559138ca9526b5db7856d07a98fb081b2297ca1fc829fcd4",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "docs/CLI.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "docs/DIAGNOSTICS.md",
+      "sourceBlob": "baef63d81741804387bd0ce8c1bd661850f86942",
+      "sha256": "2dada8f9d64023e5ece600d8f12b17695eedbadbda8a8e05a3bfd81d4487673c",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "docs/DIAGNOSTICS.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "docs/LOCAL_AGENT_ADAPTER.md",
+      "sourceBlob": "46229ce9d963bcd440aa6c17cd56c7760a4e2b9d",
+      "sha256": "23f1b01eb34aa955238e3f8570e82c398f5a889763892332b8a123d42a2d55e2",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "docs/LOCAL_AGENT_ADAPTER.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "docs/README.md",
+      "sourceBlob": "527b5eeb573de510eb47e4c4b0d0b65c6d488041",
+      "sha256": "7dc5b3708f9816e6b2a2eaf98746c57607acef2ea5a677595bdbbf69bafb3e10",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "docs/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "docs/RECOVERY.md",
+      "sourceBlob": "3989a42f98ae273fc7a780980cf53bdeb90bceb1",
+      "sha256": "25739b1bcacfbeb083d1133226eb3f9400066d81f6282ae07d3c31954a1691f1",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "docs/RECOVERY.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "docs/ROLE_MODEL.md",
+      "sourceBlob": "e206c75a7dde49223bb277ab99b142c8306d711c",
+      "sha256": "a5bf7f3a189936d54af33a8c73a558e7f93b827e3784781f37617b0568b0f0c3",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "docs/ROLE_MODEL.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "docs/STATUS.md",
+      "sourceBlob": "9d9f5fee7fefc20f4ab6ed579af6ce5862e6334c",
+      "sha256": "2ecdd713fe67c7f1c56f53f80106b39ee27f89bfe55d64037d73e17a5c687359",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "docs/STATUS.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "docs/TASK_REGISTRY.md",
+      "sourceBlob": "07236e2ac425b4a055f3497a5d9c191dec35062d",
+      "sha256": "e38f3edbf8bb158fc01428ad9b2bf4755ac7a318f98740c0cdbfdc046a00b793",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "docs/TASK_REGISTRY.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "docs/development/best-practices.md",
+      "sourceBlob": "56a3c1498bdf7bb81b7ae1530e5920f8cb71b505",
+      "sha256": "04bc1e15d6a935ae82315eb7b741897094f666d35ad9fd654b99a91374265785",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "docs/development/best-practices.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "evidence/README.md",
+      "sourceBlob": "0c1ddbd2623f4aecc7e1f572339e63c6e54865fd",
+      "sha256": "633225333fba8c03d890368807c6690d2d2663239899c243540d29d77fea4ab1",
+      "category": "consumer",
+      "action": "retain",
+      "destination": "source:evidence/README.md",
+      "owner": "MIG-009",
+      "testOwner": "MIG-009"
+    },
+    {
+      "source": "migration/DELTA_LEDGER.md",
+      "sourceBlob": "4bd6a2ed551ad297598e1436fb3f0925ff819d5d",
+      "sha256": "83cc9f6bcfb2568dc5e60a947443561757e8831e5d25f133ba7d3969e3e1d76d",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/DELTA_LEDGER.md",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/README.md",
+      "sourceBlob": "33742e3514286e152b749584c0fa5bd1c2374069",
+      "sha256": "75db2abff22e2eee2d019640742e87a4a135f1bbfe1ad3a59caf004d796e0519",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/README.md",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/SEED.md",
+      "sourceBlob": "3c27c5f2e5fa3f8bc32b3a6ed71eb5e385780629",
+      "sha256": "8d2d3ae68295e4c358e870274de61c1d8fd2b903f4804ce382d0a3b16748a4ba",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/SEED.md",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/plan.json",
+      "sourceBlob": "40fde357efa114bed7d788e751b8ff8e173cd106",
+      "sha256": "36ff66327e9898e94cdca963a4258cf5267d66fc4a70dd0d987f96e26a8ec5d6",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/plan.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/sources/issues.json",
+      "sourceBlob": "23a5e295e4abd4cf3c1723b0d171cef7e7543def",
+      "sha256": "fbb4d75ff914a0f6d437ce571b421d6428e1fcaa3c2e88233a0a79c005cd83f7",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/sources/issues.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/aut-001.task.json",
+      "sourceBlob": "733c44ed4827c95185bfefc4413f9994114e7f7c",
+      "sha256": "5e053a67908be69f6c5bb49bf1d67a8716f37e975651e492b8948affa683b96f",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/aut-001.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/aut-002.task.json",
+      "sourceBlob": "73a4f0051f4aff799a007ef8c278de3243f2dc3c",
+      "sha256": "c414a54b8ffb4d03c7f8ad99428020e9a735e11f964b743fa658faa814a32d3a",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/aut-002.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/aut-003.task.json",
+      "sourceBlob": "6c60e20dea88b3776b0dd3a5be2e4153b4bfeec3",
+      "sha256": "5b4b52d4fba387a955707a26478b97f3218026b04ea82e1dada7837fa4bdbb53",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/aut-003.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/aut-004.task.json",
+      "sourceBlob": "022e62cf7181741f763f3d8d3f186a00a6da2693",
+      "sha256": "279c30a2a835941eb4cbe4b19c447428878c42cb9000cb318bf46937014adef2",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/aut-004.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/mig-001.task.json",
+      "sourceBlob": "38992c79322519f4665ab5bb396d7d8235c08c28",
+      "sha256": "154a70ef0c6776b9752705cd90d364bf08e835d1e7ccde7a929c6de2a4eb6e38",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/mig-001.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/mig-002.task.json",
+      "sourceBlob": "2fcb010a08761fcd8ebbf97a6135f8e1c5ac5f23",
+      "sha256": "f582402dd33f7437050fb61d6273d11716e4470075ee4a6b84250f7f67daa00c",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/mig-002.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/mig-003.task.json",
+      "sourceBlob": "f8a326a536927fc382bfdebcab1e37d4e10a2fb6",
+      "sha256": "1ee9b67fd1f0a686bc3f10f428b50f1cfc6a7b934e887235e3ee4319f60d80f1",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/mig-003.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/mig-004.task.json",
+      "sourceBlob": "e4efd12656e58b0e2cf625e058df44ca3b985dc8",
+      "sha256": "6ab47993223dd92b888fbb10f7cf8f804d3ec312331342c798c301d29dd8292f",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/mig-004.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/mig-005.task.json",
+      "sourceBlob": "8f48c549c007c0996cd80a30f611fad5c4171d47",
+      "sha256": "d3816de24447c86fbe17d2adaea2875db0ffd900ca670ff2368d70829531e543",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/mig-005.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/mig-006.task.json",
+      "sourceBlob": "ae5577c67527a2eb70277fa336937413f30309ab",
+      "sha256": "aae639506e8718f4562e688a5841645db0ebd3ca497f2a3be39b63de1583e051",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/mig-006.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/mig-007.task.json",
+      "sourceBlob": "126f3258f87ee08909a99ea5d16241ce9044fdae",
+      "sha256": "6157011ae9e92fa4a8121b6365e2a84db0d3957b62c12725769ee5a2e9317f22",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/mig-007.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/mig-008.task.json",
+      "sourceBlob": "f7750a89a239e353ab99a6de61947c4de55b325d",
+      "sha256": "5fefe0acf7f2bf6280031fb2cd3de917bb67c9282645944c699b0b8d18c00644",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/mig-008.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/mig-009.task.json",
+      "sourceBlob": "99e20ebfac8ff865436562800ea604f85b5d5076",
+      "sha256": "aef7a7d39f4a85c7b7cd6ca8398421fe89fa1a94a04363c2f0f0f4e05f375d4f",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/mig-009.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "migration/tasks/mig-010.task.json",
+      "sourceBlob": "6c4a6d550efa084ef43a27801397466f2ce738f8",
+      "sha256": "5ce5b58b6e8091e8e407d5927829248b4a438afac35411b48b831b778d48b2e0",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:migration/tasks/mig-010.task.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "package-lock.json",
+      "sourceBlob": "5c64fcf5d63629b74dbaa4db11d16279295f132c",
+      "sha256": "7fb04397ccfef339e3b30a2c84b0dad94f5cefa44d36ef74777f3e5c3488cd4f",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "package-lock.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "package.json",
+      "sourceBlob": "003451bfe995758f25a7c1c43944bf5e35bcaf8d",
+      "sha256": "99b2fda62713632c0b08e49c0163614b7e405881c35f2da04d4abe83790c822c",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "package.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "requirements/migration/aut-001.requirement.json",
+      "sourceBlob": "1c4ff8f0d997a46dd009d5b6ee95501ffa22c899",
+      "sha256": "f0eddb9ac69b03708cf7e52d8dbe2648f51efb92ffd3a5973fdfd157e704ba7d",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/aut-001.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "requirements/migration/aut-002.requirement.json",
+      "sourceBlob": "7b319ee7d43cb478579b9ab947c0b4fb1e400a38",
+      "sha256": "7341d810d59079c79caae9081959f8ce186869bc3d76780779f5f61000520221",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/aut-002.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "requirements/migration/aut-003.requirement.json",
+      "sourceBlob": "13514be88ffeb5d27589cffa42c0ba11b5b741e0",
+      "sha256": "cdd2cd4679cde1ea2ae7fed4f2e629094eb91aa674f2dfb09d995e35a0eff572",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/aut-003.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "requirements/migration/aut-004.requirement.json",
+      "sourceBlob": "b360d1f8b75b3f0cefeb1ddbac6295b91322d1e5",
+      "sha256": "3e39f7fbd6963ea1cf7a555590b750330d66184665d404ba9cf7164aa165f4c7",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/aut-004.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "requirements/migration/mig-001.requirement.json",
+      "sourceBlob": "713e64ea7fb84b66511e50bbe51e1ed7f1c11dee",
+      "sha256": "f85713058fc17e3c894d665e0aa0825475ab877eb1e8d9ae9c5b7471fc433d7c",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/mig-001.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "requirements/migration/mig-002.requirement.json",
+      "sourceBlob": "217fb1c41bdf063c2f30b7865a0b077bcc326b81",
+      "sha256": "ff0da552fe926ad7bd2afb60ec42093248cd48197c87a052a9eb97433f393aa7",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/mig-002.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "requirements/migration/mig-003.requirement.json",
+      "sourceBlob": "6ffb8c4ee54e576f5dd92c7de8f0d6574b8e1a3f",
+      "sha256": "edd6ab4f093fcfa9c636a46da52488eace8c56b9c4414252b95e698eb9ce6eb2",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/mig-003.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "requirements/migration/mig-004.requirement.json",
+      "sourceBlob": "aa8eee3fd2fa104b210834992cdbbf07c3bc712a",
+      "sha256": "9e4120eadeeefc146c56aceef1d80a8f45a62174bee58e64abb593b2ee82dcf2",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/mig-004.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "requirements/migration/mig-005.requirement.json",
+      "sourceBlob": "08cbd8f71c40913a44d2bde688a1800353ffd223",
+      "sha256": "90b54e6df3dfe04419d8cd82cc44e9de41c29223f3d0530dd84e510cff1b7c2d",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/mig-005.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "requirements/migration/mig-006.requirement.json",
+      "sourceBlob": "3d50ed4f37bedbdf1f48b4382da44d2b37f1c68c",
+      "sha256": "aad82e34950cc02ef74dcb7085e57f54e943d7e4b0e49f3d340c6a6510de79ff",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/mig-006.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "requirements/migration/mig-007.requirement.json",
+      "sourceBlob": "e589f7c3fb034bec9a988f7984444265982a13f4",
+      "sha256": "da3614d4334fffe611c4890dd434873f908eef9f5a2903b29b03471ea4bfd608",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/mig-007.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "requirements/migration/mig-008.requirement.json",
+      "sourceBlob": "fa298c92791b9d9fa1cb93a424cff711c849c71a",
+      "sha256": "6504ee0a5bf6e1b35d9a7a6823488d2cda4fb79a0b7c3667f5f1116d3c200cd8",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/mig-008.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "requirements/migration/mig-009.requirement.json",
+      "sourceBlob": "a2a9173fc43e7067a4226896c5f1ab8ccae9a5fa",
+      "sha256": "082e84664f157477254d2ba7c415cfc182063b994e765ea5953ab653a4336062",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/mig-009.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "requirements/migration/mig-010.requirement.json",
+      "sourceBlob": "f7ddac7738017f1a4ac7f9ab5cc64324d6e96a8c",
+      "sha256": "35ec0cf6c32ad4da50bb36f277d1482f125161dada3ae1823b2bd8edd4b0fa98",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:requirements/migration/mig-010.requirement.json",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "reviews/README.md",
+      "sourceBlob": "32fd73dbd97c5b51cc2cea09de4636bb7667838b",
+      "sha256": "f7b54fb67f6e946bec97eb321c4a51e2d10c03748d230a9cfad0b1819fe3e306",
+      "category": "consumer",
+      "action": "retain",
+      "destination": "source:reviews/README.md",
+      "owner": "MIG-009",
+      "testOwner": "MIG-009"
+    },
+    {
+      "source": "schemas/README.md",
+      "sourceBlob": "108fd713e6b41c8ef2e89e9f14efbe5daa85d957",
+      "sha256": "9b26193642b7425799f910379e00174b98bad5a2fc92a4d5cf6f26b6643de2c2",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "schemas/README.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/VERSIONING.md",
+      "sourceBlob": "d2b4a7511f0be41a9fc0b85acd9c77e0cd75be9c",
+      "sha256": "ce0e9df4bc1e45717ad9bb4800fa957d3f7ec85dc244fa78beed7c7e872d1d27",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "schemas/VERSIONING.md",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/assignment-lock.invalid.json",
+      "sourceBlob": "ea00942fe2b263d366a5e1512c6de674c40d5298",
+      "sha256": "c61abe5a3e492aa6a0e8ce2c6c3a34dfb0401f3f60b7ea5412dd86baa884d25a",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/assignment-lock.invalid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/assignment-lock.valid.json",
+      "sourceBlob": "1b7bb336b1c4e3cb93c14c0d28b6b52375f4fec1",
+      "sha256": "dabae0c68a8ea777ebcf9848c32073b134eba67613bee114acd4dfa053d4ee37",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/assignment-lock.valid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/lifecycle-state.invalid.json",
+      "sourceBlob": "e2fa6a1646fae760608db60114ac7f676b6d27d4",
+      "sha256": "0fc7f48682009c640326562cdaf072c1d68413e504da3bc282ac509f74adf957",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/lifecycle-state.invalid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/lifecycle-state.valid.json",
+      "sourceBlob": "3dc7b89eddd5a0e17f851886dcda5fa2556c238d",
+      "sha256": "466eac647d1c37bd2beae573112cee87a79b6e0471f62831a4a1143ab9528284",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/lifecycle-state.valid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/local-agent-packet.invalid.json",
+      "sourceBlob": "5af8b59a52c99885a0ffce221cff5e5d5daadcb0",
+      "sha256": "1dcef277110db19624d820fe51a60c66d7c60c24a086d2f5b861657dc51f7d73",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/local-agent-packet.invalid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/local-agent-packet.valid.json",
+      "sourceBlob": "fa727fc758ca49ab52fcbfcef3750e168f6f6018",
+      "sha256": "8cc4cf5549c15d71249b7b023c44aedfd5341babef0f60646c60de06bb1d64d8",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/local-agent-packet.valid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/local-agent-result.invalid.json",
+      "sourceBlob": "f4f0cfa8036963a7c719c0fe9ed0c95abfe32930",
+      "sha256": "74999379c7485013586eef15206316df32de579dd9a1390b7322e68a67843668",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/local-agent-result.invalid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/local-agent-result.valid.json",
+      "sourceBlob": "0537e7d712e62a3a3d54c9029d66d865dab67da0",
+      "sha256": "f3b1a55f65ed08db270d380948970166c345a5f53d9ca2e0793a7c03000605ed",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/local-agent-result.valid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/merge-evidence.invalid.json",
+      "sourceBlob": "cd8f9a85ff577129ea4603805912cd57445aa8d6",
+      "sha256": "b180096978fb78226b4e2bcc8911ec21aa2625f82e79c582fdee6b7279e2d826",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/merge-evidence.invalid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/merge-evidence.valid.json",
+      "sourceBlob": "869f86b1e0bc535009ff239d030c7dd6bc49f927",
+      "sha256": "26c448e2f609ddd6e4b8a0a88801103327f151bae10d968636dd2ea13fc4a9ae",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/merge-evidence.valid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/module-contract.invalid.json",
+      "sourceBlob": "6b94f2eecda9f6602c43af38cf06dca60c5a1e23",
+      "sha256": "88902960a1b17a72c4a292e39c52ff828ac81ae2eb5f6c625a97b7fd43bae131",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/module-contract.invalid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/module-contract.valid.json",
+      "sourceBlob": "6ddfe5f16c774d0c565ee4c84a3217edf599cca3",
+      "sha256": "83a0ce0082d6bc603e5ff1f9fe793a9ca4578634eba3b4ce6d8ff2056b214222",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/module-contract.valid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/requirement.invalid.json",
+      "sourceBlob": "b211556ee3f253ad6945ba994c1ab035cddb50b0",
+      "sha256": "334a5d5222156febfdbce79fd0c497b4f28871d30ae1698f772b9b54a809d00e",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/requirement.invalid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/requirement.valid.json",
+      "sourceBlob": "0dc845a85c34e29e60bf4f7e51683c04d9322bad",
+      "sha256": "7ad22fcfbff523a51a15dd280b6cc3b90c2b3336aab975ce2fb284aabbe86d25",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/requirement.valid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/review-result.invalid.json",
+      "sourceBlob": "045c79823cd0616e8b875b566166477152621809",
+      "sha256": "39372be5e472914492e62acfb66058c5de03959ce9719a247037f9fd7d36c731",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/review-result.invalid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/review-result.nonpass-invalid.json",
+      "sourceBlob": "38b1ab4a63838b1dcb1497f8d06f4f99e9c91f29",
+      "sha256": "62e56825e9d509b3ebfbcddd7005c1a0d57a4fa39f9dfcb56f5966f89ed6b06a",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/review-result.nonpass-invalid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/review-result.roles-valid.json",
+      "sourceBlob": "4174c14a30a3d58c30cb2111c1e628196ce8b75d",
+      "sha256": "1356fc817d732352502184798189ede084f450688f47d1d4b8e116b0015bfb89",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/review-result.roles-valid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/review-result.valid.json",
+      "sourceBlob": "356db424baeb70620b1a74277bc459184b94e228",
+      "sha256": "5ab7eb7a514681d4f0863e97a3f058b95975306a23efc622ffdbd1b1ae75d000",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/review-result.valid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/task.invalid.json",
+      "sourceBlob": "413fdb0246b4ee5cc9a90f3c1c8f7a8e1705a9b0",
+      "sha256": "dd207fff04445fe2bce50148b530c6487f9a0198468b06b40b70c4aa05bd30b0",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/task.invalid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/task.unknown-major.json",
+      "sourceBlob": "573b15105a49f6121653b943708b0efadf335dc0",
+      "sha256": "a11430201c90c8454798b09b371ef6b9f0f59a5476e499ad1a7c9870b55ed834",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/task.unknown-major.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/task.valid.json",
+      "sourceBlob": "b028ebc58dda616fb57f70423c0c01ac75977c41",
+      "sha256": "c62a10b36e5ee9b0003a22c0fdc560b2503cff1500727811572a8a8c4becac5d",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/task.valid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/validation-evidence.invalid.json",
+      "sourceBlob": "e85cbb9ee1d47240de2b64ed898ea21ee79d55ca",
+      "sha256": "91d9e76e8f93aa3e91bc5ed340647ab3debb5e7a2c508209d3b034eb1ac46e55",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/validation-evidence.invalid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/fixtures/v1/validation-evidence.valid.json",
+      "sourceBlob": "624b835f2e12e1b7539776fcc87b62520eca1733",
+      "sha256": "d86458a380897c3dcd13cac5b8301b7f8804ad1b3b6e9219607bc4b20260bc3b",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "schemas/fixtures/v1/validation-evidence.valid.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/requirements.txt",
+      "sourceBlob": "d1cfec3aeefd5dc8c157e12c27cc2468bc925b6e",
+      "sha256": "117bb7857e2106917057761be56b51e26df4b9c0e3ebdbcf48a992e94534c6ac",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "schemas/requirements.txt",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/v1/assignment-lock.schema.json",
+      "sourceBlob": "d246b5d8adc96e12b6800594d77abc4c4afc698c",
+      "sha256": "e5508118b76ceec7c92bf31dddd9de023d89604d8348e3568234b25f6915bd68",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "schemas/v1/assignment-lock.schema.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-007"
+    },
+    {
+      "source": "schemas/v1/lifecycle-state.schema.json",
+      "sourceBlob": "dac1138529beb49b0cd6363ca4790d79f68ab72e",
+      "sha256": "18e6fa1ae1067a63c3c44130b7ec47f6593988ec21844b134fe9a3ecd82d3992",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "schemas/v1/lifecycle-state.schema.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-007"
+    },
+    {
+      "source": "schemas/v1/local-agent-packet.schema.json",
+      "sourceBlob": "22a921eaa61107e9df346044c2fabdd856b03ffd",
+      "sha256": "c0f54bd486ab4792e71495dfabb839d8f95066249ef841a0b5f15ebcf2a83e04",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "schemas/v1/local-agent-packet.schema.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-007"
+    },
+    {
+      "source": "schemas/v1/local-agent-result.schema.json",
+      "sourceBlob": "f12bbbba07bda61302c3c5219ff9eda7168d1e93",
+      "sha256": "b353432aa4fcac8abd56d723987410297a1a884949872c980009ce44ed1befdf",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "schemas/v1/local-agent-result.schema.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-007"
+    },
+    {
+      "source": "schemas/v1/merge-evidence.schema.json",
+      "sourceBlob": "9636e0e0931eae0073d6282506029d5a8367f121",
+      "sha256": "a91f28642764179a554ce202d00659d1fabc56d73ae3df4e00252508bc5784b2",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "schemas/v1/merge-evidence.schema.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-007"
+    },
+    {
+      "source": "schemas/v1/module-contract.schema.json",
+      "sourceBlob": "6205d53b5c8b7f0c17611389888b959fd1fa3cd7",
+      "sha256": "c14ed1c613581b8fee039ced0aa6eb222dfd466bf3eadc25172a228c42556f58",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "schemas/v1/module-contract.schema.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-007"
+    },
+    {
+      "source": "schemas/v1/requirement.schema.json",
+      "sourceBlob": "3e39143564a18210d32e106664c69e73a08a0fb0",
+      "sha256": "784bbeaf54262634dad4f9509714cde1cf99cde7b4d8d9f21e53cf89800db93f",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "schemas/v1/requirement.schema.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-007"
+    },
+    {
+      "source": "schemas/v1/review-result.schema.json",
+      "sourceBlob": "eac9dcb3a592ebb014ac91b785911612e87f8c2c",
+      "sha256": "d6fcc812152f03e45b28ce8bd2edc9b6339c054f7f40252ecb01526151a93f1e",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "schemas/v1/review-result.schema.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-007"
+    },
+    {
+      "source": "schemas/v1/task.schema.json",
+      "sourceBlob": "745be8c6b2738f15784634db458d8a050a77e913",
+      "sha256": "c7259d7e42aa80b9b36ea7f215bd122ebf1ef908972b59bb4ef96519a078dad5",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "schemas/v1/task.schema.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-007"
+    },
+    {
+      "source": "schemas/v1/validation-evidence.schema.json",
+      "sourceBlob": "52144e6255d3d5d1948f7f58d45290a4a00477ea",
+      "sha256": "2b9c7918767ee45e28b089519c45cbc18b05c6b152c5de9f5aff26e9b38c43a2",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "schemas/v1/validation-evidence.schema.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-007"
+    },
+    {
+      "source": "schemas/validate_fixtures.py",
+      "sourceBlob": "a851d50069b6788c30b7fc12ad7f34c56df2435d",
+      "sha256": "ce24c3994b9d5ee172ed1ad453d3afca9e6a7d0025d661183eec13f6453afe44",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "schemas/validate_fixtures.py",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "schemas/validate_repository_contracts.py",
+      "sourceBlob": "3200e545ce9c639cbf61160a2074f33ef635e52c",
+      "sha256": "70e8bd509007aa828c4ddf8cbb7097529727bbbf77b517a2d4d74924fe57d884",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "schemas/validate_repository_contracts.py",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "scripts/adversarial-mutations.mjs",
+      "sourceBlob": "e599e2ee83187e6e38f7e598be409aa5f8bb7b17",
+      "sha256": "87cd628ed047f11c25ee0358c73725b07e8b349b52babf79c983ebcbd3fa6d9f",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "scripts/adversarial-mutations.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "scripts/canary-rehearsal.mjs",
+      "sourceBlob": "5c42b54f6e07a1e101a6eba8face6612efe74683",
+      "sha256": "583350489abfe4d5e00de9c401ff93172fe7df99a28ec3b2455b3845ff9f8546",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "scripts/canary-rehearsal.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "scripts/canary.mjs",
+      "sourceBlob": "41f966deeb28e4e903e6a5013648e0fe4452ff9a",
+      "sha256": "50445fdfe84577cdc663216ef2227bbb8a68c1bc037561ef7dd57d0339ffc6f2",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "scripts/canary.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "scripts/validate-migration.mjs",
+      "sourceBlob": "466743ccc925bd4a6e02154b77311feb1d43bf06",
+      "sha256": "050aebbbcaccf4834764b13df4dbe31583c2eb158ab0f02d7640b4c8e28965af",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:scripts/validate-migration.mjs",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "src/agent-provider/agent-provider.ts",
+      "sourceBlob": "a813ab4c8be2d4488e268fdd7bee895bf728cd3b",
+      "sha256": "e9041fdd743e79b12c9b8f7738dd948141a2e49687e627736da226d7185ddfe1",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/agent-provider/agent-provider.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/agent-provider/index.ts",
+      "sourceBlob": "8a4ff7aa356670120596896962f30b803996a240",
+      "sha256": "5fc0517ea43bf7803894fa415d17037d9bd53d30e171c3154b124634c42ce766",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/agent-provider/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/agent-provider/node-runtime.d.ts",
+      "sourceBlob": "5cfb0b45646194fddb707c43d68c36e4d0eb89cf",
+      "sha256": "31274b257a2a37696b685f82e943390b79e6f3be41ab50dbcac8468ebecd4aad",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/agent-provider/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/architecture-review/architecture-review.ts",
+      "sourceBlob": "0f88c1e926c233f87ed704c347193cd17d099a47",
+      "sha256": "d52453010e8978322f99d9604dab87568a199443029443d5b71d5900941f3a12",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/architecture-review/architecture-review.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/architecture-review/index.ts",
+      "sourceBlob": "0385ff9ecf1b3e660167f4c687e43de98abab8c1",
+      "sha256": "40fcb39b86e29e2abcb12172b09790c37210ac5a657a775e67acef24e80531c8",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/architecture-review/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/architecture-review/node-runtime.d.ts",
+      "sourceBlob": "187e72315189c926b58a5042b03e5510189e4742",
+      "sha256": "f14706aca0c5db21f0c4f8070a968c8b47569165de07dfeae9128290c039b7e3",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/architecture-review/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/assignment-lock/assignment-lock.ts",
+      "sourceBlob": "64193e5a491ccf6c2ed83f64198fabbb479cc7f7",
+      "sha256": "b296bdcaed85220524f0ce8da1492f952dd2780d9b1903e34f6ef6321bde5595",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/assignment-lock/assignment-lock.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/assignment-lock/index.ts",
+      "sourceBlob": "8b88fdfffbf762cd0cff4f5e762e8608955e89a7",
+      "sha256": "dd1efc7fe76260acb3f1772411ffd798caf409b0d88290cc5be8bce96162584f",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/assignment-lock/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/assignment-lock/node-runtime.d.ts",
+      "sourceBlob": "e56e42aaf015a287531773b3e23afb43baa71200",
+      "sha256": "523f8f27bf21a6b7af3cbcdf35fe7136f0f511bccd98f8d1cb0bc64afec2b8bb",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/assignment-lock/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/cli/cli.ts",
+      "sourceBlob": "12f07d72fdc41cb800602550ca37c2fe1e9a3625",
+      "sha256": "3c914af9c3a4458265f41e10590fb9c2c90fff135b8a8a02cc415b797df170c7",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/cli/cli.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/cli/commands.ts",
+      "sourceBlob": "90fd096e284244682ea06a80a8d8a5a32b35c330",
+      "sha256": "6e446a249c8a7a54427519eac8536b6e94f0c69ad0cc09aeca03a7371d9bc7a8",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/cli/commands.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/cli/contracts.ts",
+      "sourceBlob": "ffb7f9cd8fa7e2aa416efe21c53f605b7f6bc090",
+      "sha256": "68a98db626d67063259921d2aea710f2a8bb9aca2c48b9ece3c0db9bd30a8d99",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/cli/contracts.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/cli/core.ts",
+      "sourceBlob": "0e7c49bf0c389193883f60ea7ecc568d7645f4a9",
+      "sha256": "e968dd93d729928ad9d3dda6ae9d657d67aaea1a910c71a42b01abd91cd9dba2",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/cli/core.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/cli/explain.ts",
+      "sourceBlob": "b2950e5d12ace6226e3e4410a533ab4eb0c84add",
+      "sha256": "4ed1237f51b09057c52e56e47dd4275257eebd7a1f7f07906d13e5e0f51e6fd8",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/cli/explain.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/cli/manual.ts",
+      "sourceBlob": "2c54cba105d8f25ab7c2752fc496c580edb9ede2",
+      "sha256": "d6ea01ab27d96cb119135e8f483819cb0528a9eb5134f52f5a6ac930938cbd04",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/cli/manual.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/cli/node-runtime.d.ts",
+      "sourceBlob": "1ebe3e8fda8219aaf5df688f3ecf5c68883eb449",
+      "sha256": "6c5dcb32b334ed6058c8d603218de5527d95a283a9453be183f50f36b886ea2d",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/cli/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/cli/recovery.ts",
+      "sourceBlob": "e1d1162f1af3374f42b9e257e9bd5f469129aeaf",
+      "sha256": "ddfb3181e8d561083c54e37ea431ff0f95878914fd6830ef19bbb4bfdbf27068",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/cli/recovery.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/context-compiler/context-compiler.ts",
+      "sourceBlob": "0854a9f9fbe85cd5342e825a40df7a4aa01ec75d",
+      "sha256": "060eec0a0b01636fd04e2493b367885de3b5e1ea37b237c11e5c5280694022c0",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/context-compiler/context-compiler.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/context-compiler/index.ts",
+      "sourceBlob": "f82f86d18b75a39cc119432343fd0a152f11d1f9",
+      "sha256": "045f14049f2fd7c4d8f1e21a709c1e4a78d036ca66723be90b4fd9e909de0823",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/context-compiler/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/controlled-merge/controlled-merge.ts",
+      "sourceBlob": "280403e409395792348624363a0c983b03879c58",
+      "sha256": "b8bcacb7e1a9a0a03f4f62a14b3775875bf829c988dfb9d6a4c9157dba79c3c9",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/controlled-merge/controlled-merge.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/controlled-merge/index.ts",
+      "sourceBlob": "450425ae97b0c319485aaefbda13216b62f14834",
+      "sha256": "6f81798f49c4798de7ab674d9ec73c5410499ddb0df04ecbf054f75ddd888a94",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/controlled-merge/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/controlled-merge/node-runtime.d.ts",
+      "sourceBlob": "52e2ada35feaed41d8f0c07f9cc8b8d9a3fcc768",
+      "sha256": "f87cc1f37aa1a05cb43725dcfc443fc029911380425e079645d9257858a140e0",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/controlled-merge/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/dev-start/dev-start.ts",
+      "sourceBlob": "1c64144175d8a5bf28204b1f234be91c6a201979",
+      "sha256": "fed93207d3ee4c2af195dff82bf398653223123fbfbf70a8ff318aeadab57281",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/dev-start/dev-start.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/dev-start/index.ts",
+      "sourceBlob": "6a22bed5295b202de1879518ca0ad775a078f508",
+      "sha256": "bec3596b8038d502142bd0e7a8618dd5e2812644ee0709d90abbd887789a12cc",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/dev-start/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/dev-start/node-runtime.d.ts",
+      "sourceBlob": "e6e0f1561dcb968d39a4350e915557a207d4b556",
+      "sha256": "4faf1e0133eeb69d2389570e136ad7b17e60768d768982ac5da8adc71e3627b7",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/dev-start/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/dev-validation/dev-validation.ts",
+      "sourceBlob": "31150760762908c09c49b3171760f2065b35a04d",
+      "sha256": "819da1045dce43c66647eef27bd716685df6762009b572ea6cbc49c387408bc4",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/dev-validation/dev-validation.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/dev-validation/index.ts",
+      "sourceBlob": "7bed96bdd73095e615e928cd6a138baa9f4fecdd",
+      "sha256": "dd75e6c5f434273b5c6d5ed325bd0f38561ccd3b250fded1624a5364adf62c72",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/dev-validation/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/dev-validation/node-runtime.d.ts",
+      "sourceBlob": "187e72315189c926b58a5042b03e5510189e4742",
+      "sha256": "f14706aca0c5db21f0c4f8070a968c8b47569165de07dfeae9128290c039b7e3",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/dev-validation/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/evidence-store/evidence-store.ts",
+      "sourceBlob": "b9cc39741085f5a95e27078ba7a13df3efe1fdbd",
+      "sha256": "e6af3e7dde69a299010f7c55045b0c9282661f08dd63704168ba898f21600486",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/evidence-store/evidence-store.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/evidence-store/index.ts",
+      "sourceBlob": "9fe7383b621567fe17d906572e4a648f3af4a9cf",
+      "sha256": "98fb77caabb397e60b40fc3c4c5936e3965b2000b721cf26c1bcabbf0e57848e",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/evidence-store/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/evidence-store/node-runtime.d.ts",
+      "sourceBlob": "a1c45724f6db15601596679ffc2b5fd2f871f3ec",
+      "sha256": "ceb141f448dfaf58db3f65ed4c7cf7e7456b7e97b37c160438fd1a781ca55092",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/evidence-store/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/git-branch-lifecycle/branch-lifecycle.ts",
+      "sourceBlob": "b5b87c7da167a5609aa4d2f743b25fc85a33f14a",
+      "sha256": "1ea2503f91db2c61affce4e76505f52a8c41b6e6d998802d10b3d218730eb3f4",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/git-branch-lifecycle/branch-lifecycle.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/git-branch-lifecycle/index.ts",
+      "sourceBlob": "fe428343a5cba19fbaf5f976ffcdc5291abcf09a",
+      "sha256": "5f3cb593c8e261253d77cbeffd93940f69bab497605e2e1a518ce1476bbdb5f1",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/git-branch-lifecycle/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/git-branch-lifecycle/node-runtime.d.ts",
+      "sourceBlob": "826d21248e8cfb26649bcb035e6b4b3ea8544663",
+      "sha256": "d820367cd587ab669a76dc532b03e55354346d9b87ac39d8eca66aaa049da80e",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/git-branch-lifecycle/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/lifecycle/index.ts",
+      "sourceBlob": "2d6daca4df8f1566fa7703a6c8ee6511200420bd",
+      "sha256": "0d02a3bbc59bdbb4fd7df6bce036a944e8c80353b5838f4fbe514c6a002fed86",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/lifecycle/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/lifecycle/state-machine.ts",
+      "sourceBlob": "71d3228e74ca1f5a08771ac4557f020b5ba41870",
+      "sha256": "48059673fbabd24a6326cc6170daec25cdc5058727a219a37377eacecbfa9bbf",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/lifecycle/state-machine.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/local-agent-adapter/file-manual-agent-provider.ts",
+      "sourceBlob": "c242f6ea472494b26bedd23450dc506f72b05c29",
+      "sha256": "674440f33e93b7d051c2c637669f660ab1701dfc8571c429876ffeb0b7882809",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/local-agent-adapter/file-manual-agent-provider.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/local-agent-adapter/index.ts",
+      "sourceBlob": "02d3f6fd4fa90b8ec1f7ef32e3ffaf7e51e5fe67",
+      "sha256": "62647d6997e12a3b21ba28016e87b74fa2a89e28785d2214b1b55054baab87c1",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/local-agent-adapter/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/local-agent-adapter/json.ts",
+      "sourceBlob": "70ba5a92547720f7879a25f4efd0cb4c99ad89ce",
+      "sha256": "012a2b96aaec154a7b667150c2aaad9647465b0e3fda84e249807ab1ce78cf75",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/local-agent-adapter/json.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/local-agent-adapter/node-runtime.d.ts",
+      "sourceBlob": "fbdaca284cbeafcbcd2d7fc638b1b64e121d269c",
+      "sha256": "d4d5fc9277f6f7888d36c2f02670dfd3586bcc7abcd1cadf18b23a439fdd3580",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/local-agent-adapter/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/local-agent-adapter/schema.ts",
+      "sourceBlob": "d267a44468440af7c966e123b9b5e5ec26eafa6c",
+      "sha256": "6de7b444f69becc70f00d650fa5d418b00cfe72ff5f4608b1a72365d28a1f262",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/local-agent-adapter/schema.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/merge-readiness/index.ts",
+      "sourceBlob": "da8cdd97922ea7330fba3e1a2e90470c2289bef0",
+      "sha256": "8c2df2bbdb0a2aa6cdbefed7dda6a754e519013418bdab3a1ab53227f8ec872f",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/merge-readiness/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/merge-readiness/merge-readiness.ts",
+      "sourceBlob": "8cb0c326582ffa633cc154dbfa187d59dfd8d2a3",
+      "sha256": "a74a0f51c3818484769471a6caee254494d0a54adf08211410d2dfc8e483f735",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/merge-readiness/merge-readiness.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/merge-readiness/node-runtime.d.ts",
+      "sourceBlob": "1eac0b10a7d625a4fda14bfcfe20e70165d795e8",
+      "sha256": "db354589f13fde0dc17a69e3c39798eeb5778f349803166fe6dceb3640240594",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/merge-readiness/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/orchestration-engine/index.ts",
+      "sourceBlob": "9f60c06540f2af17d091ee9743a829f0779c73c2",
+      "sha256": "03ed948a54b5f59a6c2f240053010958e88e1ea7170f951e4458185a7278f277",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/orchestration-engine/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/orchestration-engine/node-runtime.d.ts",
+      "sourceBlob": "fa3457f2597924ee0c8a5c5b658bd09c55b26f4f",
+      "sha256": "e5da459506c6bfbb92982446063f3cbc4ff32fcccb08cb68656fc3254e5574c4",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/orchestration-engine/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/orchestration-engine/orchestration-engine.ts",
+      "sourceBlob": "06def7aae1ce75dbb041c0d0483ee1f0d212109e",
+      "sha256": "7efb2a01f51938e8369a8b14a18cb22f3cefbab7eef2514d1c1fdfcebe73ddc8",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/orchestration-engine/orchestration-engine.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/orchestration-engine/run-store.ts",
+      "sourceBlob": "4a4cd0ed29636ce9bdd186a6be37c41d204c8e10",
+      "sha256": "4728fd257ed26d1fc04204c440f35e43e48ec0984f3328de74c49cff8952ab29",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/orchestration-engine/run-store.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/pr-lifecycle/index.ts",
+      "sourceBlob": "021e0d669d8808d2b29830305049363f0e016d07",
+      "sha256": "261cdc4548303fbf10ab9e341d1cb8567e43421f9c28f58132d0132ddb09418a",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/pr-lifecycle/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/pr-lifecycle/node-runtime.d.ts",
+      "sourceBlob": "ad8f7f44fe306df2a7c3dc2cf539f21e4ac7ce4e",
+      "sha256": "5bc41858b091172adcbf340b5cb8e4cc4a2b22c224bc14aa6b43cb4bed9a0c23",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/pr-lifecycle/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/pr-lifecycle/pr-lifecycle.ts",
+      "sourceBlob": "e44796cc44fe7e2ccdf410c7e1136f2ae5ff2e55",
+      "sha256": "3a38b2a0ae3fb3fc15dbbe3a257d1ab098ad2677c70f9dde10da6629281e36ce",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/pr-lifecycle/pr-lifecycle.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/qa-review/index.ts",
+      "sourceBlob": "276736bbc75f6c4946b4c79955a94ae5948b4c0e",
+      "sha256": "7a7ee1250a1d77c42d0b75199b229637e1845313d98ce57928e9c0dfcb873fbb",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/qa-review/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/qa-review/node-runtime.d.ts",
+      "sourceBlob": "187e72315189c926b58a5042b03e5510189e4742",
+      "sha256": "f14706aca0c5db21f0c4f8070a968c8b47569165de07dfeae9128290c039b7e3",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/qa-review/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/qa-review/qa-review.ts",
+      "sourceBlob": "34d2cb7feeb29c7f8a473fbc8b9368017a691e58",
+      "sha256": "fc4fb2088b3817895632dd5655137146fcc4c754a55c4e2f9dbb4be0262617d8",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/qa-review/qa-review.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/recovery-tools/check.ts",
+      "sourceBlob": "22535203f127b47399fd42a425320a7bd67f4f32",
+      "sha256": "24f269384b1d991490b9c922ad8c9198e600c7299e9636873e7e32dcdd2bb921",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/recovery-tools/check.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/recovery-tools/index.ts",
+      "sourceBlob": "bdfe77e392c4ade5bf2189cddff1f587fd26a95a",
+      "sha256": "15ecf30e95fc5302c4623e05ed9db35bae1dc4749aeb9ffa61ba587af34c234f",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/recovery-tools/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/recovery-tools/recovery.ts",
+      "sourceBlob": "f02cfca42eb2c053f66db2229a61ed62178114ed",
+      "sha256": "43a72dfa24c58530f379d118ec4b369ba745d0f0f3435e4d13398cad7b424a6e",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/recovery-tools/recovery.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/review-framework/index.ts",
+      "sourceBlob": "83f16530eae3e5cc18c57b9f8b9d48e59237cd14",
+      "sha256": "221e2f9dc0b5c50ea0896c4e800f5dfc8665f8d3a25e0557befe656bd769bf1a",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/review-framework/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/review-framework/node-runtime.d.ts",
+      "sourceBlob": "30de65d60f1717f33d18d9b769607da3269e700a",
+      "sha256": "8ead96dc4db0ff87baaa55f6ce96bdef77f7373d675a3456a94b2878863fa73e",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/review-framework/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/review-framework/review-framework.ts",
+      "sourceBlob": "ed4cbdbbfa8c48966944b8e7c814b12177a40350",
+      "sha256": "fc20ea429346f3232df32b11ede24e950fd0883fbe9efccbc07c4825444d6047",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/review-framework/review-framework.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/review-rework/index.ts",
+      "sourceBlob": "1248d97166e916c4f92593ef7ad5187a52356b8c",
+      "sha256": "f42f931da15e17dbce5067e960382e441a4d1ae68481de1b3f7a13163a08740b",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/review-rework/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/review-rework/node-runtime.d.ts",
+      "sourceBlob": "187e72315189c926b58a5042b03e5510189e4742",
+      "sha256": "f14706aca0c5db21f0c4f8070a968c8b47569165de07dfeae9128290c039b7e3",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/review-rework/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/review-rework/review-rework.ts",
+      "sourceBlob": "9ff74090a3eb35f7a9d3428e3ec4054b894fc13f",
+      "sha256": "2a3b4ac219e1c9e65b13330ec2c9c246292e4e70e232002827035039367f6a99",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/review-rework/review-rework.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/status-reporting/index.ts",
+      "sourceBlob": "03b54d2187c7199f0ced544a1dbd86634995d621",
+      "sha256": "a87ca32798f1e74a332854c266c03a8ec4dd774337158fe39321fa615f9e0ab4",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/status-reporting/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/status-reporting/local-source.ts",
+      "sourceBlob": "67810439b9e4fb50694942ed51a801faf44e76f6",
+      "sha256": "a8853bbcae00599158528b25b8861f57b174ce04de1d2dbe7d33512e70cfa52b",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/status-reporting/local-source.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/status-reporting/node-runtime.d.ts",
+      "sourceBlob": "a1eab58edf5f4bc092881230c9ba6cfa03c5a0e7",
+      "sha256": "ce93b586cdaa5f918ae512b5d1d77b7f18758415ac0e798e7f25b09bee51e12a",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/status-reporting/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/status-reporting/phases.ts",
+      "sourceBlob": "9bd6d23df0f6293c5d4f920b2781f37ba39a19fe",
+      "sha256": "11ec2586f39731bd21ed6829901734524328b73feb4682c1ebee70c28ceb71ce",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/status-reporting/phases.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/status-reporting/render.ts",
+      "sourceBlob": "5114dad511f502447b96e07e889222b5db5482f8",
+      "sha256": "663456f62f4ce0ebb607689dbfe6dbaad364a7975f1bb3584a06c7cc4a856bab",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/status-reporting/render.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/status-reporting/status-reporting.ts",
+      "sourceBlob": "7d5846bfa7f455cbf0b750c2c33c299251be81c5",
+      "sha256": "73f720a37f16da1d98f12aa0dd31242bf7f22cea397a9e8016f6c2b1835346fa",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/status-reporting/status-reporting.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/task-registry/dependency-graph.ts",
+      "sourceBlob": "7784f122a0ff252d1641337244b1cee4b1f3529c",
+      "sha256": "73c5ab62461b06e65b061de7b082114efd0ad6abdcfb0d2063fc475550d5a581",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/task-registry/dependency-graph.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/task-registry/index.ts",
+      "sourceBlob": "3fab441814de975be3f1bd92310904f10ac6d53f",
+      "sha256": "c6453c9d8ab3d995aad980ac9fb94b7052bcd16c594e269c70682200e31c613a",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/task-registry/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/task-registry/next-task.ts",
+      "sourceBlob": "bf1eb93b7d037a3f8959b9fc24e2714900ebcb06",
+      "sha256": "2ca4d54fbef46aad976b1d8b216134320a25e2cee6cc36b2cb936d97b3096b44",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/task-registry/next-task.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/task-registry/node-runtime.d.ts",
+      "sourceBlob": "cdf1f249c951aa30e4f1fea3fd9f3a143bdcea31",
+      "sha256": "ef2dc5afe22ff2bfb71bf4829add578a7e0e4449494c97848ce6a68758a8c628",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/task-registry/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/task-registry/registry.ts",
+      "sourceBlob": "649257e34a3748226bec78a3d9807b7d6c2a939b",
+      "sha256": "690561d0a5ae4debf384cbc5d5da3d1723fd386a91ae9cebcddd3b5023b9bc9c",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/task-registry/registry.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/uat-review/index.ts",
+      "sourceBlob": "ea3fad62141d5d50df99aabd70c5500ce1fb48cf",
+      "sha256": "5f7263ab92729b7fccb5de9bca2952b109d4f55fd869f5e308c71b16eeab039f",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/uat-review/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/uat-review/node-runtime.d.ts",
+      "sourceBlob": "187e72315189c926b58a5042b03e5510189e4742",
+      "sha256": "f14706aca0c5db21f0c4f8070a968c8b47569165de07dfeae9128290c039b7e3",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/uat-review/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/uat-review/uat-review.ts",
+      "sourceBlob": "9390aa8c31c6962202132e87808057c2de96d90a",
+      "sha256": "bd4d6dfca2cc694aa7a1f8831bc74cea24259a65b4181e2e2a3a56ce295ce450",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/uat-review/uat-review.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/validation-framework/index.ts",
+      "sourceBlob": "96c2d5f31f74b68c700f30facb63d2b412617ca2",
+      "sha256": "8d16430004135ed116d01dd197d9fc8b7094506bc9b70c96ece3fd03b53d7f7a",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/validation-framework/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/validation-framework/node-runtime.d.ts",
+      "sourceBlob": "fae1264d315720c5444c0d689da44d993a1d2c89",
+      "sha256": "0ceff612f4d0641d755bdd1bec0714853d4051d043ddc1e849e036875974407c",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/validation-framework/node-runtime.d.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/validation-framework/validation-framework.ts",
+      "sourceBlob": "ac69871f4541bf93a82433396269535d38fcf563",
+      "sha256": "609d529e2db5225bf810426161fb7a427bfc781ce29f52bc8c86743e58136e54",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/validation-framework/validation-framework.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/workflow-diagnostics/diagnostics.ts",
+      "sourceBlob": "b5d19e6a317e24461c95a1ac45dca7e4efa1ccd6",
+      "sha256": "3154ac993dc50adaa7043df2ec56579eea06add7ed7ed5fc2dc5fb43d38648d3",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/workflow-diagnostics/diagnostics.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/workflow-diagnostics/index.ts",
+      "sourceBlob": "fab788827ac959ec7d78efd8b8e3048054fbc86c",
+      "sha256": "f13e3ec8161a1bcfb113e91d691b5a0cbed365200348e90034fd202f089dac92",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/workflow-diagnostics/index.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/workflow-diagnostics/local.ts",
+      "sourceBlob": "fc402a1d6f37dcd12876871a0cba6659e0144c85",
+      "sha256": "05eb13bf79079b508527475337ae6ad13733d9356f2f642b513c5783d6aeff54",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/workflow-diagnostics/local.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "src/workflow-diagnostics/render.ts",
+      "sourceBlob": "68d1c8442c663a02757c27addce5b089a4413a2c",
+      "sha256": "a5a1b36bf1723e670dc479c6cf0c4fe2a559b7f421735d0a4d7e4e3e840a38d7",
+      "category": "vibez",
+      "action": "copy",
+      "destination": "src/workflow-diagnostics/render.ts",
+      "owner": "MIG-003",
+      "testOwner": "MIG-004"
+    },
+    {
+      "source": "tasks/README.md",
+      "sourceBlob": "5054e78fa1567530768fa44cd8055f6099f4cfc6",
+      "sha256": "16183d2d777b2f7defb040a85eec5e437f42fb42a07e065eee8c7146043a9eb4",
+      "category": "consumer",
+      "action": "retain",
+      "destination": "source:tasks/README.md",
+      "owner": "MIG-009",
+      "testOwner": "MIG-009"
+    },
+    {
+      "source": "tasks/definitions/README.md",
+      "sourceBlob": "51ca2b5a4414ae52e28e1f6e9279f087f47189cd",
+      "sha256": "2720940b03016c86503322376e1ea4f0243b13dd68ca83ef73717625868600a6",
+      "category": "consumer",
+      "action": "retain",
+      "destination": "source:tasks/definitions/README.md",
+      "owner": "MIG-009",
+      "testOwner": "MIG-009"
+    },
+    {
+      "source": "tasks/definitions/canary-001.task.json",
+      "sourceBlob": "8093619697af0a93656f3676f002e6832b662791",
+      "sha256": "6adb6c59addf0e37b9f7af8c99d67e203ca143ac2a666514281a24f6a8bbdfce",
+      "category": "consumer",
+      "action": "retain",
+      "destination": "source:tasks/definitions/canary-001.task.json",
+      "owner": "MIG-009",
+      "testOwner": "MIG-009"
+    },
+    {
+      "source": "tests/adversarial-workflow.test.mjs",
+      "sourceBlob": "e891e60f6efdb17990efacb976da13eb9dc95d6d",
+      "sha256": "cf26946e36ba1c7b121ad335e9a1b97d9172ea484772e7dfb9fcddcbc0016a10",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/adversarial-workflow.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/agent-provider.test.mjs",
+      "sourceBlob": "7ac24b5b6e615bc5fd4c1d6f63d8ba347b425651",
+      "sha256": "f4b4c3df7b1cd2956a048e2ea662a1d7d473c35bc06e815b451d6488946e604f",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/agent-provider.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/architecture-review.test.mjs",
+      "sourceBlob": "9592b9f5a79c4a490ea709693cf89be76cddbf8d",
+      "sha256": "2935926cdee38ef998e3c100b641439e5b977a157aecf79238ed9f662eabd273",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/architecture-review.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/assignment-lock.test.mjs",
+      "sourceBlob": "b29444e591945d0616466bf37ccd5025784c19c8",
+      "sha256": "10865baf3d344115d58f4f6a0bfe9d486379760cd487507a6d72539522631fe5",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/assignment-lock.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/canary-e2e.test.mjs",
+      "sourceBlob": "45cddd0853d4068fcef0b065b2a604d1c0d20b4f",
+      "sha256": "3d19416f1b021ed40893d692c1cd2b0ed71e97b81de2524efc9a7ad8213964fb",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/canary-e2e.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/ci-workflow.test.mjs",
+      "sourceBlob": "e88d8e185a8563b8dff7971baae1e5a6bd29982d",
+      "sha256": "c32e5ffe7cf2d13c4c8d8860c090c9c552508204436cebd067017e560476ae53",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/ci-workflow.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/cli.test.mjs",
+      "sourceBlob": "7ad004bf36e1e50c4805e3347d523ede1745678c",
+      "sha256": "99a3da75f610473ea06624c0b7f3f1997d0719c301fe9f77c6a9a1985fff70c1",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/cli.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/context-compiler-review-regressions.test.mjs",
+      "sourceBlob": "2a173e3326ed720e4c30477a288141c32f33e745",
+      "sha256": "748c28897b2ea3d2d1d4c33e07c46c0f4981a615b162f2ff7fc7295431a0bd87",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/context-compiler-review-regressions.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/context-compiler.test.mjs",
+      "sourceBlob": "024112e9806dc8d687ae9ce58a1bf328f7e6b43f",
+      "sha256": "6ee095390549d8a5db1cd3499834d64be43035298693f97f798d61a3d140709d",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/context-compiler.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/controlled-merge.test.mjs",
+      "sourceBlob": "2b1e5f2d35c264a593389c3c73d316adb8ff2cdc",
+      "sha256": "981fa24881f5ca28eb5f9fa3c1fde4be5fc25dc971cbfe122f0943e8e245954a",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/controlled-merge.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/dependency-graph.test.mjs",
+      "sourceBlob": "30570b98a938a9282f42b317ddca16257f1af328",
+      "sha256": "6a13105205a9960805ec38b7ae541c19516598a82717b665c5198e6f437c8c5d",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/dependency-graph.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/dev-start.test.mjs",
+      "sourceBlob": "483064fddb0546c936d75363a08653d0d89d3497",
+      "sha256": "b8654057411502f8f5940793b908e066bbe3c8c504adc0b372b846ef60d0ce9d",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/dev-start.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/dev-validation.test.mjs",
+      "sourceBlob": "095031baa78895b7b0e43560eff21bc875f86f3e",
+      "sha256": "e120f53b79230d92a63db595712906f095b962b3bdf36c9a250c86cc1db134d3",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/dev-validation.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/diagnostics-cli.test.mjs",
+      "sourceBlob": "fb22547a4515133f6bfaf42280f583290195d1f3",
+      "sha256": "7e81d6b7b1b7512ce4a96bdacb2f015c5fce49174b3eb3dc63329870343d6959",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/diagnostics-cli.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/evidence-store.test.mjs",
+      "sourceBlob": "0373616aaebf342c92806fd8482e45d10844e8e2",
+      "sha256": "145ea3e019e96621d9bf608156f68a51282039be061f2deb9aa656ec2e6f2e0e",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/evidence-store.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/git-branch-lifecycle.test.mjs",
+      "sourceBlob": "93a1fa1246735edb012147e8e3f4498ea696492b",
+      "sha256": "390d6c3250d783bb61e79c5bf14f27e4f4c93d9df42904a8eb5d73918973726d",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/git-branch-lifecycle.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/helpers/canary-fixture.mjs",
+      "sourceBlob": "001f6f91bc68f4482b55f502b30f50bb5ab820ab",
+      "sha256": "c8d61c46109bd95ed43b7f675f2f034199893c0ae29e651de5871ff395fcee98",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/helpers/canary-fixture.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/lifecycle-state-machine.test.mjs",
+      "sourceBlob": "393596d7fc8c264192ba55fb1bb230d1e4caf20f",
+      "sha256": "cd3fbfa3b97de9d776d39b9c32b04eb478950fa87df670703cfe4ab4f3fdca72",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/lifecycle-state-machine.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/local-agent-adapter.test.mjs",
+      "sourceBlob": "d7ea43e4cdd1f06cddaf64a315724f4cc9dcbebd",
+      "sha256": "8269bedec862c3133cd69cbf9935a3b0da26ceae819b44bb0ce17b5e4f25572d",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/local-agent-adapter.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/manual-cli.test.mjs",
+      "sourceBlob": "8ec86fc5d59c2156bd8a4c1f47f12b3f5a317aa0",
+      "sha256": "9a245b27212875d50f6f81f9eee52c278443020ae808db01461bec7d0c440598",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/manual-cli.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/merge-readiness.test.mjs",
+      "sourceBlob": "070776db44d0663a6d472ac241ed1853bac2ec13",
+      "sha256": "03c59bc27f0518bf8a92c08d9277ffce4a6db92dd6d22b68f72eab9ca2107680",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/merge-readiness.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/migration-registration.test.mjs",
+      "sourceBlob": "35ee2bfe621446cff274cb83eb8ccfbe05c6b0e1",
+      "sha256": "8eff40c64e13c7b3cde07b2c2d70c8c0a254db0f8b42ccc76219749987b3b46a",
+      "category": "historical",
+      "action": "retain",
+      "destination": "source:tests/migration-registration.test.mjs",
+      "owner": "MIG-001",
+      "testOwner": "MIG-003"
+    },
+    {
+      "source": "tests/next-task.test.mjs",
+      "sourceBlob": "3ed606110aa32915533f1f054c5f321391e90f36",
+      "sha256": "93f159b9c20a0a263825dd9214a58ea0ffe1457e89f69e854aa7bfea6d505dbc",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/next-task.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/orchestration-engine.test.mjs",
+      "sourceBlob": "0ecf13ac17790a5b9fb3fa307178e577c828c904",
+      "sha256": "8edd43d215c2a69394b59c3ad586ef6e70efb2a7c4f7f95fff5120ec099e559a",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/orchestration-engine.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/orchestration-run-store.test.mjs",
+      "sourceBlob": "9a3a85f434b0009adc430b1c3af8c3a40816a12b",
+      "sha256": "fb1449ba9d0cc19be85d53042243620dd21573afcb4c94d0301c27924f9c13c6",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/orchestration-run-store.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/pr-lifecycle.test.mjs",
+      "sourceBlob": "b052ad5bc78d502ac6af160423ee08c05865ca12",
+      "sha256": "963db9265b6926c76b65db3806d30f4044d7bb34f25b9cf7a7efdd468871004c",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/pr-lifecycle.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/qa-review.test.mjs",
+      "sourceBlob": "37059ce59b8b3f1c3955966bb156988dc2d9e087",
+      "sha256": "a919252e76e76f5339cdb3319c78620e6eec4d401b4ef91834d74c1e510d573f",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/qa-review.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/recovery-check.test.mjs",
+      "sourceBlob": "83446585a73545aa661afedb821cb639f6ae00d5",
+      "sha256": "1352585eada9ef22cc658fa5dfaa30d615a63836c7b5578034a45d0315647f5d",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/recovery-check.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/recovery-cli.test.mjs",
+      "sourceBlob": "12a907325a1425fd86404365a2446d347997cbe9",
+      "sha256": "9afc52dd52a8000409f2bea621c449c2b6791b60c9c3eb6fe247c8c1eb13e5cf",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/recovery-cli.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/recovery-tools.test.mjs",
+      "sourceBlob": "4bf3f0b39bbae9bd88652480cf7e4b9ae2ce8b1e",
+      "sha256": "a25aaba43f77abf3867fd2db897df10290c9d2126a50beca55fe6a09c48d3279",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/recovery-tools.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/review-framework.test.mjs",
+      "sourceBlob": "1088c4cd3bfb4aea95875b756e998d3110b03aed",
+      "sha256": "fc183a31815919d455cb0496ffce553a35f06b6ae577a2d588df0b68fd4340a2",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/review-framework.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/review-rework.test.mjs",
+      "sourceBlob": "3cdeb82eb04910f8956e6bbb0d4a7e30b2c5e6f0",
+      "sha256": "e07994a5bb1482997d4203d764e0fa6501b13f59738ac8f19671ef7aa52d351b",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/review-rework.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/status-reporting.test.mjs",
+      "sourceBlob": "fbe1939527f398729bfba784bf08cda2ea95ea16",
+      "sha256": "bde7227b2973c73b49942ea4d8fd1aabf32b60f1dee0707e2d9ee1e45e57a10a",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/status-reporting.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/status-source.test.mjs",
+      "sourceBlob": "3d5698c25402be3c9f7f1b03b56e83114a4f2267",
+      "sha256": "a6d15ca35d3f161fa7c1774ad645da6474e9c48f6a7d86bd76a37188d2bd6105",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/status-source.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/task-registry.test.mjs",
+      "sourceBlob": "3689b8fb552db97193c0f4ef083c6fce1f823004",
+      "sha256": "047cf8c8270a96e86609e58787c57291829d844473b9d22679db0082ba6184fc",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/task-registry.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/uat-review.test.mjs",
+      "sourceBlob": "3c76a381ee9aa57333670a227789ad3b1d7ab6d4",
+      "sha256": "c76f3b3f057de23ce4af86b8789ae7d2de07940dac81757bea681484a00fbd7e",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/uat-review.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/validation-framework.test.mjs",
+      "sourceBlob": "e0aec3bf0b5fe083ed1c36132add62fa7e2ec9a3",
+      "sha256": "0716e0f801ad477e716f0c5036eb3cda3e596bd6071238f312ee76a94dafa390",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/validation-framework.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tests/workflow-diagnostics.test.mjs",
+      "sourceBlob": "c98ff6ac51a0dd9896a35732453b88f694e3115f",
+      "sha256": "99ccd5e5c8d8f275c057ae00169ebf884cd7ffaaa594d81745dd2c7828ef70fa",
+      "category": "test-example",
+      "action": "adapt",
+      "destination": "tests/workflow-diagnostics.test.mjs",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    },
+    {
+      "source": "tsconfig.json",
+      "sourceBlob": "ac50ecc4840919ad645a164235d8b662e73ad236",
+      "sha256": "7eb4e757a105af584dc97501de8162132e1be91874ca10c0136b88832b777cc2",
+      "category": "vibez",
+      "action": "adapt",
+      "destination": "tsconfig.json",
+      "owner": "MIG-003",
+      "testOwner": "MIG-008"
+    }
+  ],
+  "untrackedExclusions": [
+    ".agent/**",
+    "node_modules/**",
+    "dist/**",
+    "credentials",
+    "local checkouts and worktrees"
+  ]
+}
