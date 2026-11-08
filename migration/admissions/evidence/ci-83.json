@@ -1,0 +1,14 @@
+{
+  "workflow_runs": [
+    {
+      "id": 42528759202,
+      "name": "CI",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 65,
+      "jobs_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/actions/runs/42528759202/jobs",
+      "logs_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/actions/runs/42528759202/logs",
+      "workflow_id": 355041759
+    }
+  ]
+}

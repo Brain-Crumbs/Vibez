@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "dependentTask": "MIG-002",
+  "destination": "Brain-Crumbs/Vibez",
+  "integrationBase": "5ac4a575cc4748f6e5c4623456002e4962241722",
+  "observedAt": "2026-11-08T22:26:10.708388+00:00",
+  "verifier": "MIG-002 implementation agent under owner assignment",
+  "authority": "User requested next eligible task, publication and merge after separate reviews and checks.",
+  "issueBodySha256": "027e8fb09b5c7778f86adc1e6ff46a89ccbe70f28e3faede43a7e91ebe68193b",
+  "definitionSha256": "982b80140b8c58a7e9ea93023c70534df36ac144f060a19f052961f8a006b240",
+  "requirementSha256": "ff0da552fe926ad7bd2afb60ec42093248cd48197c87a052a9eb97433f393aa7",
+  "prerequisites": [
+    {
+      "task": "MIG-001",
+      "repository": "Brain-Crumbs/IPTFantasyFootball",
+      "issue": 80,
+      "pr": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/83",
+      "head": "d4adee3ba31376ab4af6704ca67cea4d1646daa3",
+      "merge": "50ef51e7dd2443dd0cec644c04e8db1b7fd612f7",
+      "ci": "https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/42528759202",
+      "reviews": [
+        {
+          "role": "qa",
+          "outcome": "PASS",
+          "reviewId": "MIG-001:QA:d4adee3ba31376ab4af6704ca67cea4d1646daa3:mig001-qa-d4adee3ba31376ab4af6704ca67cea4d1646daa3",
+          "lineage": "MIG-001::role::QA",
+          "sequence": 1,
+          "contextSha256": "001aa1ec1948e08055256800fe94f768f563a4aec2c69deb048317bc140a8998"
+        },
+        {
+          "role": "architecture",
+          "outcome": "PASS",
+          "reviewId": "MIG-001:Architect:d4adee3ba31376ab4af6704ca67cea4d1646daa3:mig001-architecture-d4adee3ba31376ab4af6704ca67cea4d1646daa3",
+          "lineage": "MIG-001::role::Architect",
+          "sequence": 1,
+          "contextSha256": "2256bfada9ff10a4f296ca3ad5bda378ee9ad84f54ddf4f209311c6111e50852"
+        },
+        {
+          "role": "uat",
+          "outcome": "PASS",
+          "reviewId": "MIG-001:UAT/Product:d4adee3ba31376ab4af6704ca67cea4d1646daa3:mig001-uat-d4adee3ba31376ab4af6704ca67cea4d1646daa3",
+          "lineage": "MIG-001::role::UAT/Product",
+          "sequence": 1,
+          "contextSha256": "8e1609a551d30c1e471d65b8e9df928a265080e26963d6633c1b7082b083b041"
+        }
+      ],
+      "originalArtifactHashes": [
+        {
+          "path": ".agent/mig001-start.json",
+          "sha256": "e25c72385e45dd66fac065d85928caf7cd13168715140bdd12367951c7022bc2"
+        },
+        {
+          "path": ".agent/validation-d4adee3ba31376ab4af6704ca67cea4d1646daa3.json",
+          "sha256": "2ab88582df46f09852fc950f9b75f91e5d4ce62ea1114e6ac4fdb5ea6adf0b61"
+        },
+        {
+          "path": ".agent/mig001-host.mjs",
+          "sha256": "f22dc9ea73a56e3af3977f6aacf9c1c5b4d1306153b6be12fe25863a28cb561e"
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "7fb04397ccfef339e3b30a2c84b0dad94f5cefa44d36ef74777f3e5c3488cd4f"
+        },
+        {
+          "path": ".agent/qa-review.json",
+          "sha256": "45995e4aaef0f7ffafb251bcf8579093cb077a3c1e86426b7917f1331ad2356e"
+        },
+        {
+          "path": ".agent/qa-gate-d4adee3ba31376ab4af6704ca67cea4d1646daa3.json",
+          "sha256": "a3e159640857c1606e87a2e107dc0e893986fb400f229d3d29856f8b70f67d98"
+        },
+        {
+          "path": ".agent/architecture-review.json",
+          "sha256": "21801565ee7a09a72d2a427d80954c0b5ed8d8b7a562ebc963cb4e913fa4d670"
+        },
+        {
+          "path": ".agent/architecture-gate-d4adee3ba31376ab4af6704ca67cea4d1646daa3.json",
+          "sha256": "64e33c004afc6fb599b3cbe840aaa8eda829d6ae842acea0862632501a2d42b9"
+        },
+        {
+          "path": ".agent/uat-review.json",
+          "sha256": "6e71cc6ac9b886295d76267fb6cae0e81e62b1a9ce74ca9c60e5302b20e3664b"
+        },
+        {
+          "path": ".agent/uat-gate-d4adee3ba31376ab4af6704ca67cea4d1646daa3.json",
+          "sha256": "40221659d790026f56a0c03bb35b947f0cd3fe1a806214f94957680b9edc784a"
+        }
+      ],
+      "acceptance": "External implementation accepted on main; original 10 handoff artifact hashes verified locally, three independent PASS reviews and both exact-head CI jobs verified. Native MERGE_READY is historical; no native DONE asserted or imported."
+    }
+  ],
+  "nativeDependencies": [],
+  "originalExternalEdges": [
+    "Brain-Crumbs/IPTFantasyFootball#80"
+  ],
+  "definitionChanges": [
+    "Expand allowed paths for seed governance, specification checks, examples and PR CI required by accepted SEED.md; no runtime implementation.",
+    "Replace generic destination build commands with design checks; retain pinned engine validation separately."
+  ],
+  "evidence": [
+    {
+      "path": "evidence/pr-83.json",
+      "sha256": "bd0becb40d07f47ceedb00eab654d1dda25a8ca42495ce2aa25769e1b643ece8"
+    },
+    {
+      "path": "evidence/ci-83.json",
+      "sha256": "cb67f2e7603cfbbe22da7ff7770d40c566fa4605e91cf9837f0c4989ffed1b2c"
+    }
+  ],
+  "engine": {
+    "revision": "fbc46888ce0bd2af454f471561911a913d32e6fc",
+    "package": "@iptfantasyfootball/control-plane",
+    "version": "0.1.0",
+    "lockSha256": "7fb04397ccfef339e3b30a2c84b0dad94f5cefa44d36ef74777f3e5c3488cd4f"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "baseline": "50ef51e7dd2443dd0cec644c04e8db1b7fd612f7",
+  "finalCheckpointOwner": "MIG-008",
+  "entries": [
+    {
+      "id": "DELTA-001",
+      "sourceIssue": "https://github.com/Brain-Crumbs/IPTFantasyFootball/issues/76",
+      "sourcePr": null,
+      "sourceCommit": null,
+      "sourcePaths": [],
+      "reason": "Closed issue but repair not integrated in inspected main; contract-bearing UAT regression required.",
+      "destinationOwner": "MIG-003",
+      "destinationPr": null,
+      "destinationCommit": null,
+      "destinationPaths": [],
+      "compatibility": "Must preserve documented public and semantic contracts.",
+      "evidence": [],
+      "disposition": "pending",
+      "supersedes": null
+    },
+    {
+      "id": "DELTA-002",
+      "sourceIssue": "https://github.com/Brain-Crumbs/IPTFantasyFootball/issues/78",
+      "sourcePr": null,
+      "sourceCommit": null,
+      "sourcePaths": [],
+      "reason": "Open general-driver owner; reconcile profile/config seam and import accepted implementation once.",
+      "destinationOwner": "MIG-006",
+      "destinationPr": null,
+      "destinationCommit": null,
+      "destinationPaths": [],
+      "compatibility": "Must preserve documented public and semantic contracts.",
+      "evidence": [],
+      "disposition": "pending",
+      "supersedes": null
+    },
+    {
+      "id": "DELTA-003",
+      "sourceIssue": "https://github.com/Brain-Crumbs/IPTFantasyFootball/issues/75",
+      "sourcePr": null,
+      "sourceCommit": null,
+      "sourcePaths": [],
+      "reason": "Open application-service/supervisor owner; retain shared graph and no competing supervisor.",
+      "destinationOwner": "MIG-004",
+      "destinationPr": null,
+      "destinationCommit": null,
+      "destinationPaths": [],
+      "compatibility": "Must preserve documented public and semantic contracts.",
+      "evidence": [],
+      "disposition": "pending",
+      "supersedes": null
+    }
+  ]
+}

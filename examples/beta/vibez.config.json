@@ -1,0 +1,58 @@
+{
+  "schemaId": "vibez.project-config",
+  "schemaVersion": "1.0.0",
+  "project": {
+    "id": "beta-demo",
+    "repository": "example/beta"
+  },
+  "worktree": {
+    "id": "primary"
+  },
+  "paths": {
+    "tasks": "planning/tasks",
+    "requirements": "planning/requirements",
+    "contracts": "planning/contracts",
+    "contextPolicy": "planning/policy.json",
+    "state": ".vibez/state",
+    "evidence": ".vibez/evidence",
+    "exchange": ".vibez/exchange",
+    "intake": ".vibez/inbox/issues",
+    "responses": ".vibez/inbox/responses",
+    "outbox": ".vibez/outbox",
+    "operations": ".vibez/operations"
+  },
+  "validators": [
+    {
+      "id": "python-test",
+      "executorId": "python-test",
+      "required": true
+    }
+  ],
+  "policy": {
+    "integrationTarget": "main",
+    "remote": "origin",
+    "requiredChecks": [
+      "Beta Python tests"
+    ],
+    "reviewRoles": [
+      "QA",
+      "Architect",
+      "UAT/Product"
+    ],
+    "publication": "host-authorized",
+    "merge": "exact-pr-head-host-authorized"
+  },
+  "providers": {
+    "execution": "local-manual",
+    "credentials": [
+      "github-main"
+    ]
+  },
+  "budgets": {
+    "maxAttempts": 3,
+    "retryDelayMs": 100,
+    "providerTimeoutMs": 3600000,
+    "operationTimeoutMs": 14400000,
+    "maxReworkCycles": 2
+  }
+}

@@ -1,0 +1,431 @@
+{
+  "version": 1,
+  "modules": [
+    {
+      "module": "task-registry",
+      "source": "src/task-registry/",
+      "publicSubpath": "registry",
+      "contract": "contracts/task-registry/module-contract.json",
+      "contractId": "control-plane.task-registry",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/task-registry.test.mjs"
+      ]
+    },
+    {
+      "module": "lifecycle",
+      "source": "src/lifecycle/",
+      "publicSubpath": "lifecycle",
+      "contract": "contracts/lifecycle-state-machine/module-contract.json",
+      "contractId": "control-plane.lifecycle-state-machine",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/git-branch-lifecycle.test.mjs",
+        "tests/lifecycle-state-machine.test.mjs",
+        "tests/pr-lifecycle.test.mjs"
+      ]
+    },
+    {
+      "module": "assignment-lock",
+      "source": "src/assignment-lock/",
+      "publicSubpath": "lifecycle",
+      "contract": "contracts/assignment-lock/module-contract.json",
+      "contractId": "control-plane.assignment-lock",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/assignment-lock.test.mjs"
+      ]
+    },
+    {
+      "module": "git-branch-lifecycle",
+      "source": "src/git-branch-lifecycle/",
+      "publicSubpath": "lifecycle",
+      "contract": "contracts/git-branch-lifecycle/module-contract.json",
+      "contractId": "control-plane.git-branch-lifecycle",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/git-branch-lifecycle.test.mjs"
+      ]
+    },
+    {
+      "module": "context-compiler",
+      "source": "src/context-compiler/",
+      "publicSubpath": "context",
+      "contract": "contracts/context-compiler/module-contract.json",
+      "contractId": "control-plane.context-compiler",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/context-compiler-review-regressions.test.mjs",
+        "tests/context-compiler.test.mjs"
+      ]
+    },
+    {
+      "module": "validation-framework",
+      "source": "src/validation-framework/",
+      "publicSubpath": "validation",
+      "contract": "contracts/validation-framework/module-contract.json",
+      "contractId": "control-plane.validation-framework",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/validation-framework.test.mjs"
+      ]
+    },
+    {
+      "module": "dev-validation",
+      "source": "src/dev-validation/",
+      "publicSubpath": "validation",
+      "contract": "contracts/dev-validation/module-contract.json",
+      "contractId": "control-plane.dev-validation",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/dev-validation.test.mjs"
+      ]
+    },
+    {
+      "module": "evidence-store",
+      "source": "src/evidence-store/",
+      "publicSubpath": "evidence",
+      "contract": "contracts/evidence-store/module-contract.json",
+      "contractId": "control-plane.evidence-store",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/evidence-store.test.mjs"
+      ]
+    },
+    {
+      "module": "review-framework",
+      "source": "src/review-framework/",
+      "publicSubpath": "review",
+      "contract": "contracts/review-framework/module-contract.json",
+      "contractId": "control-plane.review-framework",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/review-framework.test.mjs"
+      ]
+    },
+    {
+      "module": "qa-review",
+      "source": "src/qa-review/",
+      "publicSubpath": "review",
+      "contract": "contracts/qa-review/module-contract.json",
+      "contractId": "control-plane.qa-review",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/qa-review.test.mjs"
+      ]
+    },
+    {
+      "module": "architecture-review",
+      "source": "src/architecture-review/",
+      "publicSubpath": "review",
+      "contract": "contracts/architecture-review/module-contract.json",
+      "contractId": "control-plane.architecture-review",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/architecture-review.test.mjs"
+      ]
+    },
+    {
+      "module": "uat-review",
+      "source": "src/uat-review/",
+      "publicSubpath": "review",
+      "contract": "contracts/uat-review/module-contract.json",
+      "contractId": "control-plane.uat-review",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/uat-review.test.mjs"
+      ]
+    },
+    {
+      "module": "review-rework",
+      "source": "src/review-rework/",
+      "publicSubpath": "review",
+      "contract": "contracts/review-rework/module-contract.json",
+      "contractId": "control-plane.review-rework",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/review-rework.test.mjs"
+      ]
+    },
+    {
+      "module": "dev-start",
+      "source": "src/dev-start/",
+      "publicSubpath": "workflow",
+      "contract": "contracts/dev-start/module-contract.json",
+      "contractId": "control-plane.dev-start",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/dev-start.test.mjs"
+      ]
+    },
+    {
+      "module": "orchestration-engine",
+      "source": "src/orchestration-engine/",
+      "publicSubpath": "workflow",
+      "contract": "contracts/orchestration-engine/module-contract.json",
+      "contractId": "control-plane.orchestration-engine",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/orchestration-engine.test.mjs"
+      ]
+    },
+    {
+      "module": "agent-provider",
+      "source": "src/agent-provider/",
+      "publicSubpath": "providers",
+      "contract": "contracts/agent-provider/module-contract.json",
+      "contractId": "control-plane.agent-provider",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/agent-provider.test.mjs"
+      ]
+    },
+    {
+      "module": "local-agent-adapter",
+      "source": "src/local-agent-adapter/",
+      "publicSubpath": "providers",
+      "contract": "contracts/local-agent-adapter/module-contract.json",
+      "contractId": "control-plane.local-agent-adapter",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/local-agent-adapter.test.mjs"
+      ]
+    },
+    {
+      "module": "pr-lifecycle",
+      "source": "src/pr-lifecycle/",
+      "publicSubpath": "integration",
+      "contract": "contracts/pr-lifecycle/module-contract.json",
+      "contractId": "control-plane.pr-lifecycle",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/pr-lifecycle.test.mjs"
+      ]
+    },
+    {
+      "module": "merge-readiness",
+      "source": "src/merge-readiness/",
+      "publicSubpath": "integration",
+      "contract": "contracts/merge-readiness/module-contract.json",
+      "contractId": "control-plane.merge-readiness",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/merge-readiness.test.mjs"
+      ]
+    },
+    {
+      "module": "controlled-merge",
+      "source": "src/controlled-merge/",
+      "publicSubpath": "integration",
+      "contract": "contracts/controlled-merge/module-contract.json",
+      "contractId": "control-plane.controlled-merge",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/controlled-merge.test.mjs"
+      ]
+    },
+    {
+      "module": "status-reporting",
+      "source": "src/status-reporting/",
+      "publicSubpath": "diagnostics",
+      "contract": "contracts/status-reporting/module-contract.json",
+      "contractId": "control-plane.status-reporting",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/status-reporting.test.mjs"
+      ]
+    },
+    {
+      "module": "workflow-diagnostics",
+      "source": "src/workflow-diagnostics/",
+      "publicSubpath": "diagnostics",
+      "contract": "contracts/workflow-diagnostics/module-contract.json",
+      "contractId": "control-plane.workflow-diagnostics",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/workflow-diagnostics.test.mjs"
+      ]
+    },
+    {
+      "module": "recovery-tools",
+      "source": "src/recovery-tools/",
+      "publicSubpath": "diagnostics",
+      "contract": "contracts/recovery-tools/module-contract.json",
+      "contractId": "control-plane.recovery-tools",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/recovery-tools.test.mjs"
+      ]
+    },
+    {
+      "module": "cli",
+      "source": "src/cli/",
+      "publicSubpath": "cli",
+      "contract": "contracts/cli-shell/module-contract.json",
+      "contractId": "control-plane.cli-shell",
+      "testOwner": "MIG-008",
+      "sourceTests": [
+        "tests/cli.test.mjs",
+        "tests/diagnostics-cli.test.mjs",
+        "tests/manual-cli.test.mjs",
+        "tests/recovery-cli.test.mjs"
+      ]
+    }
+  ],
+  "cli": [
+    {
+      "command": "help",
+      "status": "implemented",
+      "inventorySource": "src/cli/commands.ts",
+      "testOwner": "MIG-005"
+    },
+    {
+      "command": "version",
+      "status": "implemented",
+      "inventorySource": "src/cli/commands.ts",
+      "testOwner": "MIG-005"
+    },
+    {
+      "command": "next",
+      "status": "implemented",
+      "inventorySource": "src/cli/commands.ts",
+      "testOwner": "MIG-005"
+    },
+    {
+      "command": "status",
+      "status": "implemented",
+      "inventorySource": "src/cli/commands.ts",
+      "testOwner": "MIG-005"
+    },
+    {
+      "command": "explain",
+      "status": "implemented",
+      "inventorySource": "src/cli/commands.ts",
+      "testOwner": "MIG-005"
+    },
+    {
+      "command": "start",
+      "status": "implemented",
+      "inventorySource": "src/cli/commands.ts",
+      "testOwner": "MIG-005"
+    },
+    {
+      "command": "validate",
+      "status": "implemented",
+      "inventorySource": "src/cli/commands.ts",
+      "testOwner": "MIG-005"
+    },
+    {
+      "command": "manual",
+      "status": "implemented",
+      "inventorySource": "src/cli/commands.ts",
+      "testOwner": "MIG-005"
+    },
+    {
+      "command": "recovery",
+      "status": "implemented",
+      "inventorySource": "src/cli/commands.ts",
+      "testOwner": "MIG-005"
+    },
+    {
+      "command": "review",
+      "status": "reserved",
+      "inventorySource": "src/cli/commands.ts",
+      "testOwner": "MIG-006"
+    },
+    {
+      "command": "rework",
+      "status": "reserved",
+      "inventorySource": "src/cli/commands.ts",
+      "testOwner": "MIG-006"
+    },
+    {
+      "command": "orchestrate",
+      "status": "reserved",
+      "inventorySource": "src/cli/commands.ts",
+      "testOwner": "MIG-006"
+    }
+  ],
+  "additionalContracts": [
+    "contracts/dependency-dag/module-contract.json",
+    "contracts/next-task/module-contract.json",
+    "contracts/ci-enforcement/module-contract.json"
+  ],
+  "epicTrace": [
+    {
+      "criterion": "M-AC-01",
+      "design": "migration/inventory.json",
+      "testOwners": [
+        "MIG-003"
+      ]
+    },
+    {
+      "criterion": "M-AC-02",
+      "design": "docs/PUBLIC_API.md",
+      "testOwners": [
+        "MIG-005",
+        "MIG-008"
+      ]
+    },
+    {
+      "criterion": "M-AC-03",
+      "design": "docs/PROJECT_CONFIG.md",
+      "testOwners": [
+        "MIG-004",
+        "MIG-008",
+        "MIG-009"
+      ]
+    },
+    {
+      "criterion": "M-AC-04",
+      "design": "docs/COMPATIBILITY.md",
+      "testOwners": [
+        "MIG-006",
+        "MIG-008"
+      ]
+    },
+    {
+      "criterion": "M-AC-05",
+      "design": "docs/COMPATIBILITY.md",
+      "testOwners": [
+        "MIG-007",
+        "MIG-009"
+      ]
+    },
+    {
+      "criterion": "M-AC-06",
+      "design": "migration/README.md",
+      "testOwners": [
+        "MIG-003",
+        "MIG-005"
+      ]
+    },
+    {
+      "criterion": "M-AC-07",
+      "design": "docs/COMPATIBILITY.md",
+      "testOwners": [
+        "MIG-008",
+        "MIG-009",
+        "MIG-010"
+      ]
+    },
+    {
+      "criterion": "M-AC-08",
+      "design": "AGENTS.md",
+      "testOwners": [
+        "MIG-003"
+      ]
+    },
+    {
+      "criterion": "M-AC-09",
+      "design": "docs/SUPPORT.md",
+      "testOwners": [
+        "MIG-005",
+        "MIG-006",
+        "MIG-007",
+        "MIG-008",
+        "MIG-009"
+      ]
+    }
+  ]
+}
