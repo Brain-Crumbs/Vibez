@@ -114,6 +114,28 @@ invocation revision while deterministic validation and later reviews resolve the
 new HEAD; this is the existing deliberate exception, not permission to rebind a
 review. Explicit host authorization for the exact PR/head is an out-of-band
 operational grant, not a replacement config digest or agent-owned approval flag.
-Budget increases need an audited host decision under existing engine limits;
-attempts never reset. Timeouts/cancellation stop waiting, not necessarily external
-tools; drain gates and verify quiescence before recovery.
+`budgets.maxAttempts` is the immutable baseline provider-attempt allowance, not
+an editable resume knob. Preserve the source engine's supported same-run budget
+increase through a separate **host-only operational grant**. A grant identifies
+project/task, original owner/run/key and execution-binding digest, previous
+effective allowance, new total allowance (strictly greater, at most 10), observed
+attempt counts, actor/time/reason and an independently verified authorization
+reference. Persist its intent/result and content hash append-only before using
+it. Reject a stale prior allowance/counter observation or a grant for another
+binding; re-read authoritative attempts at the owning gate. Never accept a grant
+from a task document, role result, repair proposal or untrusted config field.
+
+The grant is deliberately outside configDigest and the immutable execution
+binding, like exact-head merge authorization: it appends operational authority
+without replacing original config, policy, context or request identities.
+Effective maxAttempts is the latest valid host-authorized total; persisted
+consumed attempts remain monotonic across restarts. The host policy already
+bound to the run must permit the increase and its ceiling; changing that policy
+instead remains a binding conflict. Revocation suspends further calls, not past
+history. The grant cannot retry a terminal semantic judgment, override a failed
+gate, change role/tool policy or reset counts. This permits an exhausted run to
+resume under the existing bounded infrastructure-retry semantics without editing
+tracked config or inventing a new run. MIG-004/006/007 must test original binding
+preservation, accepted same-run increase and stale/unauthorized/over-10 rejection.
+Timeouts/cancellation stop waiting, not necessarily external tools; drain gates
+and verify quiescence before recovery.
