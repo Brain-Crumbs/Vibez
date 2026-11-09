@@ -9,12 +9,30 @@ explicit blockers under AC-05; MIG-003/005/008 must enforce the relevant gate.
 | Repository | Brain-Crumbs/Vibez, public, accepted | Owner selected destination; MIG-003 verifies rights before copying source |
 | Package | Propose `@brain-crumbs/vibez`, single ESM package, no CJS guarantee | Brain-Crumbs confirms scope/name control and collision check before MIG-005 artifact identity is fixed; unresolved |
 | Channel | Immutable versioned tarball plus SHA-256 first; no npm publication | Brain-Crumbs approves actual release location/access and immutability policy before MIG-008; public npm requires a later explicit decision |
-| Source/license rights | Unresolved; no LICENSE found at source audit | Copyright owner inventories authors/third-party notices and records authority to redistribute each included path, then chooses license and notices before MIG-003 source export and any public artifact. Repository visibility is not a license |
+| Source/license rights | Scoped owner authorization for the MIG-003 source snapshot | [Decision and audit](https://github.com/Brain-Crumbs/Vibez/issues/3#issuecomment-6747942125). MIG-003 verifies each included path against the exact snapshot and records any required notices or exclusions before copying |
 | Runtime | Target Node 22 and 24 LTS, ESM, npm lockfile | MIG-005 establishes engines/package semantics; MIG-008 passes both majors. Historical Node 20 build remains a compatibility probe, not a security/support promise |
 | OS | Windows 11 NTFS; Ubuntu 24.04 local ext4; x64 baseline | MIG-008 installed matrix must pass; macOS/ARM unclaimed until independently tested |
 | Filesystem | Single host, local disk, atomic same-directory publication, file fsync; POSIX directory fsync where available | MIG-004/007/008 test interruptions. Windows lacks directory fsync; no power-loss directory-entry durability guarantee. Network shares, cloud-sync directories and distributed writers unsupported for authoritative runtime stores |
 | Source history | Allowlisted exact-revision snapshot with per-path Git blob/SHA-256 and immutable source links | MIG-003 reproduces export independently; full history and old issues remain in Fantasy Football |
 | Rollback window | Seven days and one accepted ordinary task, whichever later | MIG-009 records dates/evidence, then MIG-010 may remove only inventoried dormant copies; see compatibility contract |
+
+## MIG-003 source export decision
+
+Brain-Crumbs authorized the audited source export on 2026-11-09 for material
+the owner owns or has permission to redistribute. The scope is the 244
+`copy` and `adapt` candidates in the reviewed inventory, resolved at Fantasy
+Football commit `5cd23ef5415f2d2140654551f9152339417e4b58`, for export into
+public `Brain-Crumbs/Vibez`. The owner's material retains its copyright where
+applicable, with no additional public license. GitHub's public-repository
+terms apply.
+
+Use the [owner decision and scope digest](https://github.com/Brain-Crumbs/Vibez/issues/3#issuecomment-6747942125)
+to verify the exact candidate set. Keep required upstream notices and exclude
+any material with unclear redistribution rights until permission is recorded.
+Changes to the source revision or expanded scope require a refreshed decision.
+Package distribution requires its separate channel and rights decision.
+
+## Support and release evidence
 
 Node runtime targets are proposed support requirements, not evidence of current
 installed compatibility. The pinned design-validation engine still declares
@@ -24,6 +42,6 @@ engine regression suite does not prove the future package matrix.
 The maintainer's release receipt must identify exact source/destination SHA,
 package name/version and checksum, supported reader/data versions, OS/runtime
 results, accepted source deltas, rights/license decision and independent reviews.
-No license is chosen here. No install hook may grant permissions, start workflows,
-create remote resources or overwrite project files. Example initialization in
-MIG-005 must be explicit, non-destructive and conflict-aware.
+No install hook may grant permissions, start workflows, create remote resources
+or overwrite project files. Example initialization in MIG-005 must be explicit,
+non-destructive and conflict-aware.
