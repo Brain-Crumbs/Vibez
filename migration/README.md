@@ -48,9 +48,10 @@ Schema/contract design standards and engine contract manifests belong to Vibez;
 project business contracts belong to consumers. `contracts/examples` are test
 examples. The source currently has no fantasy product implementation. Ignored
 `.agent`, credentials, build output, dependencies and worktrees are never exports.
-Rights remain unresolved; an inventory `copy` is a design decision, not current
-redistribution permission. MIG-003 must stop before source copying until the
-rights decision in [SUPPORT](../docs/SUPPORT.md) is satisfied.
+The [MIG-003 export decision](../docs/SUPPORT.md#mig-003-source-export-decision)
+sets the authorized source revision and candidate path set. Before copying,
+verify both against the inventory, document any required notices, and exclude
+paths with unclear redistribution rights.
 
 ## Acceptance-to-evidence map
 
@@ -60,7 +61,7 @@ rights decision in [SUPPORT](../docs/SUPPORT.md) is satisfied.
 | AC-02 | PUBLIC_API.md full lifecycle, adapter seams and #75/#78 shared graph; independent semantic Architecture review |
 | AC-03 | PROJECT_CONFIG.md + strict schema + two consumer examples; shape checks and UAT walkthrough; runtime tests owned downstream |
 | AC-04 | COMPATIBILITY.md preserves records/CLI/adapters and defines version rejection, upgrade and rollback |
-| AC-05 | SUPPORT.md decision owners, criteria, unresolved rights/name/channel and required support matrix |
+| AC-05 | SUPPORT.md decision owners, criteria, decisions outstanding at MIG-002 acceptance, and required support matrix |
 | AC-06 | SOURCE_DELTAS.md and source-deltas.json; final checkpoint and ownership transfer gates |
 
 PR review evidence must bind the final candidate SHA, with QA/Architecture/UAT
