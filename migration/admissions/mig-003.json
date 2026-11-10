@@ -22,14 +22,22 @@
     "merge": "053a53956a66881b4d92356fcc9f1deca321e875",
     "ci": [
       {
+        "id": 128884359436,
         "name": "Design contracts (ubuntu-latest)",
+        "head": "23d7ae898acad6b0325182951512964bedb927fc",
+        "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42530811897/job/128884359436"
+        "url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42530811897/job/128884359436",
+        "receiptSha256": "a091eb3ecc15cbfb5a691296d3a3d5b0b9a6b6bc2deb1a070930fc27b8e0bfa6"
       },
       {
+        "id": 128884359615,
         "name": "Design contracts (windows-latest)",
+        "head": "23d7ae898acad6b0325182951512964bedb927fc",
+        "status": "completed",
         "conclusion": "success",
-        "url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42530811897/job/128884359615"
+        "url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42530811897/job/128884359615",
+        "receiptSha256": "17bfdf2d7d70afac9533018f0634aee3ad36903e40ece8877877a47fedac1faa"
       }
     ],
     "reviews": [
@@ -55,5 +63,7 @@
         "role": "UAT/Product"
       }
     ]
-  }
+  },
+  "destinationPR": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+  "scopeSha256": "c0c8927f73972a999108a5e82acd3f8bc32c0cc640a86a93374e870ce2d87f2a"
 }

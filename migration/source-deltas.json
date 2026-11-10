@@ -90,7 +90,7 @@
       ],
       "reason": "Accepted UAT handoff repair and contract-bearing regressions at the authorized export pin.",
       "destinationOwner": "MIG-003",
-      "destinationPr": null,
+      "destinationPr": "https://github.com/Brain-Crumbs/Vibez/pull/15",
       "destinationCommit": "8a82d9ec896448a9b433d8ebbdbce74cae6cae7f",
       "destinationPaths": [
         {
@@ -128,9 +128,10 @@
       "evidence": [
         "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/84",
         "https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/42538984027",
-        "migration/SEED_EXPORT.md"
+        "migration/SEED_EXPORT.md",
+        "https://github.com/Brain-Crumbs/Vibez/pull/15"
       ],
-      "disposition": "pending",
+      "disposition": "imported",
       "supersedes": "DELTA-001"
     }
   ]
