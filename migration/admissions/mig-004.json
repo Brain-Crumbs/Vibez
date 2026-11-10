@@ -15,7 +15,7 @@
     "path": "requirements/mig-004.requirement.json"
   },
   "verifier": "Brain-Crumbs maintainer (delegated under the scoped owner request)",
-  "observedAt": "2026-11-10T18:08:48.9600022+00:00",
+  "observedAt": "2026-11-10T10:08:48.9600022-08:00",
   "grant": "The owner authorized implementing one eligible task, publishing its reviewed PR and merging after checks and reviews.",
   "prerequisite": {
     "taskId": "MIG-003",
@@ -78,6 +78,18 @@
       }
     ],
     "predecessorReceipt": "https://github.com/Brain-Crumbs/Vibez/blob/16a73b8071f5b9ef390d08504e325b779af291fe/migration/admissions/mig-003.json",
-    "originalPlan": "https://github.com/Brain-Crumbs/IPTFantasyFootball/blob/50ef51e7dd2443dd0cec644c04e8db1b7fd612f7/migration/plan.json"
+    "originalPlan": "https://github.com/Brain-Crumbs/IPTFantasyFootball/blob/50ef51e7dd2443dd0cec644c04e8db1b7fd612f7/migration/plan.json",
+    "fetchedEvidence": [
+      {
+        "path": "migration/admissions/evidence/mig-004-pr15.json",
+        "source": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+        "sha256": "a7612dd61f8ae4b7452ac53fee3447acd4b102f2885871fe75dbc068ce47ce5a"
+      },
+      {
+        "path": "migration/admissions/evidence/mig-004-main-ci.json",
+        "source": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42869658896",
+        "sha256": "135b7beb7483df479d39ad36c1815024e2fb90f487fe368b5c14a2a21f6f1f94"
+      }
+    ]
   }
 }
