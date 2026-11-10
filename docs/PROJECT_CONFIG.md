@@ -3,8 +3,7 @@
 [project-config.schema.json](specs/project-config.schema.json) describes the
 tracked, non-secret project document. It is a new `vibez.project-config@1.0.0`
 specification; it does not rename existing `ipt.*` records. Unknown fields and
-versions reject. MIG-004 owns the resolver and complete service injection;
-schema tests in MIG-002 prove only shape, not safe filesystem behavior.
+versions reject. See the [configured runtime guide](CONFIGURED_RUNTIME.md) for the implemented resolver, host services, validation, and rollback procedure.
 
 ## Inputs, precedence and authority
 

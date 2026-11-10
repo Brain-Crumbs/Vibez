@@ -1,3 +1,4 @@
+import { packageRoot } from "../project-assets/index.js";
 import { createHash, randomUUID } from "node:crypto";
 import { closeSync, constants, fstatSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -45,6 +46,8 @@ export interface LocalAgentImportResult {
 export interface FileManualAgentProviderOptions {
   readonly repositoryRoot?: string;
   readonly pollIntervalMs?: number;
+  readonly deferDirectory?: boolean;
+  readonly beforeWrite?: () => void;
 }
 
 const INSTRUCTIONS = Object.freeze([
@@ -62,6 +65,7 @@ const INSTRUCTIONS = Object.freeze([
 export class FileManualAgentProvider implements AgentProvider {
   readonly providerId = LOCAL_MANUAL_PROVIDER_ID;
   readonly #root: string;
+  readonly #beforeWrite: (() => void) | undefined;
   readonly #pollIntervalMs: number;
   readonly #packetSchema: Record<string, unknown>;
   readonly #resultSchema: Record<string, unknown>;
@@ -72,10 +76,11 @@ export class FileManualAgentProvider implements AgentProvider {
     if (!Number.isInteger(poll) || poll < 1 || poll > 60000) throw error("INVALID_REQUEST", "pollIntervalMs must be an integer between 1 and 60000.");
     this.#root = resolve(root);
     this.#pollIntervalMs = poll;
-    const repositoryRoot = options.repositoryRoot ?? process.cwd();
+    this.#beforeWrite = options.beforeWrite;
+    const repositoryRoot = options.repositoryRoot ?? packageRoot;
     this.#packetSchema = loadSchema(join(repositoryRoot, "schemas/v1/local-agent-packet.schema.json"));
     this.#resultSchema = loadSchema(join(repositoryRoot, "schemas/v1/local-agent-result.schema.json"));
-    this.#ensureDirectory();
+    if (options.deferDirectory !== true) this.#ensureDirectory();
   }
 
   capabilities(): AgentProviderCapabilities {
@@ -194,7 +199,7 @@ export class FileManualAgentProvider implements AgentProvider {
     return join(this.#root, `${packetId}.${kind}.json`);
   }
 
-  #ensureDirectory(): void {
+  #ensureDirectory(create = true): boolean {
     try {
       const chain: string[] = [];
       for (let current = this.#root; ; current = dirname(current)) { chain.push(current); if (dirname(current) === current) break; }
@@ -204,16 +209,18 @@ export class FileManualAgentProvider implements AgentProvider {
           if (stat.isSymbolicLink() || !stat.isDirectory()) throw error("INVALID_REQUEST", "Exchange directory and its parents must be real directories, not symlinks.");
         } catch (cause: unknown) {
           if (!hasCode(cause, "ENOENT")) throw cause;
+          if (!create) return false;
           try { mkdirSync(path, { mode: 0o700 }); } catch (mkdirError: unknown) { if (!hasCode(mkdirError, "EEXIST")) throw mkdirError; }
           const stat = lstatSync(path);
           if (stat.isSymbolicLink() || !stat.isDirectory()) throw error("INVALID_REQUEST", "Exchange directory must be a real directory.");
         }
       }
+      return true;
     } catch (cause: unknown) { throw normalize(cause, "PROVIDER_ERROR", true); }
   }
 
   #read(path: string): unknown | null {
-    this.#ensureDirectory();
+    if (!this.#ensureDirectory(false)) return null;
     let fd: number | undefined;
     try {
       // O_NOFOLLOW is unavailable on Windows; reject reparse points explicitly.
@@ -238,6 +245,7 @@ export class FileManualAgentProvider implements AgentProvider {
   }
 
   #publish(path: string, value: unknown): boolean {
+    this.#beforeWrite?.();
     this.#ensureDirectory();
     const temporary = `${path}.${randomUUID()}.tmp`;
     let fd: number | undefined;

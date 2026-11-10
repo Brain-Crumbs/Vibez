@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { runRecoveryCommand, renderRecoveryResult } from "./recovery.js";
 import { RecoveryError, type RecoveryRequest } from "../recovery-tools/index.js";
 import { renderWorkflowExplanation, type WorkflowDiagnostics } from "../workflow-diagnostics/index.js";
@@ -24,7 +26,7 @@ import {
 } from "../task-registry/index.js";
 import { ALL_COMMANDS, IMPLEMENTED_COMMANDS, RESERVED_COMMANDS, isReservedCommand } from "./commands.js";
 import { AgentProviderError } from "../agent-provider/index.js";
-import { runManualCommand } from "./manual.js";
+import { runManualCommand, type ConfiguredManual } from "./manual.js";
 import {
   CLI_VERSION,
   EXIT_CODES,
@@ -41,6 +43,10 @@ export interface CliRunResult {
 }
 
 export interface CliRunContext {
+  configuredProject?: true;
+  recoveryCheck?: (now: string) => Promise<Awaited<ReturnType<typeof import("../recovery-tools/index.js").checkRecoveryState>>>;
+  recoveryApply?: (request: unknown) => ReturnType<import("../recovery-tools/index.js").LocalRecoveryTools["apply"]>;
+  configuredManual?: ConfiguredManual;
   authorizeRecoveryOverride?: (request: RecoveryRequest) => boolean;
   signal?: AbortSignal;
   repositoryRoot?: string;
@@ -231,6 +237,13 @@ export async function runCli(
 
   if (parsed.parseError !== null) {
     return fail(parsed.command, parsed.json, EXIT_CODES.USAGE_ERROR, parsed.parseError);
+  }
+
+  if (context.configuredProject !== true && ["next", "status", "start", "validate", "manual", "explain", "recovery"].includes(parsed.command) &&
+    existsSync(join(context.repositoryRoot ?? ".", ".git", "vibez-project.json"))) {
+    return fail(parsed.command, parsed.json, EXIT_CODES.WORKFLOW_BLOCKED, {
+      code: "PROJECT_CONFIGURATION_REQUIRED", message: "This checkout has configured Vibez state. Use the configured project host.",
+    });
   }
 
   if (parsed.command === "help") {
@@ -429,7 +442,7 @@ export async function runCli(
 
   if (parsed.command === "manual") {
     try {
-      const result = await runManualCommand(parsed.rest, context.repositoryRoot ?? process.cwd(), context.signal);
+      const result = await runManualCommand(parsed.rest, context.repositoryRoot ?? process.cwd(), context.signal, context.configuredManual);
       return succeed("manual", parsed.json, result.data, result.human);
     } catch (error: unknown) {
       if (error instanceof AgentProviderError) {

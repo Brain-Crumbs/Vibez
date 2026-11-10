@@ -896,7 +896,7 @@ export async function createLocalMergeReadinessPolicyEngine(
   const branchLifecycle = new GitBranchLifecycleAdapter(new LocalGitBranchOperations(repositoryRoot));
   const approvals = await createLocalReviewReworkGate(repositoryRoot);
   const stateRoot = join(repositoryRoot, LOCAL_AGENT_STATE_RELATIVE_PATH);
-  const evidence = new FileEvidenceStore(join(stateRoot, "evidence"), { repositoryRoot });
+  const evidence = new FileEvidenceStore(join(stateRoot, "evidence"));
   const lifecycleState = new FileReviewReworkStateStore(join(stateRoot, "lifecycle"));
   const providerOptions = {
     owner: options.owner,

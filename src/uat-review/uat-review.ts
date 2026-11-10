@@ -1649,7 +1649,7 @@ export async function createLocalUatReviewGate(repositoryRoot = "."): Promise<Ua
   const lifecycleRoot = join(stateRoot, "lifecycle");
   const evidenceRoot = join(stateRoot, "evidence");
   const evidenceLocation = `${evidenceRoot} (lineage <taskId>::role::<role>)`;
-  const evidenceStore = new FileEvidenceStore(evidenceRoot, { repositoryRoot });
+  const evidenceStore = new FileEvidenceStore(evidenceRoot);
   return new UatReviewGate({
     registry,
     stateStore: new FileUatReviewStateStore(lifecycleRoot),

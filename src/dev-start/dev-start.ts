@@ -421,9 +421,9 @@ export class DeveloperStartWorkflow {
 }
 
 export class FileDeveloperStartStateStore implements DeveloperStartStateStore {
-  constructor(private readonly root: string) {
+  constructor(private readonly root: string, deferDirectory = false) {
     if (root.trim().length === 0) throw new RangeError("Lifecycle state root must be non-empty.");
-    mkdirSync(root, { recursive: true });
+    if (!deferDirectory) mkdirSync(root, { recursive: true });
   }
 
   get(taskId: string): LifecycleRecord | null {

@@ -649,9 +649,9 @@ export class QaReviewGate {
 }
 
 export class FileQaReviewStateStore implements QaReviewStateStore {
-  constructor(private readonly root: string) {
+  constructor(private readonly root: string, deferDirectory = false) {
     if (root.trim().length === 0) throw new RangeError("Lifecycle state root must be non-empty.");
-    mkdirSync(root, { recursive: true });
+    if (!deferDirectory) mkdirSync(root, { recursive: true });
   }
 
   get(taskId: string): LifecycleRecord | null {
@@ -707,9 +707,9 @@ export class FileQaReviewStateStore implements QaReviewStateStore {
  * cannot wedge the task indefinitely.
  */
 export class FileQaReviewTaskLock implements QaReviewTaskLock {
-  constructor(private readonly root: string) {
+  constructor(private readonly root: string, deferDirectory = false) {
     if (root.trim().length === 0) throw new RangeError("Task lock root must be non-empty.");
-    mkdirSync(root, { recursive: true });
+    if (!deferDirectory) mkdirSync(root, { recursive: true });
   }
 
   withLock<T>(taskId: string, fn: () => T): T {
@@ -1436,11 +1436,17 @@ export class FileQaReviewTaskLock implements QaReviewTaskLock {
  * mirrors.
  */
 export class RepositoryQaContextSource implements QaReviewContextSource {
-  constructor(private readonly repositoryRoot: string, private readonly baseRef: string = "main") {
+  constructor(private readonly repositoryRoot: string, private readonly baseRef: string = "main",
+    private readonly projectArtifacts?: (task: RegisteredTask, registry: TaskRegistry, revision: string) => readonly ContextArtifact[],
+    private readonly remote = "origin") {
     if (repositoryRoot.trim().length === 0) throw new RangeError("Repository root must be non-empty.");
   }
 
   artifactsFor(task: RegisteredTask, registry: TaskRegistry, revision: string): readonly ContextArtifact[] {
+    if (this.projectArtifacts !== undefined) {
+      return Object.freeze([...this.projectArtifacts(task, registry, revision), this.diffArtifact(task, revision)]
+        .sort((left, right) => compareText(left.artifactId, right.artifactId)));
+    }
     const requirementIds = new Set(task.requirements);
     // The Developer-role context this gate also compiles (for the BOOT-017
     // handoff bridge) requires every dependency's affected contract, not
@@ -1506,7 +1512,7 @@ export class RepositoryQaContextSource implements QaReviewContextSource {
   }
 
   private mergeBase(revision: string): string {
-    for (const candidate of [this.baseRef, `origin/${this.baseRef}`]) {
+    for (const candidate of [this.baseRef, `${this.remote}/${this.baseRef}`]) {
       try {
         const result = this.execGit(["merge-base", candidate, revision]).trim();
         if (result.length > 0) return result;
@@ -1515,7 +1521,7 @@ export class RepositoryQaContextSource implements QaReviewContextSource {
       }
     }
     throw new Error(
-      `Cannot resolve a merge base between '${this.baseRef}' (or 'origin/${this.baseRef}') and revision '${revision}'.`,
+      `Cannot resolve a merge base between '${this.baseRef}' (or '${this.remote}/${this.baseRef}') and revision '${revision}'.`,
     );
   }
 
@@ -1574,7 +1580,7 @@ export async function createLocalQaReviewGate(repositoryRoot = "."): Promise<QaR
   const lifecycleRoot = join(stateRoot, "lifecycle");
   const evidenceRoot = join(stateRoot, "evidence");
   const evidenceLocation = `${evidenceRoot} (lineage <taskId>::role::<role>)`;
-  const evidenceStore = new FileEvidenceStore(evidenceRoot, { repositoryRoot });
+  const evidenceStore = new FileEvidenceStore(evidenceRoot);
   return new QaReviewGate({
     registry,
     stateStore: new FileQaReviewStateStore(lifecycleRoot),

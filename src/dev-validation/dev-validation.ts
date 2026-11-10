@@ -409,7 +409,7 @@ export async function createLocalDeveloperValidationGate(
     registry,
     stateStore: new FileDeveloperValidationStateStore(join(stateRoot, "lifecycle")),
     branchLifecycle: new GitBranchLifecycleAdapter(new LocalGitBranchOperations(repositoryRoot)),
-    evidenceStore: new FileEvidenceStore(evidenceRoot, { repositoryRoot }) as EvidenceStore,
+    evidenceStore: new FileEvidenceStore(evidenceRoot) as EvidenceStore,
     validatorResolver: options.validatorResolver ?? new RepositoryValidatorResolver(repositoryRoot),
     evidenceLocation: `${evidenceRoot} (lineage <taskId>::validator::<validatorId>)`,
   });

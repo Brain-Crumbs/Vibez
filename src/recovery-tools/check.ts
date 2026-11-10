@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { lstatSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { isAssignmentLockExpired, type AssignmentLockRecord } from "../assignment-lock/index.js";
-import { RepositoryValidatorResolver } from "../dev-validation/index.js";
+import { RepositoryValidatorResolver, type DeveloperValidatorResolver } from "../dev-validation/index.js";
 import type { StoredEvidenceRecord } from "../evidence-store/index.js";
 import { getTransitionRule, type LifecycleRecord } from "../lifecycle/index.js";
 import { parseOrchestrationRunJournal } from "../orchestration-engine/run-store.js";
@@ -44,7 +44,16 @@ const INSPECT = "Preserve the original record and evidence. Inspect the named in
 const QUIESCE = "Verify all repository runners and external provider sessions are stopped before explicitly authorized audited lock recovery. Lock presence or age does not prove its owner is dead.";
 
 /** An observation only: no writable stores, locks, validators, providers or repairs are invoked. */
-export async function checkRecoveryState(repositoryRoot: string, options: { registry?: TaskRegistry; now?: string } = {}): Promise<RecoveryCheckReport> {
+export async function checkRecoveryState(repositoryRoot: string, options: {
+  registry?: TaskRegistry;
+  now?: string;
+  paths?: { state: string; evidence: string; orchestration: string };
+  source?: StatusReportingDependencies;
+  validatorResolver?: DeveloperValidatorResolver;
+} = {}): Promise<RecoveryCheckReport> {
+  const state = options.paths?.state ?? STATE;
+  const evidence = options.paths?.evidence ?? `${state}/evidence`;
+  const orchestration = options.paths?.orchestration ?? `${state}/orchestration`;
   const checkedAt = options.now ?? new Date().toISOString();
   isAssignmentLockExpired({ expiresAt: checkedAt }, checkedAt);
   const findings: RecoveryCheckFinding[] = [];
@@ -57,14 +66,14 @@ export async function checkRecoveryState(repositoryRoot: string, options: { regi
 
   // Reject symlinked state paths instead of reading through them. An absent tree is normal.
   let safeTree = true;
-  for (const path of [".agent", STATE]) {
+  for (const path of options.paths === undefined ? [".agent", state] : [state, evidence, orchestration]) {
     try { assertDirectory(repositoryRoot, path); }
     catch (error: unknown) { add("STATE_PATH_UNSAFE", path, errorMessage(error), INSPECT); safeTree = false; break; }
   }
   if (safeTree) {
     const areas = new Map<string, readonly string[]>();
     for (const area of ["lifecycle", "assignments", "evidence", "orchestration", "recovery"]) {
-      const path = `${STATE}/${area}`;
+      const path = area === "evidence" ? evidence : area === "orchestration" ? orchestration : `${state}/${area}`;
       try { areas.set(area, directory(repositoryRoot, path)); }
       catch (error: unknown) { add("STATE_DIRECTORY_UNREADABLE", path, errorMessage(error), INSPECT); }
     }
@@ -73,13 +82,13 @@ export async function checkRecoveryState(repositoryRoot: string, options: { regi
         add("REGISTRY_TASK_INVALID", "tasks/definitions", `Invalid registry task identity '${taskId}'.`, INSPECT);
         continue;
       }
-      await inspectTask(repositoryRoot, task, checkedAt, areas, add);
+      await inspectTask(repositoryRoot, task, checkedAt, areas, add, state, evidence, options.source, options.validatorResolver);
     }
     for (const area of ["lifecycle", "assignments"]) {
       const suffix = area === "lifecycle" ? ".lifecycle.json" : ".lock.json";
       for (const name of areas.get(area) ?? []) {
         if (area === "lifecycle" && /^[A-Z]+-[0-9]{3,}\.lifecycle\.lock$/.test(name)) {
-          const path = `${STATE}/${area}/${name}`;
+          const path = `${state}/${area}/${name}`;
           try {
             const stamp = read(repositoryRoot, path);
             if (!/^\d+$/.test(stamp) || !Number.isSafeInteger(Number(stamp))) throw new Error("Lifecycle mutex timestamp is malformed.");
@@ -88,7 +97,7 @@ export async function checkRecoveryState(repositoryRoot: string, options: { regi
           continue;
         }
         if (area === "assignments" && (name === ".history" || name === ".claims")) {
-          const path = `${STATE}/${area}/${name}`;
+          const path = `${state}/${area}/${name}`;
           try {
             const entries = directory(repositoryRoot, path);
             // BOOT-010 archives are intentional durable history, not debris.
@@ -99,20 +108,20 @@ export async function checkRecoveryState(repositoryRoot: string, options: { regi
         }
         const taskId = name.endsWith(suffix) ? name.slice(0, -suffix.length) : undefined;
         if (taskId === undefined || !TASK_ID.test(taskId)) {
-          add("INCOMPLETE_STATE_FILE", `${STATE}/${area}/${name}`, "Unexpected state file or interrupted claim remains.", INSPECT);
+          add("INCOMPLETE_STATE_FILE", `${state}/${area}/${name}`, "Unexpected state file or interrupted claim remains.", INSPECT);
         } else if (!registry.has(taskId)) {
-          add("UNREGISTERED_TASK_STATE", `${STATE}/${area}/${name}`, `State belongs to unregistered task '${taskId}'.`, INSPECT, taskId);
+          add("UNREGISTERED_TASK_STATE", `${state}/${area}/${name}`, `State belongs to unregistered task '${taskId}'.`, INSPECT, taskId);
         }
       }
     }
     for (const name of areas.get("evidence") ?? []) {
       const taskId = /^([A-Z]+-[0-9]{3,})(?:_|$)/.exec(name)?.[1];
       if (taskId === undefined || !registry.has(taskId)) {
-        add("UNREGISTERED_EVIDENCE", `${STATE}/evidence/${name}`, "Evidence directory cannot be associated with a registered task.", INSPECT, taskId);
+        add("UNREGISTERED_EVIDENCE", `${evidence}/${name}`, "Evidence directory cannot be associated with a registered task.", INSPECT, taskId);
       }
     }
-    inspectRuns(repositoryRoot, areas.get("orchestration") ?? [], runs, add);
-    inspectAudits(repositoryRoot, areas.get("recovery") ?? [], add);
+    inspectRuns(repositoryRoot, areas.get("orchestration") ?? [], runs, add, orchestration);
+    inspectAudits(repositoryRoot, areas.get("recovery") ?? [], add, state, orchestration);
   }
   findings.sort((a, b) => compare(a.taskId ?? "", b.taskId ?? "") || compare(a.path ?? "", b.path ?? "")
     || compare(a.code, b.code) || compare(a.message, b.message));
@@ -120,12 +129,14 @@ export async function checkRecoveryState(repositoryRoot: string, options: { regi
   return freeze({ recoveryVersion: "1.0.0", checkedAt, consistent: findings.length === 0, findings, runs });
 }
 
-async function inspectTask(root: string, task: RegisteredTask, now: string, areas: ReadonlyMap<string, readonly string[]>, add: AddFinding): Promise<void> {
+async function inspectTask(root: string, task: RegisteredTask, now: string, areas: ReadonlyMap<string, readonly string[]>, add: AddFinding,
+  state: string, evidence: string, configuredSource?: StatusReportingDependencies,
+  validatorResolver?: DeveloperValidatorResolver): Promise<void> {
   const taskId = task.taskId;
-  const lifecyclePath = `${STATE}/lifecycle/${taskId}.lifecycle.json`;
-  const assignmentPath = `${STATE}/assignments/${taskId}.lock.json`;
+  const lifecyclePath = `${state}/lifecycle/${taskId}.lifecycle.json`;
+  const assignmentPath = `${state}/assignments/${taskId}.lock.json`;
   let source: StatusReportingDependencies;
-  try { source = await createLocalStatusDependencies(root, new Map([[taskId, task]])); }
+  try { source = configuredSource ?? await createLocalStatusDependencies(root, new Map([[taskId, task]])); }
   catch (error: unknown) { add("TASK_SOURCE_UNREADABLE", task.sourcePath, errorMessage(error), INSPECT, taskId); return; }
   let lifecycle: LifecycleRecord | null | undefined;
   let assignment: AssignmentLockRecord | null | undefined;
@@ -144,7 +155,7 @@ async function inspectTask(root: string, task: RegisteredTask, now: string, area
   let evidenceValid = areas.has("evidence");
   for (const name of areas.get("evidence") ?? []) {
     if (/^([A-Z]+-[0-9]{3,})(?:_|$)/.exec(name)?.[1] !== taskId) continue;
-    const path = `${STATE}/evidence/${name}`;
+    const path = `${evidence}/${name}`;
     try {
       if (!/^(?:[A-Za-z0-9-]|_[0-9a-f]{4})+$/.test(name)) throw new Error("Invalid encoded evidence lineage directory.");
       const lineage = name.replace(/_([0-9a-f]{4})/g, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)));
@@ -174,13 +185,13 @@ async function inspectTask(root: string, task: RegisteredTask, now: string, area
         "Inspect retained work and use the authorized branch recovery procedure without resetting or deleting existing history.", taskId);
     }
   }
-  if (lifecycle !== undefined && lifecycle !== null) inspectHistory(task, lifecycle, histories, add);
+  if (lifecycle !== undefined && lifecycle !== null) inspectHistory(task, lifecycle, histories, add, state);
   if (lifecycle !== undefined && assignment !== undefined && revision !== undefined && evidenceValid) {
     // Validation/review diagnostics do not evaluate dependency eligibility. Their
     // one-task projection avoids an unrelated corrupt task suppressing this audit.
     const scopedTask = { ...task, dependencies: [] };
     const scoped: StatusReportingDependencies = { ...source, registry: new Map([[taskId, scopedTask]]) };
-    const diagnostics = new WorkflowDiagnostics({ source: scoped, validatorResolver: new RepositoryValidatorResolver(root) });
+    const diagnostics = new WorkflowDiagnostics({ source: scoped, validatorResolver: validatorResolver ?? new RepositoryValidatorResolver(root) });
     try {
       const state = lifecycle?.currentState ?? "PLANNED";
       if (POST_VALIDATION.includes(state)) {
@@ -201,8 +212,8 @@ async function inspectTask(root: string, task: RegisteredTask, now: string, area
   }
 }
 
-function inspectHistory(task: RegisteredTask, lifecycle: LifecycleRecord, histories: ReadonlyMap<string, readonly StoredEvidenceRecord[]>, add: AddFinding): void {
-  const path = `${STATE}/lifecycle/${task.taskId}.lifecycle.json`;
+function inspectHistory(task: RegisteredTask, lifecycle: LifecycleRecord, histories: ReadonlyMap<string, readonly StoredEvidenceRecord[]>, add: AddFinding, state: string): void {
+  const path = `${state}/lifecycle/${task.taskId}.lifecycle.json`;
   if (GATED_STATES.includes(lifecycle.currentState) && !lifecycle.history.some(event => event.toState === lifecycle.currentState)) {
     add("LIFECYCLE_PROVENANCE_MISSING", path, `Lifecycle '${lifecycle.currentState}' has no recorded transition.`, INSPECT, task.taskId);
   }
@@ -245,10 +256,10 @@ function inspectHistory(task: RegisteredTask, lifecycle: LifecycleRecord, histor
   }
 }
 
-function inspectRuns(root: string, names: readonly string[], runs: RecoveryRunObservation[], add: AddFinding): void {
+function inspectRuns(root: string, names: readonly string[], runs: RecoveryRunObservation[], add: AddFinding, orchestration: string): void {
   const runKeys = new Map<string, string>();
   for (const name of names) {
-    const path = `${STATE}/orchestration/${name}`;
+    const path = `${orchestration}/${name}`;
     if (name === ".orchestration.lock") {
       try {
         const token = read(root, path);
@@ -278,10 +289,10 @@ function inspectRuns(root: string, names: readonly string[], runs: RecoveryRunOb
   }
 }
 
-function inspectAudits(root: string, names: readonly string[], add: AddFinding): void {
+function inspectAudits(root: string, names: readonly string[], add: AddFinding, state: string, orchestration: string): void {
   const files = new Set(names);
   for (const name of names) {
-    const path = `${STATE}/recovery/${name}`;
+    const path = `${state}/recovery/${name}`;
     if (name === ".recovery.lock") {
       try {
         const lock: unknown = JSON.parse(read(root, path));
@@ -317,17 +328,17 @@ function inspectAudits(root: string, names: readonly string[], add: AddFinding):
     try {
       const value: unknown = JSON.parse(read(root, path));
       if (!object(value) || value.recoveryVersion !== "1.0.0" || value.operationId !== operationId) throw new Error("Recovery audit identity is malformed or mismatched.");
-      if (match[2] === "intent") validateIntent(value, operationId);
+      if (match[2] === "intent") validateIntent(value, operationId, state, orchestration);
       else {
         if (value.status !== "APPLIED" || !timestamp(value.completedAt) || typeof value.intentHash !== "string"
           || !/^[a-f0-9]{64}$/.test(value.intentHash) || (value.resultingHash !== null &&
           (typeof value.resultingHash !== "string" || !/^[a-f0-9]{64}$/.test(value.resultingHash)))
-          || value.auditPath !== `${STATE}/recovery/${operationId}.intent.json`) throw new Error("Recovery result is malformed.");
+          || value.auditPath !== `${state}/recovery/${operationId}.intent.json`) throw new Error("Recovery result is malformed.");
         if (files.has(`${operationId}.intent.json`)) {
-          const intentBytes = read(root, `${STATE}/recovery/${operationId}.intent.json`);
+          const intentBytes = read(root, `${state}/recovery/${operationId}.intent.json`);
           const intent: unknown = JSON.parse(intentBytes);
           if (!object(intent)) throw new Error("Recovery intent is malformed.");
-          validateIntent(intent, operationId);
+          validateIntent(intent, operationId, state, orchestration);
           if (value.intentHash !== recoveryHash(intentBytes) || value.resultingHash !==
             (intent.resultingState === null ? null : recoveryHash(intent.resultingState as string))) throw new Error("Recovery result hashes contradict its intent.");
         }
@@ -340,11 +351,11 @@ function inspectAudits(root: string, names: readonly string[], add: AddFinding):
   }
 }
 
-function validateIntent(value: Record<string, unknown>, operationId: string): void {
+function validateIntent(value: Record<string, unknown>, operationId: string, state: string, orchestration: string): void {
   const request = parseRecoveryRequest(value.request);
-  const target = request.operation === "release-run-lock" ? `${STATE}/orchestration/.orchestration.lock`
-    : request.operation === "reset-task" ? `${STATE}/lifecycle/${request.taskId}.lifecycle.json`
-      : `${STATE}/assignments/${request.taskId}.lock.json`;
+  const target = request.operation === "release-run-lock" ? `${orchestration}/.orchestration.lock`
+    : request.operation === "reset-task" ? `${state}/lifecycle/${request.taskId}.lifecycle.json`
+      : `${state}/assignments/${request.taskId}.lock.json`;
   if (value.recoveryVersion !== "1.0.0" || value.operationId !== operationId || request.operationId !== operationId
     || value.actorId !== request.actorId || value.reason !== request.reason || !timestamp(value.occurredAt)
     || value.revisionIdentity !== request.expectedRevision || typeof value.canonicalBranch !== "string" || value.canonicalBranch.length === 0

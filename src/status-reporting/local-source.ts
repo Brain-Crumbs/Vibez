@@ -28,19 +28,21 @@ const VERSIONS = ["1.0.0", "1.1.0"];
 export async function createLocalStatusDependencies(
   repositoryRoot: string,
   registry?: TaskRegistry,
+  paths: { state?: string; evidence?: string; evidenceStore?: FileEvidenceStore } = {},
 ): Promise<StatusReportingDependencies> {
   const tasks = registry ?? await loadTaskRegistry({ repositoryRoot });
   for (const [taskId, task] of tasks) assertTaskIdentity(taskId, task);
-  const evidenceRoot = join(repositoryRoot, ".agent/state/evidence");
-  const store = new FileEvidenceStore(evidenceRoot, { repositoryRoot, readOnly: true });
+  const stateRoot = paths.state ?? join(repositoryRoot, ".agent/state");
+  const evidenceRoot = paths.evidence ?? join(stateRoot, "evidence");
+  const store = paths.evidenceStore ?? new FileEvidenceStore(evidenceRoot, { readOnly: true });
   // Keep reads live: the reporter performs two complete observations and refuses
   // a changed view. Caching here would silently defeat that concurrency check.
   return {
     registry: tasks,
-    lifecycle: { get: (taskId) => tasks.has(taskId) ? readLifecycle(repositoryRoot, taskId) : null },
+    lifecycle: { get: (taskId) => tasks.has(taskId) ? readLifecycle(stateRoot, taskId) : null },
     assignments: { get: (taskId) => {
       const task = tasks.get(taskId);
-      return task === undefined ? null : readAssignment(repositoryRoot, task);
+      return task === undefined ? null : readAssignment(stateRoot, task);
     } },
     revisions: { get: (task) => readRevision(repositoryRoot, task) },
     evidence: {
@@ -67,7 +69,7 @@ export function readLocalLifecycleStates(
   const states = new Map<string, TaskLifecycleState>();
   for (const [taskId, task] of registry) {
     assertTaskIdentity(taskId, task);
-    const state = readLifecycle(repositoryRoot, taskId);
+    const state = readLifecycle(join(repositoryRoot, ".agent/state"), taskId);
     if (state !== null) states.set(taskId, state.currentState);
   }
   return states;
@@ -78,8 +80,8 @@ function assertTaskIdentity(taskId: string, task: RegisteredTask): void {
     `Registry task identity '${taskId}' is invalid.`);
 }
 
-function readLifecycle(repositoryRoot: string, taskId: string): LifecycleRecord | null {
-  const path = join(repositoryRoot, ".agent/state/lifecycle", `${taskId}.lifecycle.json`);
+function readLifecycle(stateRoot: string, taskId: string): LifecycleRecord | null {
+  const path = join(stateRoot, "lifecycle", `${taskId}.lifecycle.json`);
   const raw = readOptionalJson(path);
   if (raw === null) return null;
   requireObject(raw, path);
@@ -121,8 +123,8 @@ function readLifecycle(repositoryRoot: string, taskId: string): LifecycleRecord 
   return deepFreeze(raw) as unknown as LifecycleRecord;
 }
 
-function readAssignment(repositoryRoot: string, task: RegisteredTask): AssignmentLockRecord | null {
-  const path = join(repositoryRoot, ".agent/state/assignments", `${task.taskId}.lock.json`);
+function readAssignment(stateRoot: string, task: RegisteredTask): AssignmentLockRecord | null {
+  const path = join(stateRoot, "assignments", `${task.taskId}.lock.json`);
   const raw = readOptionalJson(path);
   if (raw === null) return null;
   requireObject(raw, path);

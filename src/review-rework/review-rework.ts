@@ -1346,7 +1346,7 @@ export async function createLocalReviewReworkGate(repositoryRoot = "."): Promise
     stateStore: new FileReviewReworkStateStore(lifecycleRoot),
     taskLock: new FileReviewReworkTaskLock(lifecycleRoot),
     branchLifecycle: new GitBranchLifecycleAdapter(new LocalGitBranchOperations(repositoryRoot)),
-    evidenceStore: new FileEvidenceStore(evidenceRoot, { repositoryRoot }),
+    evidenceStore: new FileEvidenceStore(evidenceRoot),
     evidenceLocation,
   });
 }

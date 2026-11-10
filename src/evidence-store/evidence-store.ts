@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { packageRoot } from "../project-assets/index.js";
 import { join } from "node:path";
 
 type JsonObject = Record<string, unknown>;
@@ -108,9 +109,7 @@ export class FileEvidenceStore implements EvidenceStore {
     if (!root.trim()) throw new RangeError("Evidence store root must be non-empty.");
     this.#root = root;
     this.#readOnly = options.readOnly ?? false;
-    if (!this.#readOnly) mkdirSync(this.#root, { recursive: true });
-
-    const repositoryRoot = options.repositoryRoot ?? process.cwd();
+    const repositoryRoot = options.repositoryRoot ?? packageRoot;
     const schemas = new Map<SupportedEvidenceSchemaId, LoadedSchema>();
     for (const schemaId of Object.keys(SUPPORTED_SCHEMAS) as SupportedEvidenceSchemaId[]) {
       schemas.set(schemaId, loadSchema(repositoryRoot, schemaId));

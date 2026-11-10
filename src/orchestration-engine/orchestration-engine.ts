@@ -188,6 +188,8 @@ export interface OrchestrationDependencies {
   readonly lifecycleState: { get(taskId: string): LifecycleRecord | null };
   readonly runStore: OrchestrationRunStore;
   readonly retryPolicy?: OrchestrationRetryPolicy;
+  /** Trusted host grant resolver, called under the repository run lock before provider dispatch. */
+  readonly maxAttemptsFor?: (journal: OrchestrationRunJournal) => number;
   readonly developerStart: Pick<DeveloperStartWorkflow, "start">;
   readonly developerValidation: Pick<DeveloperValidationGate, "validate">;
   /** The same BOOT-011 task registry every wrapped gate already reads its
@@ -543,7 +545,14 @@ export class SequentialOrchestrationEngine {
       return cached.result;
     }
     const policy = this.dependencies.retryPolicy ?? { maxAttempts: 3, delayMs: 100 };
-    while ((x.journal.attempts[stage] ?? 0) < policy.maxAttempts) {
+    const maxAttempts = () => {
+      const effective = this.dependencies.maxAttemptsFor?.(x.journal) ?? policy.maxAttempts;
+      if (!Number.isInteger(effective) || effective < policy.maxAttempts || effective > 10) {
+        throw new OrchestrationError("INVALID_REQUEST", "The host supplied an invalid retry allowance.");
+      }
+      return effective;
+    };
+    while ((x.journal.attempts[stage] ?? 0) < maxAttempts()) {
       x.check();
       x.journal.pendingStage = stage;
       x.journal.attempts[stage] = (x.journal.attempts[stage] ?? 0) + 1;
@@ -565,7 +574,7 @@ export class SequentialOrchestrationEngine {
         x.journal.lastFailure = { kind: failure.kind, code: failure.code, message: error instanceof Error ? error.message : String(error) };
         this.dependencies.runStore.save(x.journal);
         x.check();
-        if (!failure.retryable || (x.journal.attempts[stage] ?? 0) >= policy.maxAttempts) throw error;
+        if (!failure.retryable || (x.journal.attempts[stage] ?? 0) >= maxAttempts()) throw error;
         await new Promise<void>((resolve) => {
           const done = () => { clearTimeout(timer); x.signal.removeEventListener("abort", done); resolve(); };
           const timer = setTimeout(done, policy.delayMs);

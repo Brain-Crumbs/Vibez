@@ -51,6 +51,9 @@ export interface RecoveryResult {
   readonly auditPath: string;
 }
 export interface LocalRecoveryOptions {
+  readonly source?: Awaited<ReturnType<typeof createLocalStatusDependencies>>;
+  readonly paths?: { readonly state: string; readonly orchestration: string };
+
   readonly registry?: TaskRegistry;
   readonly now?: () => string;
   /** Trusted host policy, not a field supplied by the repair request. Defaults to deny. */
@@ -137,15 +140,15 @@ function stableRequest(request: RecoveryRequest): string {
     ? Object.fromEntries(Object.keys(v).sort().map(k => [k, canonical(v[k])])) : v;
   return JSON.stringify(canonical(identity));
 }
-function targetFor(request: RecoveryRequest): string {
+function targetFor(request: RecoveryRequest, state: string, orchestration: string): string {
   switch (request.operation) {
-    case "release-assignment": case "transfer-assignment": return `.agent/state/assignments/${request.taskId}.lock.json`;
-    case "reset-task": return `.agent/state/lifecycle/${request.taskId}.lifecycle.json`;
-    case "release-run-lock": return ".agent/state/orchestration/.orchestration.lock";
+    case "release-assignment": case "transfer-assignment": return `${state}/assignments/${request.taskId}.lock.json`;
+    case "reset-task": return `${state}/lifecycle/${request.taskId}.lifecycle.json`;
+    case "release-run-lock": return `${orchestration}/.orchestration.lock`;
   }
 }
-function readJournals(root: string) {
-  const relative = ".agent/state/orchestration";
+function readJournals(root: string, orchestration: string) {
+  const relative = orchestration;
   assertRecoveryPath(root, relative);
   let names: string[];
   try { names = readdirSync(join(root, relative)); } catch (error) { if (errorCode(error) === "ENOENT") return []; throw error; }
@@ -159,6 +162,8 @@ function readJournals(root: string) {
 
 /** Offline administration only. Quiescence is externally verified, never inferred from age or PID. */
 export class LocalRecoveryTools {
+  private get state(): string { return this.options.paths?.state ?? ".agent/state"; }
+  private get orchestration(): string { return this.options.paths?.orchestration ?? `${this.state}/orchestration`; }
   private constructor(private readonly root: string, private readonly options: LocalRecoveryOptions, private readonly registry: TaskRegistry) {}
   static async create(root: string, options: LocalRecoveryOptions = {}): Promise<LocalRecoveryTools> {
     return new LocalRecoveryTools(resolve(root), options, options.registry ?? await loadTaskRegistry({ repositoryRoot: root }));
@@ -167,10 +172,11 @@ export class LocalRecoveryTools {
     const request = parseRecoveryRequest(input);
     const task = this.registry.get(request.taskId);
     requireValue(task !== undefined, `Unknown registered task '${request.taskId}'.`);
-    assertStateTree(this.root);
-    const sources = await createLocalStatusDependencies(this.root, this.registry);
+    assertStateTree(this.root, this.state);
+    if (this.options.paths !== undefined) assertStateTree(this.root, this.orchestration);
+    const sources = this.options.source ?? await createLocalStatusDependencies(this.root, this.registry);
     requireValue(sources.revisions.get(task) === request.expectedRevision, "Canonical branch revision changed or is missing.", "STATE_CONFLICT");
-    const auditRoot = ".agent/state/recovery";
+    const auditRoot = `${this.state}/recovery`;
     const intentPath = `${auditRoot}/${request.operationId}.intent.json`;
     const resultPath = `${auditRoot}/${request.operationId}.result.json`;
     const mutexPath = `${auditRoot}/.recovery.lock`;
@@ -251,28 +257,28 @@ export class LocalRecoveryTools {
     const value: unknown = JSON.parse(raw);
     requireValue(object(value) && value.recoveryVersion === "1.0.0" && value.operationId === request.operationId && stableRequest(parseRecoveryRequest(value.request)) === stableRequest(request) &&
       value.actorId === request.actorId && value.reason === request.reason && timestamp(value.occurredAt) && value.revisionIdentity === request.expectedRevision &&
-      value.canonicalBranch === this.registry.get(request.taskId)?.canonicalBranch && value.targetPath === targetFor(request) && typeof value.priorState === "string" &&
+      value.canonicalBranch === this.registry.get(request.taskId)?.canonicalBranch && value.targetPath === targetFor(request, this.state, this.orchestration) && typeof value.priorState === "string" &&
       recoveryHash(value.priorState) === request.expectedTargetHash && (value.resultingState === null || typeof value.resultingState === "string") && typeof value.overrideAuthorized === "boolean" && object(value.context),
       "Existing recovery intent is malformed or belongs to a different request.", "AUDIT_INVALID");
     const intent = value as unknown as RecoveryAuditIntent;
-    requireValue(intent.overrideAuthorized === (request.override !== undefined) && intent.resultingState === resultFor(request, intent.priorState, intent.canonicalBranch, intent.occurredAt, this.registry),
+    requireValue(intent.overrideAuthorized === (request.override !== undefined) && intent.resultingState === resultFor(request, intent.priorState, intent.canonicalBranch, intent.occurredAt, this.registry, this.state),
       "Recovery intent contains an unsupported resulting state.", "AUDIT_INVALID");
     return intent;
   }
   private plan(request: RecoveryRequest, canonicalBranch: string, sources: Awaited<ReturnType<typeof createLocalStatusDependencies>>, now: string): RecoveryAuditIntent {
-    const targetPath = targetFor(request);
+    const targetPath = targetFor(request, this.state, this.orchestration);
     const prior = read(this.root, targetPath);
     requireValue(prior !== null && recoveryHash(prior) === request.expectedTargetHash, "Target is absent or differs from the explicitly expected hash.", "STATE_CONFLICT");
     const lifecycle = sources.lifecycle.get(request.taskId);
     requireValue(lifecycle !== null, "Recovery requires an existing, valid lifecycle record.");
 
-    const journals = readJournals(this.root);
+    const journals = readJournals(this.root, this.orchestration);
     const taskJournals = journals.filter(j => object(j.values.start) && j.values.start.taskId === request.taskId);
     const context: Record<string, unknown> = { lifecycle, runIdentities: taskJournals.map(j => ({ idempotencyKey: j.idempotencyKey, ownerId: j.ownerId, runId: j.runId, pendingStage: j.pendingStage ?? null })) };
     if (request.operation !== "release-run-lock") {
       requireValue(!["MERGED", "DONE"].includes(lifecycle.currentState), "Completed/merged tasks must be reconciled through the controlled merge owner.");
       requireValue(sources.evidence.getHistory(mergeEvidenceLineageId(request.taskId)).length === 0, "Merge evidence exists; only controlled-merge reconciliation may continue this task.");
-      requireValue(read(this.root, ".agent/state/orchestration/.orchestration.lock") === null, "Resolve the abandoned orchestration lock first; repair cannot run beside a possibly active runner.");
+      requireValue(read(this.root, `${this.orchestration}/.orchestration.lock`) === null, "Resolve the abandoned orchestration lock first; repair cannot run beside a possibly active runner.");
       requireValue(!taskJournals.some(j => j.pendingStage === "controlled-merge" || object(j.values.result) && j.values.result.status === "COMPLETED"), "A merge may already have happened; use controlled-merge reconciliation before any reset or assignment repair.");
     }
     if (request.operation === "release-assignment" || request.operation === "transfer-assignment") {
@@ -306,13 +312,13 @@ export class LocalRecoveryTools {
 
     }
     return { recoveryVersion: "1.0.0", operationId: request.operationId, request, actorId: request.actorId, reason: request.reason, occurredAt: now,
-      revisionIdentity: request.expectedRevision, canonicalBranch, targetPath, priorState: prior, resultingState: resultFor(request, prior, canonicalBranch, now, this.registry),
+      revisionIdentity: request.expectedRevision, canonicalBranch, targetPath, priorState: prior, resultingState: resultFor(request, prior, canonicalBranch, now, this.registry, this.state),
       overrideAuthorized: request.override !== undefined, context };
   }
 }
 
 /** Re-derive the only legal mutation rather than trusting persisted proposed bytes. */
-function resultFor(request: RecoveryRequest, prior: string, canonicalBranch: string, now: string, registry: TaskRegistry): string | null {
+function resultFor(request: RecoveryRequest, prior: string, canonicalBranch: string, now: string, registry: TaskRegistry, statePath: string): string | null {
   if (request.operation === "release-assignment" || request.operation === "release-run-lock") return null;
   if (request.operation === "transfer-assignment") return serialized({ schemaId: "ipt.assignment-lock", schemaVersion: "1.1.0", taskId: request.taskId, canonicalBranch,
     lockId: request.replacement!.lockId, ownerId: request.replacement!.ownerId, runId: request.replacement!.runId,
@@ -323,7 +329,7 @@ function resultFor(request: RecoveryRequest, prior: string, canonicalBranch: str
     requireValue(!state.history.some(event => event.eventId === `recovery:${request.operationId}:${target}`), "Recovery lifecycle event ID already exists; preserve history and choose a fresh operation identity.");
     const transition = transitionLifecycle(state, { taskId: request.taskId, expectedState: state.currentState, toState: target,
       eventId: `recovery:${request.operationId}:${target}`, occurredAt: now, reason: request.reason,
-      evidenceRef: `.agent/state/recovery/${request.operationId}.intent.json`, actorId: request.actorId, runId: `recovery:${request.operationId}`,
+      evidenceRef: `${statePath}/recovery/${request.operationId}.intent.json`, actorId: request.actorId, runId: `recovery:${request.operationId}`,
       revisionIdentity: request.expectedRevision, requiredReviewRoles: registry.get(request.taskId)!.requiredReviewRoles as readonly ReviewRole[],
       satisfiedPrerequisites: target === "BLOCKED" ? ["BLOCKER_RECORDED"] : ["REWORK_FINDINGS_RECORDED"] });
     requireValue(transition.ok, transition.ok ? "" : transition.rejection.reason);
@@ -331,7 +337,7 @@ function resultFor(request: RecoveryRequest, prior: string, canonicalBranch: str
   }
   return serialized(state);
 }
-function assertStateTree(root: string): void {
+function assertStateTree(root: string, state: string): void {
   let entries = 0;
   const walk = (relative: string, depth: number) => {
     requireValue(depth < 32 && ++entries < 100000, "State tree exceeds bounded recovery inspection limits.");
@@ -341,5 +347,5 @@ function assertStateTree(root: string): void {
     if (info.isDirectory()) for (const name of readdirSync(join(root, relative))) walk(`${relative}/${name}`, depth + 1);
     else requireValue(info.isFile(), `State tree contains unsupported non-file: ${relative}.`);
   };
-  walk(".agent/state", 0);
+  walk(state, 0);
 }
