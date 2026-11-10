@@ -949,31 +949,33 @@ test("FileControlledMergeTaskLock reclaims a stale lock file rather than wedging
 test("FileControlledMergeTaskLock's heartbeat keeps a long-running holder from being reclaimed as stale", async () => {
   const dir = mkdtempSync(join(tmpdir(), "controlled-merge-task-lock-heartbeat-"));
   try {
-    // A stale threshold and heartbeat interval short enough to observe
-    // within a fast unit test, but with the heartbeat still comfortably
-    // inside the stale window (mirrors the real DEFAULT_HEARTBEAT_INTERVAL_MS
-    // being well inside STALE_LOCK_MS).
-    const holder = new FileControlledMergeTaskLock(dir, { staleLockMs: 40, heartbeatIntervalMs: 10 });
-    const contender = new FileControlledMergeTaskLock(dir, { staleLockMs: 40, heartbeatIntervalMs: 10 });
+    const { statSync, utimesSync } = await import("node:fs");
+    const lockPath = join(dir, "BOOT-025.lifecycle.lock");
+    const staleLockMs = 60_000;
+    const holder = new FileControlledMergeTaskLock(dir, { staleLockMs, heartbeatIntervalMs: 20 });
+    const contender = new FileControlledMergeTaskLock(dir, { staleLockMs });
+    let releaseHolder;
+    const held = holder.withLock("BOOT-025", () => new Promise((resolve) => { releaseHolder = resolve; }));
 
-    const held = holder.withLock("BOOT-025", async () => {
-      // Outlast the nominal stale threshold several times over; without a
-      // heartbeat refreshing the lock file, a concurrent caller would
-      // reclaim it well before this resolves.
-      await new Promise((resolve) => setTimeout(resolve, 150));
-      return "holder-done";
-    });
-
-    await new Promise((resolve) => setTimeout(resolve, 60));
-    await assert.rejects(
-      () => contender.withLock("BOOT-025", async () => "should-not-run"),
-      (error) => {
-        assert.equal(error.code, "STATE_CONFLICT");
-        return true;
-      },
-    );
-
-    assert.equal(await held, "holder-done");
+    try {
+      // Observe a real heartbeat recover an aged mtime while the holder is
+      // explicitly kept in flight. Runner load can delay timers and I/O.
+      const old = new Date(Date.now() - 2 * staleLockMs);
+      utimesSync(lockPath, old, old);
+      assert.ok(Date.now() - statSync(lockPath).mtimeMs > staleLockMs);
+      const deadline = Date.now() + 10_000;
+      while (Date.now() - statSync(lockPath).mtimeMs > staleLockMs) {
+        assert.ok(Date.now() < deadline, "heartbeat did not refresh the held lock");
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      await assert.rejects(
+        () => contender.withLock("BOOT-025", async () => "should-not-run"),
+        { code: "STATE_CONFLICT" },
+      );
+    } finally {
+      releaseHolder?.("holder-done");
+      assert.equal(await held, "holder-done");
+    }
 
     // Once genuinely released, a new caller succeeds immediately.
     const result = await contender.withLock("BOOT-025", async () => "after-release");

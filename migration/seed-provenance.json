@@ -76,6 +76,10 @@
       "reason": "Require a single exact-head Vibez checkout for each of the three jobs.",
       "sha256": "0d70a139540528e875886b8c12c0c40affe891b3f0cc7091b12b99224d98182f"
     },
+    "tests/controlled-merge.test.mjs": {
+      "reason": "Exercise a real heartbeat and stale-lock fence while the holder stays active, independent of Windows runner timer scheduling.",
+      "sha256": "598259961ac878c4df20ab1a75720f4deea0a826b0598a55f383264fd06d6b6b"
+    },
     "tests/helpers/canary-fixture.mjs": {
       "reason": "Read the new synthetic fixture task instead of a source consumer definition.",
       "sha256": "8f6eedd472492c31787d4469981b7b22861204ea5bc95a114e96e9c1cb64834c"
