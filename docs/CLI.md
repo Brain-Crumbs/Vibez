@@ -7,7 +7,7 @@ The CLI is the stable, provider-neutral human/agent command surface for the boot
 
 ## Clean-checkout setup
 
-Use Git, Node.js 20 or newer and npm for the local CLI. The test suite also
+Use Git, Node.js 22 or 24 and npm for the local CLI. The test suite also
 uses Python 3.11 or later with jsonschema installed in its development environment.
 
 ```sh
@@ -25,6 +25,9 @@ See the [standalone setup](../README.md#build-and-validate-a-fresh-checkout)
 for the repository checks and PowerShell notes.
 
 ## Invocation
+
+The [installed package](INSTALL.md) provides `vibez` and `agent` with the
+same command behavior. The examples below run from a source checkout.
 
 Human-readable commands use:
 

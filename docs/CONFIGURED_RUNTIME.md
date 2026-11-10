@@ -20,11 +20,12 @@ outside tracked inputs and ignore them in Git.
    paths. Keep the context-policy file a tracked JSON object. It identifies
    the context input and cannot relax role visibility or lifecycle rules.
 2. Call `previewProjectInit(projectRoot, "vibez.config.json", document)`
-   from the private build's `dist/project-config/index.js`. Check the
+   from `@brain-crumbs/vibez/config`. Check the
    reported destination and contents. Call `initializeProjectConfig` with
    those same arguments to create the file exclusively. A repeated create
    returns a conflict. Commit the config and all referenced inputs.
-3. Construct a trusted host and call `doctorProject(location, host)`.
+3. Import `doctorProject` and `createProjectServices` from `@brain-crumbs/vibez`.
+   Construct a trusted host and call `doctorProject(location, host)`.
    Doctor validates project identity, configuration, task dependencies,
    referenced requirements and contracts, storage and executor availability.
    It does not initialize the runtime directories or run validators.
@@ -88,7 +89,7 @@ process.stdout.write(status.stdout);
 The existing `GitHubPullRequestOperations`,
 `GitHubMergeReadinessPullRequestOperations`, `GitHubCiStatusOperations` and
 `GitHubControlledMergePullRequestOperations` are available to trusted hosts
-through the private build. Read-only hosts may supply adapters that report
+from `@brain-crumbs/vibez/integration`. Read-only hosts may supply adapters that report
 unavailability when called. Publication, merge and recovery each require
 separate host callbacks. Merge authorization binds the exact repository, PR
 number and head SHA immediately before the merge provider call. Credentials

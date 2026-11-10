@@ -1,5 +1,4 @@
 export const OUTPUT_SCHEMA_VERSION = "1.0.0" as const;
-export const CLI_VERSION = "0.1.0" as const;
 
 export const EXIT_CODES = {
   SUCCESS: 0,

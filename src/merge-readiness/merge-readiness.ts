@@ -1,3 +1,4 @@
+import type { GitHubFetchInit, GitHubFetchResponse, GitHubFetch } from "../github-http.js";
 import { join } from "node:path";
 import { LOCAL_AGENT_STATE_RELATIVE_PATH } from "../dev-start/index.js";
 import { FileEvidenceStore, reviewResultLineageId, type StoredEvidenceRecord } from "../evidence-store/index.js";
@@ -622,7 +623,7 @@ export class CiStatusProviderError extends Error {
   }
 }
 
-export type FetchLike = (url: string, init: IptFetchInit) => Promise<IptFetchResponse>;
+export type FetchLike = GitHubFetch;
 
 export interface GitHubCiStatusOperationsOptions {
   readonly owner: string;
@@ -669,7 +670,7 @@ export class GitHubCiStatusOperations implements MergeReadinessCiPort {
   }
 
   private async request(method: string, path: string): Promise<unknown> {
-    const init: IptFetchInit = {
+    const init: GitHubFetchInit = {
       method,
       headers: {
         Accept: "application/vnd.github+json",
@@ -679,7 +680,7 @@ export class GitHubCiStatusOperations implements MergeReadinessCiPort {
       },
     };
 
-    let response: IptFetchResponse;
+    let response: GitHubFetchResponse;
     try {
       response = await this.fetchImpl(`${this.apiBaseUrl}${path}`, init);
     } catch (error: unknown) {
@@ -791,7 +792,7 @@ export class GitHubMergeReadinessPullRequestOperations implements MergeReadiness
   }
 
   private async request(method: string, path: string): Promise<unknown> {
-    const init: IptFetchInit = {
+    const init: GitHubFetchInit = {
       method,
       headers: {
         Accept: "application/vnd.github+json",
@@ -801,7 +802,7 @@ export class GitHubMergeReadinessPullRequestOperations implements MergeReadiness
       },
     };
 
-    let response: IptFetchResponse;
+    let response: GitHubFetchResponse;
     try {
       response = await this.fetchImpl(`${this.apiBaseUrl}${path}`, init);
     } catch (error: unknown) {

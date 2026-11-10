@@ -1,3 +1,4 @@
+import type { GitHubFetchInit, GitHubFetchResponse } from "../github-http.js";
 import { existsSync, linkSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { FileAssignmentLockStore, type AssignmentLockRecord, type LockResult } from "../assignment-lock/index.js";
@@ -2257,7 +2258,7 @@ export class GitHubControlledMergePullRequestOperations implements ControlledMer
   }
 
   private async request(method: string, path: string, jsonBody?: Record<string, unknown>): Promise<unknown> {
-    const init: IptFetchInit = {
+    const init: GitHubFetchInit = {
       method,
       headers: {
         Accept: "application/vnd.github+json",
@@ -2271,7 +2272,7 @@ export class GitHubControlledMergePullRequestOperations implements ControlledMer
       init.body = JSON.stringify(jsonBody);
     }
 
-    let response: IptFetchResponse;
+    let response: GitHubFetchResponse;
     try {
       response = await this.fetchImpl(`${this.apiBaseUrl}${path}`, init);
     } catch (error: unknown) {

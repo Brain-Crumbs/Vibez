@@ -1,9 +1,8 @@
-# Supported package boundary (design v1)
+# Supported package boundary (API v1)
 
-One ESM TypeScript/Node package is the initial boundary. The proposed identity is
-`@brain-crumbs/vibez`; it is not reserved or published. [Release decisions](SUPPORT.md)
-gate the final name and rights. MIG-005 implements explicit exports plus matching
-declarations. No wildcard exports, `src/`, `dist/`, or undocumented deep imports
+Vibez is an ESM TypeScript/Node package with explicit exports and matching
+declarations. `@brain-crumbs/vibez` identifies the provisional private candidate.
+See [installation](INSTALL.md) and the [release decisions](SUPPORT.md). No wildcard exports, `src/`, `dist/`, or undocumented deep imports
 are supported. No CommonJS guarantee in v1. Internal modules remain separate.
 
 ## Capability exports
@@ -16,9 +15,9 @@ all 24 source modules, source contracts, current tests and downstream test owner
 
 | Subpath | Supported capability and principal API | Semantic boundary |
 | --- | --- | --- |
-| root (`.`) | `createProjectServices(config, host)`, `describeCapabilities()` (new MIG-004/005 composition) | One graph; construction/inspection does not start a run or create state |
-| `./config` | `ProjectConfigV1`, `ResolvedProjectConfig`, `resolveProjectConfig`, `ConfigError` (new MIG-004) | Shape, containment and identity checks before writes |
-| `./assets` | `getAssetCatalog`, `readSchema`, `readContract` (new MIG-004/005) | Immutable installed bytes, declared versions and hashes; no remote lookup |
+| root (`.`) | `createProjectServices(location, host)`, `doctorProject`, `describeCapabilities` | One graph; construction/inspection does not start a run or create state |
+| `./config` | `ProjectConfigV1`, `ResolvedProjectConfig`, `resolveProjectConfig`, `previewProjectInit`, `initializeProjectConfig`, `ConfigError` | Shape, containment and identity checks before writes |
+| `./assets` | `getAssetCatalog`, `readSchema`, `readContract`  | Immutable installed bytes, declared versions and hashes; no remote lookup |
 | `./registry` | `loadTaskRegistry`, `loadTaskRegistryFromPaths`, `discoverTaskDefinitionPaths`, `validateDependencyDag`, `resolveDependencyDag`, `selectNextEligibleTask`, `explainTaskEligibility` | Complete valid registry or error; native dependencies require genuine DONE |
 | `./lifecycle` | `createLifecycleRecord`, `transitionLifecycle`, `getTransitionRule`, `FileAssignmentLockStore`, `GitBranchLifecycleAdapter`, `LocalGitBranchOperations` | Pure transitions plus explicit lock/Git ports; no bypassing owning gates |
 | `./context` | `compileRoleContext`, context/artifact types and `ContextCompilationError` | Role visibility and semantic dependency projection stay intact |
@@ -28,8 +27,8 @@ all 24 source modules, source contracts, current tests and downstream test owner
 | `./workflow` | `DeveloperStartWorkflow`, `SequentialOrchestrationEngine`, `FileOrchestrationRunStore`, `parseOrchestrationRunJournal`, orchestration ports | Start/validate/review/rework/readiness/merge delegated to existing owners |
 | `./providers` | `AgentProvider`, `AgentRunner`, `AgentProviderError`, `FileManualAgentProvider`, packet/result types | All five roles and PASS/FAIL/BLOCKED remain reachable; transport is not approval |
 | `./integration` | `PullRequestLifecycleAdapter`, `MergeReadinessPolicyEngine`, `ControlledMergeController`, their Git/GitHub/CI operation ports and concrete GitHub adapters | Canonical PR, current checks, exact head, separately granted merge authority |
-| `./diagnostics` | Status source/query/result ports, diagnostics queries, recovery checker and bounded recovery service ports | Read-only observation distinct from authorized offline recovery |
-| `./cli` | Programmatic CLI runner and command envelope types (MIG-005 facade over current CLI core) | Stable command/exit/JSON behavior; no parsing human output |
+| `./diagnostics` | `ProjectStatusReporter`, `WorkflowDiagnostics`, `checkRecoveryState`, `LocalRecoveryTools` and their ports | Read-only observation distinct from authorized offline recovery |
+| `./cli` | `runCli`, `CliRunContext`, `CliRunResult`, `OutputEnvelope`, `EXIT_CODES` | Stable command/exit/JSON behavior; no parsing human output |
 
 Low-level port types needed for custom providers, stores, validators, context
 sources and GitHub implementations are public under the owning subpath.
@@ -40,10 +39,10 @@ start, validation, context, evidence, QA, Architecture, UAT, rework, provider,
 orchestration, PR, CI, readiness, controlled merge, status, diagnostics and
 recovery. Callers do not construct child local factories with competing roots.
 
-MIG-005 must name and type the diagnostics/CLI facades against their existing
-contracts; this document commits to capabilities, not accidental symbol names.
-An unsupported capability returns a typed unavailable result. None of the new
-root/config/assets facade names is implemented by MIG-002.
+The declaration at each subpath specifies the named exports and port types. Use
+`describeCapabilities()` for the installed package and API versions, CLI
+envelope version and command support. The optional `apiVersion` and
+`packageVersion` requirements check exact matches before starting work.
 
 ## Full lifecycle and CLI
 
@@ -53,8 +52,7 @@ branch/context → Developer → deterministic validation → required QA/Archit
 controlled merge → MERGED/DONE → idempotent reconciliation. Diagnostics and
 read-only status remain usable at blocked stages. Recovery never fabricates a gate.
 
-Preserve `agent` as the executable alias for compatibility; `vibez` is an additive
-alias proposed for MIG-005. Current commands: `help`/`--help`/`-h`,
+Preserve `agent` as the executable alias for compatibility; `vibez` is the equivalent standalone name. Current commands: `help`/`--help`/`-h`,
 `version`/`--version`/`-v`, `next`, `status`, `start <owner> <run>`,
 `validate <task> <actor> <run>`, `explain task|validation|reviews|merge <task>` or
 `explain transition <request>`, `manual export|run <request> <exchange>`,

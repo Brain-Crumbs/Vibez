@@ -1,3 +1,4 @@
+import type { GitHubFetchInit, GitHubFetchResponse, GitHubFetch } from "../github-http.js";
 import { BranchLifecycleError, GitBranchLifecycleAdapter, LocalGitBranchOperations, type TaskBranchMetadata } from "../git-branch-lifecycle/index.js";
 import { createLocalReviewReworkGate, type ApprovalStatusRequest, type ApprovalStatusResult, type RoleApprovalStatus } from "../review-rework/index.js";
 import { loadTaskRegistry, type RegisteredTask, type TaskRegistry } from "../task-registry/index.js";
@@ -443,7 +444,7 @@ export class PullRequestProviderError extends Error {
   }
 }
 
-export type FetchLike = (url: string, init: IptFetchInit) => Promise<IptFetchResponse>;
+export type FetchLike = GitHubFetch;
 
 export interface GitHubPullRequestOperationsOptions {
   readonly owner: string;
@@ -505,7 +506,7 @@ export class GitHubPullRequestOperations implements PullRequestOperations {
   }
 
   private async request(method: string, path: string, jsonBody?: Record<string, unknown>): Promise<unknown> {
-    const init: IptFetchInit = {
+    const init: GitHubFetchInit = {
       method,
       headers: {
         Accept: "application/vnd.github+json",
@@ -519,7 +520,7 @@ export class GitHubPullRequestOperations implements PullRequestOperations {
       init.body = JSON.stringify(jsonBody);
     }
 
-    let response: IptFetchResponse;
+    let response: GitHubFetchResponse;
     try {
       response = await this.fetchImpl(`${this.apiBaseUrl}${path}`, init);
     } catch (error: unknown) {
