@@ -121,6 +121,12 @@ reports unknown provenance rather than inferring a writer. Files remain local an
 the checkout. Digests detect corruption where there is a recorded comparison.
 Keep protected copies if an independent integrity reference is required.
 
+For backup comparison, use the configured runtime path keys as the layout map
+(`state`, `evidence`, `exchange`, `operations`, `intake`, `responses`, `outbox`).
+For an unconfigured checkout use `{ state: ".agent/state" }`. If using explicit
+legacy exchange paths, sort those paths and name their layout entries
+`exchange-0`, `exchange-1`, and so on.
+
 The compatibility manifest is exported as `historyCompatibility`. It lists exact
 package readers and the separate API, CLI, evidence, lifecycle, assignment,
 configuration, manual exchange, recovery and orchestration versions. MIG-006

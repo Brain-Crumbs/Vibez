@@ -7,15 +7,19 @@ const reviewer = new Map([
 ]);
 
 export function inspectEvidenceReferences(taskId: string, event: LifecycleHistoryEvent,
-  histories: ReadonlyMap<string, readonly StoredEvidenceRecord[]>) {
-  const role = reviewer.get(event.fromState);
+  histories: ReadonlyMap<string, readonly StoredEvidenceRecord[]>, previous?: LifecycleHistoryEvent) {
+  // The recovery owner separately checks intent/result references and hashes.
+  // A reset from a review state is not the review gate's judgment.
+  if (event.toState === "BLOCKED") return [];
+  const resumed = event.fromState === "REWORK_REQUIRED" && event.toState === "IN_DEVELOPMENT";
+  const role = resumed ? reviewer.get(previous?.fromState ?? "") : reviewer.get(event.fromState);
   const merge = event.toState === "MERGED" || event.toState === "DONE";
-  const validation = event.toState === "DEV_VALIDATED" || event.toState === "DEV_VALIDATION_FAILED";
-  const reworkResume = event.fromState === "REWORK_REQUIRED" && event.eventId.startsWith("review-rework:");
+  const validation = event.toState === "DEV_VALIDATED" || event.toState === "DEV_VALIDATION_FAILED" ||
+    (event.fromState === "DEV_VALIDATED" && event.toState === "MERGE_READY");
   const schema = merge ? "ipt.merge-evidence" : validation ? "ipt.validation-evidence"
-    : role !== undefined || reworkResume ? "ipt.review-result" : null;
+    : role !== undefined ? "ipt.review-result" : null;
   if (schema === null) return [];
-  const nonPass = event.toState.endsWith("_FAILED") || event.toState === "REWORK_REQUIRED" || reworkResume;
+  const nonPass = event.toState.endsWith("_FAILED") || event.toState === "REWORK_REQUIRED" || resumed;
   return (event.evidenceRef ?? "").split(",").map(reference => {
     const match = /^(.*)@([1-9][0-9]*)$/.exec(reference);
     if (!match || !match[1]!.startsWith(`${taskId}::`) || !Number.isSafeInteger(Number(match[2]))) {

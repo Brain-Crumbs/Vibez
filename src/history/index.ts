@@ -9,7 +9,7 @@ import { digest, projectGit, resolveProjectConfig, writablePaths, type ProjectLo
 import { inspectEvidenceReferences } from "../recovery-tools/evidence-integrity.js";
 import { checkRecoveryState } from "../recovery-tools/index.js";
 import { createLocalStatusDependencies, readLocalLifecycleStates } from "../status-reporting/index.js";
-import { readEvidenceHistories } from "../status-reporting/local-source.js";
+import { parseStoredAssignment, readEvidenceHistories } from "../status-reporting/local-source.js";
 import { loadTaskRegistry } from "../task-registry/index.js";
 import { localHistoryIdentity } from "./native-writer.js";
 import { evidenceReceiptIdentity, hashText, identityDigest, isSha, object, parseProvenance } from "./provenance.js";
@@ -31,7 +31,7 @@ export const historyCompatibility = Object.freeze({
   evidenceVersions: EVIDENCE_STORE_SUPPORTED_SCHEMAS,
   lifecycleVersions: Object.freeze(["1.0.0", "1.1.0"]),
   assignmentVersions: Object.freeze(["1.0.0", "1.1.0"]),
-  authoredRecordVersions: Object.freeze({ task: "1.0.0", requirement: "1.0.0", moduleContractSchema: "1.0.0" }),
+  authoredRecordVersions: Object.freeze({ task: "1.0.0", requirement: "1.0.0", moduleContractSchema: "1.1.0" }),
   projectConfigVersion: "1.0.0",
   orchestrationJournalVersion: 1,
   manualExchangeVersion: "1.0.0",
@@ -149,8 +149,35 @@ function scanObservations(history: History, files: readonly HistoryFile[]) {
       (/(?:^|\/)\.claims\//.test(file.name) || /(?:\.lock(?:\.json)?|\.mutex|\.tmp)$/.test(file.name))) {
       findings.add("WRITER_OR_UNRECONCILED_LOCK");
     }
-    if (file.area === "state" && !legacyDefaultExchange && !/^(?:assignments|audit-provenance|evidence|lifecycle|orchestration|recovery)\//.test(file.name)) {
-      findings.add("UNSUPPORTED_STATE_RECORD");
+    const stateFamily = history.config === null
+      ? /^(?:assignments|audit-provenance|evidence|lifecycle|orchestration|recovery)\//
+      : /^(?:assignments|lifecycle|recovery)\//;
+    if (file.area === "state" && !legacyDefaultExchange && !stateFamily.test(file.name)) findings.add("UNSUPPORTED_STATE_RECORD");
+    if (file.area === "state" && file.name.startsWith("assignments/.history/")) {
+      const archive = file.name.slice("assignments/.history/".length);
+      const taskId = /^([A-Z]+-[0-9]{3,})(?:-|\.)/.exec(archive)?.[1];
+      if (taskId === undefined || !history.registry.has(taskId)) throw new Error("Unknown assignment archive.");
+      if (archive === `${taskId}.audit.jsonl`) {
+        for (const line of text().split("\n").filter(Boolean)) {
+          const entry: unknown = JSON.parse(line);
+          if (!object(entry) || !["ACQUIRED", "REACQUIRED", "RELEASED", "RECOVERED_STALE"].includes(String(entry.action)) ||
+            !["occurredAt", "actorId", "runId", "reason"].every(key => typeof entry[key] === "string") ||
+            Object.keys(entry).some(key => !["action", "occurredAt", "actorId", "runId", "reason", "priorLockId", "resultingLockId"].includes(key))) {
+            throw new Error("Unsupported assignment audit entry.");
+          }
+        }
+      } else {
+        const entry: unknown = JSON.parse(text());
+        if (/-recovery-claim-[^/]+-\d+\.json$/.test(archive)) {
+          const keys = ["taskId", "expectedStaleLockId", "recoveryActorId", "recoveryRunId", "recoveryReason",
+            "replacementLockId", "replacementOwnerId", "replacementRunId", "claimedAt"];
+          if (!object(entry) || entry.taskId !== taskId || Object.keys(entry).length !== keys.length ||
+            !keys.every(key => typeof entry[key] === "string" && entry[key] !== "")) throw new Error("Unsupported assignment claim archive.");
+        } else {
+          if (!/-(?:released|stale)-[^/]+-\d+\.json$/.test(archive)) throw new Error("Unknown assignment archive format.");
+          parseStoredAssignment(entry, taskId, "assignment archive");
+        }
+      }
     }
     if (file.area === "operations" && !/^(?:audit-provenance|orchestration|retry-grants)\//.test(file.name)) {
       findings.add("UNSUPPORTED_OPERATION_RECORD");
@@ -216,6 +243,7 @@ function scanObservations(history: History, files: readonly HistoryFile[]) {
     }
   }
   const recorded = new Map<string, string>();
+  const mismatched = new Set<string>();
   if ([...provenance.values()].some(receipts => receipts.some(receipt => receipt.recordSha256 !== null))) {
     for (const id of history.registry.keys()) {
       for (const records of readEvidenceHistories(join(history.root, history.paths.evidence), id, history.store).values()) {
@@ -228,10 +256,13 @@ function scanObservations(history: History, files: readonly HistoryFile[]) {
   }
   for (const receipts of provenance.values()) {
     for (const receipt of receipts) {
-      if (receipt.recordSha256 !== null && recorded.get(receipt.subject) !== receipt.recordSha256) findings.add("EVIDENCE_RECEIPT_MISMATCH");
+      if (receipt.recordSha256 !== null && recorded.get(receipt.subject) !== receipt.recordSha256) {
+        findings.add("EVIDENCE_RECEIPT_MISMATCH");
+        mismatched.add(receipt.subject);
+      }
     }
   }
-  return { findings, provenance, runs, attempts: [...attempts, ...agentResults] };
+  return { findings, provenance, mismatched, runs, attempts: [...attempts, ...agentResults] };
 }
 
 /** Inspect validated evidence and original lifecycle history without returning arbitrary stored text. */
@@ -267,10 +298,12 @@ async function inspectProjectAudit(location: HistoryLocation, taskId: string) {
   const events = (lifecycle?.history ?? []).map((event, index) => ({
     ordinal: index + 1, eventDigest: digest(event.eventId), from: event.fromState ?? null, to: event.toState,
     occurredAt: event.occurredAt, revision: commit(event.revisionIdentity), actorDigest: identityDigest(event.actorId),
-    runDigest: identityDigest(event.runId), references: inspectEvidenceReferences(taskId, event, histories).map(reference => ({
-      lineageDigest: digest(reference.lineage ?? reference.reference),
-      sequence: reference.sequence ?? null, resolves: reference.code === null, finding: reference.code,
-    })), authority: "RECORDED_TRANSITION",
+    runDigest: identityDigest(event.runId), references: inspectEvidenceReferences(taskId, event, histories, lifecycle?.history[index - 1]).map(reference => {
+      const mismatched = reference.lineage !== null && observations.mismatched.has(digest([reference.lineage, reference.sequence]));
+      const finding = reference.code ?? (mismatched ? "EVIDENCE_RECEIPT_MISMATCH" : null);
+      return { lineageDigest: digest(reference.lineage ?? reference.reference),
+        sequence: reference.sequence, resolves: finding === null, finding };
+    }), authority: "RECORDED_TRANSITION",
   }));
   const integrity = await checkRecoveryState(history.root, { registry: history.registry, paths: history.paths, source: history.source });
   if (inventory(history.root, history.layout).snapshotSha256 !== snapshot.snapshotSha256) throw new Error("Runtime changed during inspection.");

@@ -180,13 +180,16 @@ function legacyValidationRepeat(
 function readAssignment(stateRoot: string, task: RegisteredTask): AssignmentLockRecord | null {
   const path = join(stateRoot, "assignments", `${task.taskId}.lock.json`);
   const raw = readOptionalJson(path);
-  if (raw === null) return null;
+  return raw === null ? null : parseStoredAssignment(raw, task.taskId, path);
+}
+
+export function parseStoredAssignment(raw: unknown, taskId: string, path: string): AssignmentLockRecord {
   requireObject(raw, path);
   requireKeys(raw, ["schemaId", "schemaVersion", "lockId", "taskId", "canonicalBranch", "ownerId", "runId",
     "status", "acquiredAt", "expiresAt", "releasedAt"], path);
   requireCondition(raw.schemaId === "ipt.assignment-lock" && typeof raw.schemaVersion === "string" && VERSIONS.includes(raw.schemaVersion),
     `${path}: unsupported assignment schema identity/version.`);
-  requireCondition(raw.taskId === task.taskId, `${path}: assignment task identity mismatch.`);
+  requireCondition(raw.taskId === taskId, `${path}: assignment task identity mismatch.`);
   for (const key of ["lockId", "ownerId", "canonicalBranch"]) requireText(raw[key], `${path}.${key}`);
   if (raw.schemaVersion === "1.1.0" || "runId" in raw) requireText(raw.runId, `${path}.runId`);
   requireCondition(typeof raw.status === "string" && ["ACTIVE", "RELEASED", "STALE"].includes(raw.status), `${path}: invalid lock status.`);

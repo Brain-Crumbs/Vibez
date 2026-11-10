@@ -196,13 +196,17 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     };
   }
 
+  function assertTaskHistory(taskId: string): void {
+    if (!registry.has(taskId)) return;
+    source.lifecycle.get(taskId);
+    source.assignments.get(taskId);
+    readEvidenceHistories(paths.evidence, taskId, fileEvidence);
+  }
+
   function taskGuarded<Request extends { readonly taskId: string }, Result>(method: (request: Request) => Result): (request: Request) => Result {
     return request => {
       assertCurrent(request?.taskId);
-      if (typeof request?.taskId === "string" && registry.has(request.taskId)) {
-        source.lifecycle.get(request.taskId);
-        readEvidenceHistories(paths.evidence, request.taskId, fileEvidence);
-      }
+      if (typeof request?.taskId === "string") assertTaskHistory(request.taskId);
       return method(request);
     };
   }
@@ -320,10 +324,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
   });
 
   function assertRegistryHistory(): void {
-    for (const taskId of registry.keys()) {
-      source.lifecycle.get(taskId);
-      readEvidenceHistories(paths.evidence, taskId, fileEvidence);
-    }
+    for (const taskId of registry.keys()) assertTaskHistory(taskId);
   }
   const developerStart = { start: guarded((request: Parameters<typeof startGate.start>[0]) => {
     assertRegistryHistory();
@@ -381,8 +382,13 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
         throw new AgentProviderError("INVALID_REQUEST", "Use a relative manual input file under the configured intake or response root.", false);
       }
     },
+    verifyTaskHistory: taskId => {
+      assertCurrent(taskId);
+      assertTaskHistory(taskId);
+    },
     verifyRequest: request => {
       assertCurrent(request.taskId);
+      assertTaskHistory(request.taskId);
       const task = registry.get(request.taskId);
       if (task === undefined || !task.requiredReviewRoles.includes(request.role) ||
         branchLifecycle.currentRevision() !== request.revisionIdentity) {

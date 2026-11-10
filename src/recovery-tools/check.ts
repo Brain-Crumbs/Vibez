@@ -218,7 +218,7 @@ function inspectHistory(task: RegisteredTask, lifecycle: LifecycleRecord, histor
   if (GATED_STATES.includes(lifecycle.currentState) && !lifecycle.history.some(event => event.toState === lifecycle.currentState)) {
     add("LIFECYCLE_PROVENANCE_MISSING", path, `Lifecycle '${lifecycle.currentState}' has no recorded transition.`, INSPECT, task.taskId);
   }
-  for (const event of lifecycle.history) {
+  for (const [index, event] of lifecycle.history.entries()) {
     if (event.fromState != null && getTransitionRule(event.fromState, event.toState) === null) {
       add("ILLEGAL_LIFECYCLE_HISTORY", path, `Event '${event.eventId}' records an illegal ${event.fromState} -> ${event.toState} transition.`, INSPECT, task.taskId);
     }
@@ -226,7 +226,7 @@ function inspectHistory(task: RegisteredTask, lifecycle: LifecycleRecord, histor
       add("LIFECYCLE_PROVENANCE_MISSING", path, `Event '${event.eventId}' lacks revision-bound evidence.`, INSPECT, task.taskId);
       continue;
     }
-    for (const reference of inspectEvidenceReferences(task.taskId, event, histories)) {
+    for (const reference of inspectEvidenceReferences(task.taskId, event, histories, lifecycle.history[index - 1])) {
       if (reference.code !== null) add(reference.code, path,
         `Event '${event.eventId}' has inconsistent evidence reference '${reference.reference}'.`, INSPECT, task.taskId);
     }

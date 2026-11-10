@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { runCli } from "../dist/cli/core.js";
+import { inspectEvidenceReferences } from "../dist/recovery-tools/evidence-integrity.js";
 import { createLocalEvidenceWriter } from "../dist/history/native-writer.js";
 import { FileEvidenceStore } from "../dist/evidence-store/index.js";
 import { checkProjectUpgrade, historyCompatibility, readProjectAudit, verifyHistoryBackup } from "../dist/public/diagnostics.js";
@@ -192,4 +193,29 @@ test("unsupported evidence blocks legacy writers and a changed receipted record 
   const attempted = await runCli(["--json", "start", "developer", "guard-test"], location);
   assert.notEqual(attempted.exitCode, 0);
   assert.throws(() => readFileSync(lifecyclePath), { code: "ENOENT" });
+});
+
+test("recovery reset and resume keep their intent references, while a no-review merge needs validation", () => {
+  const intent = ".agent/state/recovery/reset.intent.json";
+  const event = (fromState, toState, evidenceRef = intent) => ({ eventId: "history-event", taskId,
+    fromState, toState, occurredAt: timestamp, reason: "fixture", revisionIdentity: "a".repeat(40), evidenceRef });
+  const reset = event("QA_REVIEW", "BLOCKED");
+  const route = event("BLOCKED", "REWORK_REQUIRED");
+  const resume = event("REWORK_REQUIRED", "IN_DEVELOPMENT");
+  for (const [current, previous] of [[reset, undefined], [route, reset], [resume, route]]) {
+    assert.deepEqual(inspectEvidenceReferences(taskId, current, new Map(), previous), []);
+  }
+  const skippedReview = event("DEV_VALIDATED", "MERGE_READY", `${taskId}::validator::build@7`);
+  assert.equal(inspectEvidenceReferences(taskId, skippedReview, new Map())[0].code, "LIFECYCLE_EVIDENCE_MISSING");
+});
+
+test("an unknown archived assignment version blocks an otherwise quiescent handoff", async t => {
+  const { root } = history(t);
+  const directory = join(root, layout.state, "assignments/.history");
+  mkdirSync(directory, { recursive: true });
+  const record = { ...fixture("assignment-lock"), taskId, status: "RELEASED", schemaVersion: "99.0.0" };
+  writeFileSync(join(directory, `${taskId}-fixture-released-2026-11-10T20_3A00_3A00Z-0.json`), JSON.stringify(record));
+  const report = await checkProjectUpgrade({ repositoryRoot: root, quiescence: drain, targetPackageVersion: newPackage });
+  assert.equal(report.compatible, false);
+  assert.ok(report.findings.includes("HISTORY_UNREADABLE_OR_UNSUPPORTED"));
 });

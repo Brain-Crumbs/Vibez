@@ -1,3 +1,5 @@
+import { assertLocalGateHistory } from "../status-reporting/local-source.js";
+import { loadTaskRegistry } from "../task-registry/index.js";
 import { recordLocalProvenance } from "../history/native-writer.js";
 import { digest } from "../project-config/index.js";
 import { closeSync, constants, existsSync, fstatSync, openSync, readFileSync } from "node:fs";
@@ -11,6 +13,7 @@ export interface ConfiguredManual {
   readonly exchange: string;
   readonly provider?: FileManualAgentProvider;
   readonly inputPath: (path: string, operation: "export" | "import" | "run") => string;
+  readonly verifyTaskHistory?: (taskId: string) => void;
   readonly verifyRequest: (request: AgentRunRequest) => void;
 }
 
@@ -40,7 +43,15 @@ export async function runManualCommand(
     },
   });
   const input = (value: string) => configured?.inputPath(value, operation) ?? resolve(repositoryRoot, value);
+  async function verifyHistory(taskId: string): Promise<void> {
+    if (configured !== undefined) configured.verifyTaskHistory?.(taskId);
+    else if (existsSync(join(repositoryRoot, "tasks/definitions"))) {
+      const registry = await loadTaskRegistry({ repositoryRoot });
+      assertLocalGateHistory(repositoryRoot, registry, taskId);
+    }
+  }
   if (operation === "import") {
+    await verifyHistory(provider.readPacket(args[1]!).taskId);
     const imported = provider.importResult(args[1]!, readJson(input(args[2]!)));
     return {
       data: { packetId: args[1], resultPath: imported.resultPath, reused: imported.reused, status: imported.result.status },
@@ -52,7 +63,8 @@ export async function runManualCommand(
     throw new AgentProviderError("INVALID_REQUEST", "Request file must contain an AgentRunRequest JSON object without a signal field; cancellation belongs to the running process.", false);
   }
   const request = value as AgentRunRequest;
-  configured?.verifyRequest(request);
+  if (configured === undefined) await verifyHistory(request.taskId);
+  else configured.verifyRequest(request);
   if (operation === "export") {
     const packet = provider.exportPacket(request);
     const packetPath = provider.packetPath(packet.packetId);
