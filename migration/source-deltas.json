@@ -91,7 +91,7 @@
       "reason": "Accepted UAT handoff repair and contract-bearing regressions at the authorized export pin.",
       "destinationOwner": "MIG-003",
       "destinationPr": "https://github.com/Brain-Crumbs/Vibez/pull/15",
-      "destinationCommit": "8a82d9ec896448a9b433d8ebbdbce74cae6cae7f",
+      "destinationCommit": "1fdf73f0254fd9a94c78f2b04e0255027e4010ab",
       "destinationPaths": [
         {
           "path": "contracts/uat-review/README.md",
@@ -110,8 +110,8 @@
         },
         {
           "path": "tests/canary-e2e.test.mjs",
-          "blob": "e4d4cbc1734cdc71e88e89c919257e8d094f0c2b",
-          "sha256": "be0160327b826898ebe89e279eed9bff6918fd1663f3fde48dc93f741ef75bec"
+          "blob": "e267e3a86d29862254f5cdfea211e879da3b9ab5",
+          "sha256": "dc0924f1072480a50ca658bdfe488fb6a68e61a80e2d5e3c906eb71a84b6efda"
         },
         {
           "path": "tests/helpers/canary-fixture.mjs",
