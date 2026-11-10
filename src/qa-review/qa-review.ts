@@ -1,3 +1,4 @@
+import { createLocalEvidenceWriter } from "../history/native-writer.js";
 import { execFileSync } from "node:child_process";
 import { existsSync, linkSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -10,7 +11,6 @@ import {
 import { LOCAL_AGENT_STATE_RELATIVE_PATH } from "../dev-start/index.js";
 import {
   EVIDENCE_STORE_SUPPORTED_SCHEMAS,
-  FileEvidenceStore,
   reviewResultLineageId,
   type StoredEvidenceRecord,
 } from "../evidence-store/index.js";
@@ -1580,7 +1580,7 @@ export async function createLocalQaReviewGate(repositoryRoot = "."): Promise<QaR
   const lifecycleRoot = join(stateRoot, "lifecycle");
   const evidenceRoot = join(stateRoot, "evidence");
   const evidenceLocation = `${evidenceRoot} (lineage <taskId>::role::<role>)`;
-  const evidenceStore = new FileEvidenceStore(evidenceRoot);
+  const evidenceStore = createLocalEvidenceWriter(repositoryRoot);
   return new QaReviewGate({
     registry,
     stateStore: new FileQaReviewStateStore(lifecycleRoot),

@@ -11,7 +11,7 @@ import { FileEvidenceStore } from "../evidence-store/index.js";
 import { GitBranchLifecycleAdapter, LocalGitBranchOperations } from "../git-branch-lifecycle/index.js";
 import { FileManualAgentProvider } from "../local-agent-adapter/index.js";
 import { checkProjectUpgrade, readProjectAudit, type UpgradeCheckRequest } from "../history/index.js";
-import { provenanceFor, recordProvenance } from "../history/provenance.js";
+import { evidenceReceiptIdentity, provenanceFor, recordProvenance } from "../history/provenance.js";
 import { readEvidenceHistories } from "../status-reporting/local-source.js";
 import { MergeReadinessPolicyEngine, type MergeReadinessPrPort, type MergeReadinessCiPort } from "../merge-readiness/index.js";
 import { FileOrchestrationRunStore, SequentialOrchestrationEngine, type OrchestrationRunRequest } from "../orchestration-engine/index.js";
@@ -95,7 +95,10 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
   const contextPolicyDigest = context.load(config.revision).policyDigest;
   const validatorResolver = configuredValidators(config, host.executors);
   const manual = document.providers.execution === "local-manual"
-    ? new FileManualAgentProvider(paths.exchange, { deferDirectory: true, configuredHost: true, beforeWrite: () => prepareWrite() }) : undefined;
+    ? new FileManualAgentProvider(paths.exchange, { deferDirectory: true, configuredHost: true, beforeWrite: () => prepareWrite(),
+      afterExport: ({ taskId, role, runId, actorId, revisionIdentity }) =>
+        recordProvenance(auditRoot, digest({ taskId, role, runId, actorId, revisionIdentity }), null, engineProvenance, () => prepareWrite(auditRoot)),
+    }) : undefined;
   const provider = manual ?? host.providers?.get(document.providers.execution);
   if (provider === undefined) throw new ConfigError("TOOL_UNAVAILABLE", `Execution provider '${document.providers.execution}' is unavailable.`);
   const registryFiles = trackedFiles(config, config.revision, document.paths.tasks, ".task.json");
@@ -210,7 +213,10 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     for (const directory of directories) mkdirSync(directory, { recursive: true });
   }
 
-  const fileEvidence = new FileEvidenceStore(paths.evidence, { deferDirectory: true });
+  const fileEvidence = new FileEvidenceStore(paths.evidence, { deferDirectory: true, afterAppend: record => {
+    const { subject, recordSha256 } = evidenceReceiptIdentity(record);
+    recordProvenance(auditRoot, subject, recordSha256, engineProvenance, () => prepareWrite(auditRoot));
+  } });
   const source = await createLocalStatusDependencies(projectRoot, registry, { state: paths.state, evidence: paths.evidence, evidenceStore: fileEvidence });
   const lifecycle = new FileDeveloperStartStateStore(lifecycleRoot, true);
   const stateStore = { get: source.lifecycle.get, save: (...args: Parameters<typeof lifecycle.save>) => {
@@ -259,7 +265,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
       if (typeof payload === "object" && payload !== null && "taskId" in payload && typeof payload.taskId === "string") {
         assertCurrent(payload.taskId);
       }
-      recordProvenance(auditRoot, payload, engineProvenance, () => prepareWrite(paths.evidence, auditRoot));
+      prepareWrite(paths.evidence);
       return fileEvidence.record(payload);
     },
     validate: fileEvidence.validate.bind(fileEvidence),
@@ -354,7 +360,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     agentRunner: { run: guarded((request: Parameters<typeof agentRunner.run>[0]) => {
       const { taskId, role, runId, actorId, revisionIdentity } = request;
       assertTaskBinding(taskId, gitOperations.currentRevision());
-      recordProvenance(auditRoot, { taskId, role, runId, actorId, revisionIdentity }, engineProvenance, () => prepareWrite(auditRoot));
+      recordProvenance(auditRoot, digest({ taskId, role, runId, actorId, revisionIdentity }), null, engineProvenance, () => prepareWrite(auditRoot));
       return agentRunner.run(request);
     }) },
     retryPolicy: { maxAttempts: document.budgets.maxAttempts, delayMs: document.budgets.retryDelayMs },

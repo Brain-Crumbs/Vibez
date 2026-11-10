@@ -78,6 +78,20 @@ export function readLocalLifecycleStates(
   return states;
 }
 
+/** Validate existing inputs before the default local CLI constructs any writable stores. */
+export function assertLocalGateHistory(repositoryRoot: string, registry: TaskRegistry, selected?: string): void {
+  const stateRoot = join(repositoryRoot, ".agent/state");
+  const evidenceRoot = join(stateRoot, "evidence");
+  const store = new FileEvidenceStore(evidenceRoot, { readOnly: true });
+  for (const [taskId, task] of registry) {
+    if (selected !== undefined && selected !== taskId) continue;
+    assertTaskIdentity(taskId, task);
+    readLifecycle(stateRoot, evidenceRoot, taskId, store);
+    readAssignment(stateRoot, task);
+    readEvidenceHistories(evidenceRoot, taskId, store);
+  }
+}
+
 function assertTaskIdentity(taskId: string, task: RegisteredTask): void {
   requireCondition(TASK_ID.test(taskId) && task.taskId === taskId,
     `Registry task identity '${taskId}' is invalid.`);

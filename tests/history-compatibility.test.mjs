@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { runCli } from "../dist/cli/core.js";
+import { createLocalEvidenceWriter } from "../dist/history/native-writer.js";
 import { FileEvidenceStore } from "../dist/evidence-store/index.js";
 import { checkProjectUpgrade, historyCompatibility, readProjectAudit, verifyHistoryBackup } from "../dist/public/diagnostics.js";
 
@@ -61,9 +62,12 @@ function history(t, repeat = false) {
   validate(first);
   if (repeat) {
     history.push(event("qa-entry", "DEV_VALIDATED", "QA_REVIEW", first, "qa-review:request:qa"));
-    history.push(event("qa-fail", "QA_REVIEW", "QA_FAILED", first));
-    history.push(event("rework", "QA_FAILED", "REWORK_REQUIRED", first));
-    history.push(event("resume", "REWORK_REQUIRED", "IN_DEVELOPMENT", second));
+    const qa = roles.find(record => record.role === "QA");
+    const failure = evidence({ ...qa, outcome: "FAIL", revisionIdentity: first,
+      nonPass: { reason: secret, remediation: secret } });
+    history.push(event("qa-fail", "QA_REVIEW", "QA_FAILED", first, failure));
+    history.push(event("rework", "QA_FAILED", "REWORK_REQUIRED", first, failure));
+    history.push(event("review-rework:resume", "REWORK_REQUIRED", "IN_DEVELOPMENT", first, failure));
     validate(second);
   }
   const reviewed = repeat ? second : first;
@@ -105,7 +109,8 @@ test("the current reader preserves valid legacy duplicate validation labels and 
 
   record.history[5].evidenceRef = record.history[0].evidenceRef;
   writeFileSync(lifecyclePath, JSON.stringify(record));
-  await assert.rejects(readProjectAudit(location, taskId), /duplicate event identity/);
+  await assert.rejects(readProjectAudit(location, taskId), /History unavailable/);
+  assert.match((await runCli(["--json", "next"], location)).stdout, /duplicate event identity/);
 });
 
 test("quiescent upgrade and rollback preflight verify a nonempty backup and refuse damaged or changing inputs", async t => {
@@ -147,4 +152,44 @@ test("quiescent upgrade and rollback preflight verify a nonempty backup and refu
   mkdirSync(join(restored, ".agent"));
   cpSync(join(offline, layout.state), join(restored, layout.state), { recursive: true });
   assert.equal(verifyHistoryBackup(restored, layout, baseline.snapshotSha256).matches, true);
+});
+
+test("references to another role and missing historical failure evidence are not trustworthy", async t => {
+  const { root, lifecyclePath, record } = history(t, true);
+  const location = { repositoryRoot: root };
+  const qa = record.history.find(event => event.eventId === "qa-pass");
+  const arch = record.history.find(event => event.eventId === "arch-pass");
+  qa.evidenceRef = arch.evidenceRef;
+  record.history.find(event => event.eventId === "qa-fail").evidenceRef = `${taskId}::role::QA@99`;
+  writeFileSync(lifecyclePath, JSON.stringify(record));
+  const audit = await readProjectAudit(location, taskId);
+  assert.equal(audit.events.find(event => event.from === "QA_REVIEW" && event.to === "ARCHITECTURE_REVIEW").references[0].resolves, false);
+  const result = await checkProjectUpgrade({ ...location, quiescence: drain, targetPackageVersion: newPackage });
+  assert.ok(result.findings.includes("LIFECYCLE_EVIDENCE_MISMATCH"));
+  assert.ok(result.findings.includes("LIFECYCLE_EVIDENCE_MISSING"));
+  assert.equal(result.compatible, false);
+});
+
+test("unsupported evidence blocks legacy writers and a changed receipted record blocks handoff", async t => {
+  const { root, lifecyclePath, record } = history(t);
+  const location = { repositoryRoot: root };
+  const writer = createLocalEvidenceWriter(root);
+  const validation = fixture("validation-evidence");
+  assert.equal(writer.record({ ...validation, revisionIdentity: record.history[0].revisionIdentity }).ok, true);
+  const audit = await readProjectAudit(location, taskId);
+  const receipted = audit.evidence.find(record => record.schemaId === "ipt.validation-evidence" && record.sequence === 2);
+  assert.equal(receipted.engine.packageVersion, newPackage);
+  const lineage = validation.validatorId;
+  const evidencePath = join(root, layout.state, "evidence", `${taskId}_003a_003avalidator_003a_003a${lineage}`, "0000002.json");
+  const data = JSON.parse(readFileSync(evidencePath, "utf8"));
+  data.payload.checks[0].evidenceRef = "changed fixture contents";
+  writeFileSync(evidencePath, JSON.stringify(data));
+  const result = await checkProjectUpgrade({ ...location, quiescence: drain, targetPackageVersion: newPackage });
+  assert.ok(result.findings.includes("EVIDENCE_RECEIPT_MISMATCH"));
+  data.payload.schemaVersion = "99.0.0";
+  writeFileSync(evidencePath, JSON.stringify(data));
+  rmSync(lifecyclePath);
+  const attempted = await runCli(["--json", "start", "developer", "guard-test"], location);
+  assert.notEqual(attempted.exitCode, 0);
+  assert.throws(() => readFileSync(lifecyclePath), { code: "ENOENT" });
 });

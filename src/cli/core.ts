@@ -1,3 +1,4 @@
+import { assertLocalGateHistory } from "../status-reporting/local-source.js";
 import { checkProjectUpgrade, readProjectAudit, type HistoryLocation } from "../history/index.js";
 import { readPackageIdentity } from "../project-assets/identity.js";
 import { existsSync } from "node:fs";
@@ -405,7 +406,7 @@ export async function runCli(
 
     try {
       if (context.developerStartWorkflow === undefined) {
-        readLocalLifecycleStates(context.repositoryRoot ?? ".", await registryFor(context));
+        assertLocalGateHistory(context.repositoryRoot ?? ".", await registryFor(context));
       }
       const workflow = context.developerStartWorkflow
         ?? await createLocalDeveloperStartWorkflow(context.repositoryRoot ?? ".");
@@ -452,7 +453,7 @@ export async function runCli(
 
     try {
       if (context.developerValidationGate === undefined) {
-        readLocalLifecycleStates(context.repositoryRoot ?? ".", await registryFor(context));
+        assertLocalGateHistory(context.repositoryRoot ?? ".", await registryFor(context), taskId);
       }
       const gate = context.developerValidationGate
         ?? await createLocalDeveloperValidationGate(context.repositoryRoot ?? ".");

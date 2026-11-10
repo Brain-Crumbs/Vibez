@@ -87,7 +87,11 @@ const backup = verifyHistoryBackup(absoluteBackupRoot, runtimeLayout, check.snap
 ```
 
 Omit `config` only for an original unconfigured checkout using `.agent/state`.
-The legacy CLI has no configured-project or external provider discovery.
+The legacy CLI observes exchanges at `.agent/state/manual-exchange`.
+For any other legacy exchange, pass its project-relative path in
+`legacyExchangePaths` to the inspection API and include that directory in the
+protected backup. Exchange paths outside the project require separate operator
+verification. The legacy CLI cannot discover external provider sessions.
 `quiescent` asserts both checks were verified by the operator. The programmatic
 request keeps the two attestations separate. CLI envelope success means the
 inspection ran. Read `compatible`, `findings` and `authority` for its decision.
@@ -101,16 +105,19 @@ which evidence a gate accepts. Provider exchanges and run checkpoints appear
 as observations even when they report PASS. Free-form payloads, role context,
 provider messages, paths, credentials and model reasoning are excluded. Opaque
 actor, run, provider, event and lineage identifiers are displayed as correlation
-digests. Keep the private originals available to authorized operators.
+digests. Use audit for shareable output. Existing operator-local status retains
+the original ownership identifiers. Keep the private originals available to
+authorized operators.
 
-Configured writes associate exact evidence payloads with a versioned sidecar
-under the configured operations root. The installed package manifest, optional
+Configured and native gate writes associate the exact evidence lineage, sequence
+and content digest with a versioned sidecar under the operations or legacy state root. The installed package manifest, optional
 host-verified artifact SHA-256, project identity, configuration/policy digests
 and provider identity describe the recording environment. For historical
 records without a matching receipt, the audit reports an unknown engine. The
 observing package version cannot establish the historical writer version.
-Sidecars may exist before the matching evidence write completes and carry no
-gate authority. Files remain local and writable by the account that controls
+A provider dispatch receipt can precede a result and carries no gate authority.
+If the evidence write completes before its receipt can be published, the audit
+reports unknown provenance rather than inferring a writer. Files remain local and writable by the account that controls
 the checkout. Digests detect corruption where there is a recorded comparison.
 Keep protected copies if an independent integrity reference is required.
 
@@ -152,7 +159,8 @@ sequence.
    `verifyHistoryBackup` using the recorded digest. Also compare the exact
    separate config, marker and lockfile hashes. Recheck the original using
    `expectedSnapshotSha256`, `expectedConfigDigest` and
-   `expectedBindingSha256` as applicable before changing the engine pin.
+   `expectedBindingSha256` and `expectedTaskBindingsSha256` as applicable
+   before changing the engine pin.
 4. Install the verified target using its exact dependency and lockfile.
    For configured storage, the old marker includes an engine binding that
    intentionally rejects the new package. With all writers still disabled and

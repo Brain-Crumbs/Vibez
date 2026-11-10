@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { canonicalJson } from "../local-agent-adapter/json.js";
 import { readPackageJson } from "../project-assets/index.js";
 import { readPackageIdentity } from "../project-assets/identity.js";
+import type { StoredEvidenceRecord } from "../evidence-store/index.js";
 import { digest, type ResolvedProjectConfig } from "../project-config/index.js";
 
 export const isSha = (value: unknown): value is string => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
@@ -38,11 +39,11 @@ export function provenanceFor(config: ResolvedProjectConfig, executionBinding: s
   });
 }
 
-export function parseProvenance(text: string, file: string): EngineProvenance & { readonly subject: string } {
+export function parseProvenance(text: string, file: string): EngineProvenance & { readonly subject: string; readonly recordSha256: string | null } {
   const value: unknown = JSON.parse(text);
-  if (!object(value) || Object.keys(value).length !== 4 || value.version !== 1 ||
-    !isSha(value.subject) || !isSha(value.sha256) || !object(value.engine) ||
-    digest({ version: value.version, subject: value.subject, engine: value.engine }) !== value.sha256 ||
+  if (!object(value) || Object.keys(value).length !== 5 || value.version !== 1 ||
+    !isSha(value.subject) || (value.recordSha256 !== null && !isSha(value.recordSha256)) || !isSha(value.sha256) || !object(value.engine) ||
+    digest({ version: value.version, subject: value.subject, recordSha256: value.recordSha256, engine: value.engine }) !== value.sha256 ||
     file !== `${value.sha256}.json`) throw new Error("Invalid audit provenance receipt.");
   const engine = value.engine;
   const { packageVersion, manifestSha256, artifactSha256, projectIdentity, configDigest, policyDigest, executionBinding, providerDigest } = engine;
@@ -51,13 +52,19 @@ export function parseProvenance(text: string, file: string): EngineProvenance & 
     !isSha(configDigest) || !isSha(policyDigest) || !isSha(executionBinding) || !isSha(providerDigest)) {
     throw new Error("Unsupported audit provenance receipt.");
   }
-  return { subject: value.subject, packageVersion, manifestSha256, artifactSha256, projectIdentity,
+  return { subject: value.subject, recordSha256: value.recordSha256, packageVersion, manifestSha256, artifactSha256, projectIdentity,
     configDigest, policyDigest, executionBinding, providerDigest };
 }
 
-/** Published before evidence append. An orphan receipt cannot establish that evidence exists. */
-export function recordProvenance(directory: string, payload: unknown, engine: EngineProvenance, prepare: () => void): void {
-  const receipt = { version: 1, subject: digest(payload), engine };
+export function evidenceReceiptIdentity(record: StoredEvidenceRecord) {
+  const { lineageId, sequence, storedAt, payload } = record;
+  return { subject: digest([lineageId, sequence]), recordSha256: digest({ lineageId, sequence, storedAt, payload }) };
+}
+
+/** Receipts describe recorded inputs. Only owning gates can advance the lifecycle. */
+export function recordProvenance(directory: string, subject: string, recordSha256: string | null,
+  engine: EngineProvenance, prepare: () => void): void {
+  const receipt = { version: 1, subject, recordSha256, engine };
   const sha256 = digest(receipt);
   const bytes = canonicalJson({ ...receipt, sha256 }) + "\n";
   const path = join(directory, `${sha256}.json`);

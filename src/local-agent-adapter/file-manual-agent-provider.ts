@@ -49,6 +49,7 @@ export interface FileManualAgentProviderOptions {
   readonly deferDirectory?: boolean;
   readonly beforeWrite?: () => void;
   readonly configuredHost?: true;
+  readonly afterExport?: (binding: LocalAgentBinding) => void;
 }
 
 const INSTRUCTIONS = Object.freeze([
@@ -77,6 +78,7 @@ export class FileManualAgentProvider implements AgentProvider {
   readonly #root: string;
   readonly #instructions: readonly string[];
   readonly #beforeWrite: (() => void) | undefined;
+  readonly #afterExport: ((binding: LocalAgentBinding) => void) | undefined;
   readonly #pollIntervalMs: number;
   readonly #packetSchema: Record<string, unknown>;
   readonly #resultSchema: Record<string, unknown>;
@@ -88,6 +90,7 @@ export class FileManualAgentProvider implements AgentProvider {
     this.#root = resolve(root);
     this.#pollIntervalMs = poll;
     this.#beforeWrite = options.beforeWrite;
+    this.#afterExport = options.afterExport;
     this.#instructions = options.configuredHost ? CONFIGURED_INSTRUCTIONS : INSTRUCTIONS;
     const repositoryRoot = options.repositoryRoot ?? packageRoot;
     this.#packetSchema = loadSchema(join(repositoryRoot, "schemas/v1/local-agent-packet.schema.json"));
@@ -122,6 +125,7 @@ export class FileManualAgentProvider implements AgentProvider {
       if (canonicalJson(stored) !== canonicalJson(packet)) throw error("INVALID_REQUEST", "This request identity already has a different context or tool policy. Use a new run identity; existing packets/results cannot be replaced.");
       return stored;
     }
+    this.#afterExport?.(packet.resultBinding);
     return deepFreeze(packet);
   }
 
@@ -132,6 +136,12 @@ export class FileManualAgentProvider implements AgentProvider {
     const packet = raw as LocalAgentPacket;
     if (packet.packetId !== packetId) throw error("MALFORMED_RESULT", "Packet filename does not match packet identity.");
     return deepFreeze(packet);
+  }
+
+  /** Inspect the immutable original packet and any exact-bound imported result. */
+  readExchange(packetId: string): { readonly packet: LocalAgentPacket; readonly result: LocalAgentResult | null } {
+    const packet = this.readPacket(packetId);
+    return Object.freeze({ packet, result: this.#readResult(packet) });
   }
 
   importResult(packetId: string, payload: unknown): LocalAgentImportResult {

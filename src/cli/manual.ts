@@ -1,5 +1,7 @@
-import { closeSync, constants, fstatSync, openSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { recordLocalProvenance } from "../history/native-writer.js";
+import { digest } from "../project-config/index.js";
+import { closeSync, constants, existsSync, fstatSync, openSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { AgentProviderError, AgentRunner, type AgentRunRequest } from "../agent-provider/index.js";
 import { FileManualAgentProvider } from "../local-agent-adapter/index.js";
 
@@ -31,7 +33,12 @@ export async function runManualCommand(
   if (configured !== undefined && (configured.provider === undefined || root !== configured.exchange)) {
     throw new AgentProviderError("INVALID_REQUEST", "Manual commands require the configured manual provider and exchange root.", false);
   }
-  const provider = configured?.provider ?? new FileManualAgentProvider(root);
+  const provider = configured?.provider ?? new FileManualAgentProvider(root, {
+    afterExport: ({ taskId, role, runId, actorId, revisionIdentity, providerId }) => {
+      if (existsSync(join(repositoryRoot, ".git"))) recordLocalProvenance(repositoryRoot,
+        digest({ taskId, role, runId, actorId, revisionIdentity }), null, providerId);
+    },
+  });
   const input = (value: string) => configured?.inputPath(value, operation) ?? resolve(repositoryRoot, value);
   if (operation === "import") {
     const imported = provider.importResult(args[1]!, readJson(input(args[2]!)));

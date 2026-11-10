@@ -104,11 +104,13 @@ export class FileEvidenceStore implements EvidenceStore {
   readonly #root: string;
   readonly #schemas: ReadonlyMap<SupportedEvidenceSchemaId, LoadedSchema>;
   readonly #readOnly: boolean;
+  readonly #afterAppend: ((record: StoredEvidenceRecord) => void) | undefined;
 
-  constructor(root: string, options: { readonly repositoryRoot?: string; readonly readOnly?: boolean; readonly deferDirectory?: boolean } = {}) {
+  constructor(root: string, options: { readonly repositoryRoot?: string; readonly readOnly?: boolean; readonly deferDirectory?: boolean; readonly afterAppend?: (record: StoredEvidenceRecord) => void } = {}) {
     if (!root.trim()) throw new RangeError("Evidence store root must be non-empty.");
     this.#root = root;
     this.#readOnly = options.readOnly ?? false;
+    this.#afterAppend = options.afterAppend;
     const repositoryRoot = options.repositoryRoot ?? packageRoot;
     const schemas = new Map<SupportedEvidenceSchemaId, LoadedSchema>();
     for (const schemaId of Object.keys(SUPPORTED_SCHEMAS) as SupportedEvidenceSchemaId[]) {
@@ -137,6 +139,7 @@ export class FileEvidenceStore implements EvidenceStore {
       payload: frozenPayload,
     });
 
+    this.#afterAppend?.(record);
     return Object.freeze({ ok: true, record });
   }
 

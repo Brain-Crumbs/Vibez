@@ -164,6 +164,27 @@ test("configured graph uses package assets and literal validators with isolated 
   assert.equal(existsSync(join(alpha.root, ".agent")), false);
 });
 
+test("upgrade preflight pins the original checkout and refuses malformed bindings and unknown records", async t => {
+  const alpha = fixture(t, "history-alpha");
+  const beta = fixture(t, "history-beta");
+  const { checkProjectUpgrade } = await import("../dist/public/diagnostics.js");
+  const inspect = overrides => checkProjectUpgrade({
+    repositoryRoot: alpha.root, config: { ...alpha.location, projectRoot: beta.root },
+    targetPackageVersion: "0.1.0-mig007.0", quiescence: { localWritersDrained: true, externalSessionsDrained: true },
+    ...overrides,
+  });
+  const initial = await inspect();
+  const alphaGraph = await createProjectServices(alpha.location, alpha.host);
+  assert.equal(initial.projectIdentity, alphaGraph.config.projectIdentity);
+  assert.equal(initial.compatible, true, JSON.stringify(initial));
+  const marker = join(alpha.root, ".git/vibez-project.json");
+  writeFileSync(marker, "null");
+  assert.equal((await inspect()).compatible, false);
+  rmSync(marker);
+  alpha.put(`${alpha.config.paths.state}/future-driver/session.json`, { schemaVersion: "99.0.0" });
+  assert.ok((await inspect()).findings.includes("UNSUPPORTED_STATE_RECORD"));
+});
+
 test("doctor and init are observational until an explicit exclusive create", async t => {
   const { root, location, host, config } = fixture(t, "setup");
   assert.equal(previewProjectInit(root, "preview.json", config).exists, false);

@@ -1,9 +1,9 @@
+import { createLocalEvidenceWriter } from "../history/native-writer.js";
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { LOCAL_AGENT_STATE_RELATIVE_PATH } from "../dev-start/index.js";
 import {
   EVIDENCE_STORE_SUPPORTED_SCHEMAS,
-  FileEvidenceStore,
   validationEvidenceLineageId,
   type EvidenceStore,
   type RecordResult,
@@ -409,7 +409,7 @@ export async function createLocalDeveloperValidationGate(
     registry,
     stateStore: new FileDeveloperValidationStateStore(join(stateRoot, "lifecycle")),
     branchLifecycle: new GitBranchLifecycleAdapter(new LocalGitBranchOperations(repositoryRoot)),
-    evidenceStore: new FileEvidenceStore(evidenceRoot) as EvidenceStore,
+    evidenceStore: createLocalEvidenceWriter(repositoryRoot) as EvidenceStore,
     validatorResolver: options.validatorResolver ?? new RepositoryValidatorResolver(repositoryRoot),
     evidenceLocation: `${evidenceRoot} (lineage <taskId>::validator::<validatorId>)`,
   });

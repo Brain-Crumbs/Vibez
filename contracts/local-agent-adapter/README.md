@@ -127,3 +127,8 @@ The [standalone guide](../../docs/LOCAL_AGENT_ADAPTER.md) includes a full reques
 ## Windows filesystem support
 
 On Windows, file contents are fsynced and publication remains atomic, but Node cannot fsync directories. Process-interruption recovery is supported; directory-entry durability across OS crash or power loss is not guaranteed. Use a POSIX filesystem host when that stronger durability is required.
+
+MIG-007 exposes `readExchange(packetId)` for read-only compatibility
+inspection. It uses the same canonical packet hashes, context/policy binding,
+and nested result checks as the provider. A null result identifies an
+unsettled packet. The operator still verifies external session drain separately.

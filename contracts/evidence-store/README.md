@@ -104,3 +104,12 @@ Required reachable producer-output ranges:
 ## BOOT-032 recovery consumer
 
 `control-plane.recovery-tools` depends on `append-only-auditable-history`, `read-only-store-mode-without-initialization-writes`. checker reads historical evidence and validates revision/reference identity without mutation. reset never deletes/supersedes evidence directly and existing merge evidence blocks unsafe reset. Accepted and required reachable outputs: validated historical records, missing data and explicit schema/read failures. Existing producer behavior and version are unchanged; this records the new consumer. See [the recovery contract](../recovery-tools/README.md) for offline mutation/audit boundaries.
+
+A MIG-007 writer may attach an optional `afterAppend` callback to a file
+evidence store for additive recording provenance. The callback sees the exact
+stored lineage, sequence, timestamp and payload before the caller advances a
+gate. Its receipt lives outside the evidence lineage. A crash between append
+and receipt publication may leave original evidence with unknown writer
+provenance. Original evidence remains available for reconciliation. Receipts
+provide a content comparison for the history view and carry no review or
+completion authority.

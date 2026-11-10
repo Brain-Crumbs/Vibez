@@ -1,3 +1,4 @@
+import { createLocalEvidenceWriter } from "../history/native-writer.js";
 import {
   existsSync,
   linkSync,
@@ -19,7 +20,6 @@ import {
 import { LOCAL_AGENT_STATE_RELATIVE_PATH, RepositoryDeveloperContextSource } from "../dev-start/index.js";
 import {
   EVIDENCE_STORE_SUPPORTED_SCHEMAS,
-  FileEvidenceStore,
   reviewResultLineageId,
   type RecordResult,
   type RevisionCheckResult,
@@ -1649,7 +1649,7 @@ export async function createLocalUatReviewGate(repositoryRoot = "."): Promise<Ua
   const lifecycleRoot = join(stateRoot, "lifecycle");
   const evidenceRoot = join(stateRoot, "evidence");
   const evidenceLocation = `${evidenceRoot} (lineage <taskId>::role::<role>)`;
-  const evidenceStore = new FileEvidenceStore(evidenceRoot);
+  const evidenceStore = createLocalEvidenceWriter(repositoryRoot);
   return new UatReviewGate({
     registry,
     stateStore: new FileUatReviewStateStore(lifecycleRoot),
