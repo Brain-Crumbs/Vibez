@@ -168,11 +168,11 @@ function scanObservations(history: History, files: readonly HistoryFile[]) {
         }
       } else {
         const entry: unknown = JSON.parse(text());
-        if (/-recovery-claim-[^/]+-\d+\.json$/.test(archive)) {
+        if (object(entry) && !("schemaId" in entry) && "expectedStaleLockId" in entry) {
           const keys = ["taskId", "expectedStaleLockId", "recoveryActorId", "recoveryRunId", "recoveryReason",
             "replacementLockId", "replacementOwnerId", "replacementRunId", "claimedAt"];
-          if (!object(entry) || entry.taskId !== taskId || Object.keys(entry).length !== keys.length ||
-            !keys.every(key => typeof entry[key] === "string" && entry[key] !== "")) throw new Error("Unsupported assignment claim archive.");
+          if (!/-recovery-claim-[^/]+-\d+\.json$/.test(archive) || entry.taskId !== taskId ||
+            Object.keys(entry).length !== keys.length || !keys.every(key => typeof entry[key] === "string" && entry[key] !== "")) throw new Error("Unsupported assignment claim archive.");
         } else {
           if (!/-(?:released|stale)-[^/]+-\d+\.json$/.test(archive)) throw new Error("Unknown assignment archive format.");
           parseStoredAssignment(entry, taskId, "assignment archive");

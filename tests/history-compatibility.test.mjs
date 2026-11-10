@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -193,6 +193,12 @@ test("unsupported evidence blocks legacy writers and a changed receipted record 
   const attempted = await runCli(["--json", "start", "developer", "guard-test"], location);
   assert.notEqual(attempted.exitCode, 0);
   assert.throws(() => readFileSync(lifecyclePath), { code: "ENOENT" });
+  const exchange = ".agent/state/manual-exchange";
+  writeFileSync(join(root, "request.json"), JSON.stringify({ taskId }));
+  const manual = await runCli(["--json", "manual", "export", "request.json", exchange], location);
+  assert.notEqual(manual.exitCode, 0);
+  assert.match(manual.stdout, /unsupported|invalid evidence payload/);
+  assert.equal(existsSync(join(root, exchange)), false);
 });
 
 test("recovery reset and resume keep their intent references, while a no-review merge needs validation", () => {
@@ -218,4 +224,15 @@ test("an unknown archived assignment version blocks an otherwise quiescent hando
   const report = await checkProjectUpgrade({ repositoryRoot: root, quiescence: drain, targetPackageVersion: newPackage });
   assert.equal(report.compatible, false);
   assert.ok(report.findings.includes("HISTORY_UNREADABLE_OR_UNSUPPORTED"));
+});
+
+test("valid assignment archives may contain recovery-like text in the lock ID", async t => {
+  const { root } = history(t);
+  const directory = join(root, layout.state, "assignments/.history");
+  mkdirSync(directory, { recursive: true });
+  const lockId = "job-recovery-claim-old";
+  const record = { ...fixture("assignment-lock"), taskId, lockId, status: "RELEASED" };
+  writeFileSync(join(directory, `${taskId}-${lockId}-released-2026-11-10T20_3A00_3A00Z-0.json`), JSON.stringify(record));
+  const report = await checkProjectUpgrade({ repositoryRoot: root, quiescence: drain, targetPackageVersion: newPackage });
+  assert.equal(report.compatible, true, JSON.stringify(report));
 });

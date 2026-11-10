@@ -37,6 +37,7 @@ export async function runManualCommand(
     throw new AgentProviderError("INVALID_REQUEST", "Manual commands require the configured manual provider and exchange root.", false);
   }
   const provider = configured?.provider ?? new FileManualAgentProvider(root, {
+    deferDirectory: true,
     afterExport: ({ taskId, role, runId, actorId, revisionIdentity, providerId }) => {
       if (existsSync(join(repositoryRoot, ".git"))) recordLocalProvenance(repositoryRoot,
         digest({ taskId, role, runId, actorId, revisionIdentity }), null, providerId);
