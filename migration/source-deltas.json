@@ -91,7 +91,7 @@
       "reason": "Accepted UAT handoff repair and contract-bearing regressions at the authorized export pin.",
       "destinationOwner": "MIG-003",
       "destinationPr": "https://github.com/Brain-Crumbs/Vibez/pull/15",
-      "destinationCommit": "1fdf73f0254fd9a94c78f2b04e0255027e4010ab",
+      "destinationCommit": "fdebe9111ce7aa004566c4068a2c15a9a95ab00c",
       "destinationPaths": [
         {
           "path": "contracts/uat-review/README.md",
