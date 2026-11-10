@@ -82,7 +82,8 @@ def scan(files):
         require(not any(part in {".git", ".agent", ".aws", ".codex", ".venv", "node_modules", "dist", "worktrees"}
                         or part == ".env" or part.startswith(".env.") for part in parts)
                 and parts[0] not in {"bootstrap", "evidence", "reviews"}
-                and parts[:2] != ["tasks", "definitions"], f"Excluded seed path: {name}")
+                and (parts[:2] != ["tasks", "definitions"] or name == "tasks/definitions/.gitkeep"),
+                f"Excluded seed path: {name}")
         require(name.casefold() not in folded, f"Case-insensitive seed collision: {name}")
         folded.add(name.casefold())
         require(b"\0" not in data and not PRIVATE_MATERIAL.search(data),

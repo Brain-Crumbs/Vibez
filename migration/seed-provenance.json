@@ -84,6 +84,7 @@
     "migration/SOURCE_DELTAS.md": "Identify the append-only repair import and source ownership.",
     "migration/seed-provenance.json": "Record source and destination byte provenance.",
     "scripts/seed_export.py": "Verify the sealed snapshot and replay the authorized export.",
+    "tasks/definitions/.gitkeep": "Provide the required registry directory with zero task definitions.",
     "tests/fixtures/canary.task.json": "New disposable task fixture. The original consumer task stays in Fantasy Football.",
     "tests/test_seed_export.py": "Exercise pin, path and credential-scan rejection."
   },
