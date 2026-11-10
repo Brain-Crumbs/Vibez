@@ -37,11 +37,12 @@ test('canary assets exist only as fixture inputs', () => {
   assert.deepEqual(task.requiredReviewRoles, ['Developer', 'QA', 'Architect', 'UAT/Product', 'MergeController']);
 });
 
-test('canary harness rejects live transport and repositories with remotes before writing state', async t => {
+test('canary harness rejects live transport, a nested path and remotes before writing state', async t => {
   const f = fixture(t);
   for (const options of [{ ...f.options, fetchImpl: undefined }, { ...f.options, owner: 'external' }]) {
     await assert.rejects(runCanary(f.root, options, f.request), { code: 'CANARY_INVALID_CONFIG' });
   }
+  await assert.rejects(runCanary(join(f.root, 'tasks'), f.options, f.request), { code: 'CANARY_WRONG_ROOT' });
   git(f.root, 'remote', 'add', 'origin', 'https://example.invalid/fixture.git');
   await assert.rejects(runCanary(f.root, f.options, f.request), { code: 'CANARY_WRONG_ROOT' });
   assert.equal(readLifecycle(f.root), null);

@@ -6,7 +6,8 @@ main `4c838c1598fce5348c3a8052146b42e4eb05e1a4`. The
 and tree, MIG-002's accepted PR, exact-head CI and independent review references.
 MIG-003 uses the last [pre-native seed acceptance](https://github.com/Brain-Crumbs/IPTFantasyFootball/blob/50ef51e7dd2443dd0cec644c04e8db1b7fd612f7/migration/SEED.md#end-the-exception).
 The Vibez registry starts empty. The owner-authorized merge records seed
-acceptance in GitHub.
+acceptance in GitHub. Use a merge commit so the sealed commit remains an
+ancestor of main for later provenance checks.
 
 ## Source and rights
 
@@ -75,9 +76,28 @@ payload using Vibez alone.
 
 Vibez owns the imported reusable baseline after acceptance. The
 [delta ledger](SOURCE_DELTAS.md) keeps #78 with its Fantasy Football owner
-and requires the MIG-008 synchronization checkpoint. For the next task,
-use [Vibez admission guidance](../AGENTS.md) and a quiescent local state root.
+and requires the MIG-008 synchronization checkpoint.
 
 Abandon a rejected seed branch or revert the reviewed integration via a PR.
 Keep the rights decision, Git history and audit records. The source consumer
 and runtime state stay in Fantasy Football throughout the seed.
+
+## Next task admission
+
+Use the [reviewed admission gate](https://github.com/Brain-Crumbs/IPTFantasyFootball/blob/50ef51e7dd2443dd0cec644c04e8db1b7fd612f7/migration/README.md#audited-admission-gate)
+for MIG-004 and later, with the current Vibez issue and owner grant.
+Verify the accepted MIG-003 PR and its merged commit, final exact-head CI,
+and independent reviews. Record these in the next task's historical
+prerequisite receipt alongside its exact issue, definition and requirement
+hashes. Keep the original pre-native edge in the plan and document its
+reviewed projection into the native registry. Keep all native dependencies
+and their actual lifecycle evidence.
+
+Use a stopped, dedicated Vibez checkout on a supported local filesystem
+outside cloud-sync folders. The current engine's project-local state root is
+`.agent/state`. Stage and review the complete definition, requirements,
+contracts and validators before publishing an active definition under
+`tasks/definitions`. Run the authored-record checks and read-only
+`node dist/cli/cli.js --json next` against the candidate registry. Verify
+the authorized task is selected before calling start. Keep unresolved work
+outside the active registry.

@@ -7,17 +7,22 @@ The CLI is the stable, provider-neutral human/agent command surface for the boot
 
 ## Clean-checkout setup
 
-Requirements: Node.js 20 or newer and npm.
+Use Git, Node.js 20 or newer and npm for the local CLI. The test suite also
+uses Python 3.11 or later with jsonschema installed in its development environment.
 
 ```sh
-npm install
+npm ci
+python -m pip install -r schemas/requirements.txt
 npm test
 npm run agent -- help
 npm run agent -- version
 npm run agent -- next
 ```
 
-`npm test` builds TypeScript before running the test suite. A clean checkout does not need an AI provider, provider credential, network service beyond dependency installation, or fantasy-football data source to execute the local control-plane code.
+`npm test` builds TypeScript before running the suite. Set `IPT_PYTHON` to
+the schema-enabled interpreter when it differs from the default Python.
+See the [standalone setup](../README.md#build-and-validate-a-fresh-checkout)
+for the repository checks and PowerShell notes.
 
 ## Invocation
 

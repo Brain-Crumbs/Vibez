@@ -153,6 +153,34 @@ def reconstruct(base, seed, plan, entries, identities, source=None):
     return expected
 
 
+def check_receipt(receipt):
+    revision = receipt["seedRevision"]
+    require(bool(re.fullmatch(r"[0-9a-f]{40}", revision)) and receipt["sourceRevision"] == SOURCE
+            and receipt["baseRevision"] == BASE and receipt["rightsDecision"] == DECISION
+            and receipt["taskId"] == "MIG-003" and receipt["scopeSha256"] == SCOPE_HASH,
+            "Invalid seed receipt")
+    prerequisite = receipt["prerequisite"]
+    head = "23d7ae898acad6b0325182951512964bedb927fc"
+    require(prerequisite["taskId"] == "MIG-002" and prerequisite["head"] == head
+            and prerequisite["merge"] == "053a53956a66881b4d92356fcc9f1deca321e875",
+            "MIG-002 acceptance identity differs")
+    checks = prerequisite["ci"]
+    require(sorted(item["name"] for item in checks)
+            == ["Design contracts (ubuntu-latest)", "Design contracts (windows-latest)"],
+            "Missing prerequisite CI contexts")
+    for item in checks:
+        projection = {key: value for key, value in item.items() if key != "receiptSha256"}
+        require(item["head"] == head and item["status"] == "completed" and item["conclusion"] == "success"
+                and digest(json.dumps(projection, sort_keys=True, separators=(",", ":")).encode())
+                == item["receiptSha256"], "Prerequisite CI receipt differs")
+    reviews = prerequisite["reviews"]
+    require(sorted(item["role"] for item in reviews) == ["Architecture", "QA", "UAT/Product"]
+            and all(item["outcome"] == "PASS" and item["url"].startswith(prerequisite["pr"] + "#issuecomment-")
+                    and re.fullmatch(r"[0-9a-f]{64}", item["commentBodySha256"])
+                    and re.fullmatch(r"[0-9a-f]{64}", item["originalReportSha256"]) for item in reviews),
+            "Missing prerequisite review evidence")
+
+
 def check_candidate(base, seed, head, plan, entries, receipt):
     require({name: blob for name, blob in seed.items() if name not in EVIDENCE_PATHS}
             == {name: blob for name, blob in head.items() if name not in EVIDENCE_PATHS},
@@ -161,10 +189,10 @@ def check_candidate(base, seed, head, plan, entries, receipt):
     current = json.loads(head[LEDGER][1])
     delta = current["entries"][-1]
     require({**current, "entries": current["entries"][:-1]} == old
-            and delta["supersedes"] == "DELTA-001" and delta["sourceCommit"] == SOURCE
+            and delta["id"] == "DELTA-004" and delta["supersedes"] == "DELTA-001"
+            and delta["sourceCommit"] == SOURCE and delta["sourcePr"] == receipt["sourceRepairPR"]
             and delta["destinationCommit"] == receipt["seedRevision"]
-            and delta["disposition"] in {"pending", "imported"}
-            and (delta["disposition"] == "pending" or delta["destinationPr"]),
+            and delta["disposition"] == "imported" and delta["destinationPr"] == receipt["destinationPR"],
             "Source delta ledger is not an auditable append")
     require({row["path"]: {"blob": row["blob"], "sha256": row["sha256"]}
              for row in delta["sourcePaths"]} == plan["sourceChanges"],
@@ -177,10 +205,8 @@ def check_candidate(base, seed, head, plan, entries, receipt):
 
 def verify(source_repo, output, check_head):
     receipt = json.loads(git(ROOT, "show", f"HEAD:{RECEIPT}"))
+    check_receipt(receipt)
     revision = receipt["seedRevision"]
-    require(bool(re.fullmatch(r"[0-9a-f]{40}", revision)) and receipt["sourceRevision"] == SOURCE
-            and receipt["baseRevision"] == BASE and receipt["rightsDecision"] == DECISION,
-            "Invalid seed receipt")
     for ancestor, descendant in ((BASE, revision), (revision, "HEAD")):
         git(ROOT, "merge-base", "--is-ancestor", ancestor, descendant)
     require(git(ROOT, "rev-parse", f"{revision}^{{tree}}").decode().strip() == receipt["seedTree"],

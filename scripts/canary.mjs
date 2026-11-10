@@ -53,7 +53,11 @@ function configCheck(options, requireRoles) {
 async function preflight(root, options, requireRoles) {
   configCheck(options, requireRoles);
   const actualRoot = realpathSync(root);
-  if (realpathSync(git(actualRoot, 'rev-parse', '--show-toplevel')) !== actualRoot) throw new CanaryError('CANARY_WRONG_ROOT', 'Run from the repository root.');
+  // Git reports a nonempty prefix below the worktree root. Avoid comparing
+  // the path spellings returned by Git and Windows filesystem APIs.
+  if (git(actualRoot, 'rev-parse', '--is-inside-work-tree', '--show-prefix') !== 'true') {
+    throw new CanaryError('CANARY_WRONG_ROOT', 'Run from the repository root.');
+  }
   if (git(actualRoot, 'remote') !== '') throw new CanaryError('CANARY_WRONG_ROOT', 'The fixture repository must have no Git remotes.');
   cleanRevision(actualRoot);
   const branch = git(actualRoot, 'branch', '--show-current');

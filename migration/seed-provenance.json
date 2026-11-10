@@ -10,7 +10,7 @@
     },
     "AGENTS.md": {
       "reason": "Define Vibez seed integration and later native admission.",
-      "sha256": "84c18dbeea9d62eeaf2048766c92e5fbeabe291be69fde023f8aae9b31b2da5e"
+      "sha256": "55d72af0e8c71e975645f8fc552370455bbd42a726ae5d0594c6cf8566cd4a5d"
     },
     "CONSTITUTION.md": {
       "reason": "Bind the inherited invariants to Vibez authority and retain the immutable source reference.",
@@ -34,7 +34,11 @@
     },
     "docs/CI.md": {
       "reason": "Describe the destination CI jobs, checkout and tooling.",
-      "sha256": "fd7579768ad55889fd7f276f7ced8b1783e6462e11eaf594ee2b59616ecdca3d"
+      "sha256": "6a46175e24cbd50a6b74a6410af1a823415e8b447de18bba2afd462f18381550"
+    },
+    "docs/CLI.md": {
+      "reason": "Describe locked installation and explicit Python development dependencies for the standalone test suite.",
+      "sha256": "e1475e4b20800684e16d2b5bec5c6af1c662cdca08f377811618819563a5d6e9"
     },
     "docs/DIAGNOSTICS.md": {
       "reason": "Describe the empty active registry and isolate the historical canary example.",
@@ -42,7 +46,7 @@
     },
     "docs/README.md": {
       "reason": "Link Vibez governance and the fixture-only rehearsal.",
-      "sha256": "9989d83f48abff62b0d4486a6ab2c831a88caa7f15859fde09a66543711a8fb8"
+      "sha256": "eccfc7856a1dad9e6e15a2536b7f58118173a63328834d8f41dcbbeaea4c1651"
     },
     "docs/STATUS.md": {
       "reason": "Describe the seed registry rather than the active Fantasy Football workload.",
@@ -61,12 +65,12 @@
       "sha256": "e8c0053489a9dca5eede5bda580d480dfe731e7bc20fcfd43dccefec2942bd3d"
     },
     "scripts/canary.mjs": {
-      "reason": "Require disposable Git and injected fixture adapters. Remove the live command and credential fallback.",
-      "sha256": "6f3d03ac080f0734efa90a60e62c306c7f7dfb444b2560d2e140a8e272d553dd"
+      "reason": "Require disposable Git and injected fixture adapters. Remove the live entry point. Ask Git for the worktree root to support Windows path spellings.",
+      "sha256": "bb02d0c3bfc9940e6d2c9580418699152ab854a1167104621aa7abb652f301d9"
     },
     "tests/canary-e2e.test.mjs": {
-      "reason": "Exercise the retained #76 contracts and assert the fixture-only assets and adapter boundaries.",
-      "sha256": "be0160327b826898ebe89e279eed9bff6918fd1663f3fde48dc93f741ef75bec"
+      "reason": "Exercise the retained #76 contracts and verify fixture-only assets, transport, nested paths and remote rejection.",
+      "sha256": "dc0924f1072480a50ca658bdfe488fb6a68e61a80e2d5e3c906eb71a84b6efda"
     },
     "tests/ci-workflow.test.mjs": {
       "reason": "Require a single exact-head Vibez checkout for each of the three jobs.",

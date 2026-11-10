@@ -17,13 +17,12 @@ checks. The active registry begins empty. Historical receipts document accepted
 prerequisites. They are not lifecycle state, assignments, or current approvals.
 Fixture workloads run in disposable repositories.
 
-Before admitting MIG-004 or later, verify the accepted MIG-003 PR, source seed
-and CI on Vibez main, and the destination admission procedure. Configure a
-quiescent, project-local authoritative state root on a supported filesystem.
-Then register the authorized task through a reviewed change. Retain external and
-pre-native prerequisites as evidence-backed admission edges. Native tasks use
-the registry, lifecycle, independent reviews and controlled completion. The
-seed exception ends with MIG-003.
+Before admitting MIG-004 or later, follow [Vibez admission](migration/SEED_EXPORT.md#next-task-admission).
+Verify the accepted MIG-003 PR, sealed commit and CI on main. Use the
+project-local `.agent/state` store in a quiescent checkout on a supported local
+filesystem. Retain external and pre-native prerequisites as evidence-backed
+admission edges. Native tasks use the registry, lifecycle, independent reviews
+and controlled completion. The seed exception ends with MIG-003.
 
 Run the [repository checks](README.md#build-and-validate-a-fresh-checkout) and
 any task-specific checks. Obtain independent QA, Architecture and UAT/Product
