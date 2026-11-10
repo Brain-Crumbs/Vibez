@@ -158,3 +158,7 @@ Per issue #27, this module deliberately does not: perform any QA/Architecture/UA
 - [ ] Is each consumer-required reachable range still contained by the producer reachable range?
 
 If structural compatibility remains but semantic behavior changes (for example, which lifecycle states are treated as resumable entry points, or when a lock-release rejection blocks completion), explicitly route the change for downstream semantic compatibility review — BOOT-026+ is the named known consumer above.
+
+The optional trusted host effect wraps only the exact-head provider call after
+readiness and the PR recheck. It can deny the operation without contacting
+the merge provider. See the [host policy](../../docs/UNATTENDED_HOST.md).

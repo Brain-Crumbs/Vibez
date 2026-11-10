@@ -207,3 +207,6 @@ Tool-policy fields are carried as requested policy, not enforced by the neutral 
 - [ ] Is each consumer-required reachable range still contained by the producer reachable range?
 
 If structural compatibility remains but semantic behavior changes (for example, which errors are `recoverable`, or whether `run()` ever calls the provider for an unsupported role), explicitly route the change for downstream semantic compatibility review — `control-plane.orchestration-engine` (BOOT-027) is the named known consumer above.
+
+A trusted unattended launcher enforces the capability envelope under an
+external worker identity. See the [host policy](../../docs/UNATTENDED_HOST.md).

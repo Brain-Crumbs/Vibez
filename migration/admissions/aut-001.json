@@ -8,11 +8,11 @@
   "canonicalBranch": "automation/aut-001-scoped-policy",
   "definition": {
     "path": "tasks/definitions/aut-001.task.json",
-    "sha256": "df28bc566dfd30edd31bebc1212118f6c9af70c470c3b803bf14b9e3a1f7f429"
+    "sha256": "1e71e3beda0f62454c37a2bd0e7d44084eccb9efbcae8f7268e3fc8ac6430802"
   },
   "requirement": {
     "path": "requirements/aut-001.requirement.json",
-    "sha256": "7e5b4f565d2b6a28ad299e1362b9611fe6cd8abbbe385b03f22fb4e3632eef33"
+    "sha256": "f0eddb9ac69b03708cf7e52d8dbe2648f51efb92ffd3a5973fdfd157e704ba7d"
   },
   "observedAt": "2026-11-10T13:58:17.3139736-08:00",
   "verifier": "Brain-Crumbs maintainer delegate",
