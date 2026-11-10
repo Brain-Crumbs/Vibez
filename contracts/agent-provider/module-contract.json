@@ -24,7 +24,9 @@
       "FakeAgentProvider.queueError(error: unknown): void",
       "FakeAgentProvider.resolveAfterDelay(ms: number): void",
       "FakeAgentProvider.hangIndefinitely(): void",
-      "FakeAgentProvider.requests: readonly AgentRunRequest[] (every accepted request, in call order)"
+      "FakeAgentProvider.requests: readonly AgentRunRequest[] (every accepted request, in call order)",
+      "scopedAgentProvider(policy, runtime, limits) charges and scopes actual trusted provider launches",
+      "ScopedWorkerRuntime enforces external role, model, tools, paths, network, turn, cost and timeout boundaries before returning after drain"
     ]
   },
   "semanticContract": {

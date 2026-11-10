@@ -304,6 +304,7 @@ function makeController({
   pullRequests = new FakePullRequestPort({ existing: [prRecord()], mergeResult: { merged: true, sha: "merged-sha-1", message: "merged" } }),
   taskLock = new FakeTaskLock(),
   evidenceStore,
+  mergeEffect,
   stateStore,
 } = {}) {
   const evidence = evidenceStore ?? makeEvidenceStore().store;
@@ -315,6 +316,7 @@ function makeController({
     branchLifecycle: branch,
     mergeReadiness: readiness,
     evidenceStore: evidence,
+    ...(mergeEffect === undefined ? {} : { mergeEffect }),
     lockStore: lock,
     pullRequests,
   });
@@ -2540,4 +2542,26 @@ test("lock release requires the full assignment identity to match, not lockId al
   assert.equal(result.lifecycleState, "DONE");
   assert.equal(lock.releaseCalls.length, 0, "lockId alone matching a differently-owned assignment must not trigger a release");
   assert.equal(state.get(task.taskId).currentState, "DONE");
+});
+
+test("trusted merge effect cannot invent success, deny after readiness, or call merge twice", async () => {
+  const denied = makeController({ mergeEffect: async () => { throw new Error("denied"); } });
+  await assert.rejects(denied.controller.merge(request()));
+  assert.equal(denied.pullRequests.mergeCalls, 0);
+  assert.equal(denied.state.get(task.taskId).currentState, "MERGE_READY");
+
+  const invented = makeController({ mergeEffect: async () => ({ merged: true, sha: "fake", message: "fake" }) });
+  await assert.rejects(invented.controller.merge(request()));
+  assert.equal(invented.pullRequests.mergeCalls, 0);
+  assert.equal(invented.state.get(task.taskId).currentState, "MERGE_READY");
+
+  const accepted = makeController({ mergeEffect: async (observedTask, params, invoke) => {
+    assert.equal(observedTask.taskId, task.taskId);
+    assert.deepEqual(params, { number: 63, expectedHeadSha: revision });
+    const actual = await invoke();
+    await assert.rejects(async () => invoke(), { code: "MERGE_NOT_CONFIRMED" });
+    return actual;
+  } });
+  assert.equal((await accepted.controller.merge(request())).lifecycleState, "DONE");
+  assert.equal(accepted.pullRequests.mergeCalls, 1);
 });

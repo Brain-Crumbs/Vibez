@@ -161,3 +161,5 @@ state and manual exchange, exact-revision Developer and review contexts,
 diagnostics and recovery, rejected setup and path escapes, and a resumed
 provider attempt with a host-authorized budget. The independent delivery
 reviews for MIG-004 are recorded separately in its PR.
+
+For trusted opt-in unattended composition, see the [host policy and rollback guide](UNATTENDED_HOST.md).

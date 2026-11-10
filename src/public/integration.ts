@@ -16,3 +16,10 @@ export { ControlledMergeController, ControlledMergeError, GitHubControlledMergeP
   type ControlledMergeReadinessPort, type ControlledMergeStateStore, type ControlledMergeTaskLock,
   type ControlledMergePullRequestRecord, type ControlledMergeProviderResult, type MergePullRequestParams,
   type GitHubControlledMergePullRequestOperationsOptions } from "../controlled-merge/index.js";
+export { HostPolicyError, ScopedHostPolicy, parseHostGrant } from "../host-policy/index.js";
+export type { HostDecision, HostGrant, ScopeDenial, ScopedAction, ScopedCapabilities, ScopedHostOptions,
+  ScopedObservation, ScopedOperation, ScopedRole } from "../host-policy/index.js";
+export { commandPolicyDigest, scopedAgentProvider, scopedValidator } from "../host-policy/worker.js";
+export type { ScopedAgentLimits, ScopedWorkerRuntime } from "../host-policy/worker.js";
+export { scopedMergeEffect } from "../host-policy/merge.js";
+export { verifyGitHubProtection, type GitHubProtectionObservation, type GitHubProtectionRequirements } from "../host-policy/github-protection.js";

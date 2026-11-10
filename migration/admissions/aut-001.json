@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "taskId": "AUT-001",
+  "repository": "Brain-Crumbs/Vibez",
+  "issue": "https://github.com/Brain-Crumbs/Vibez/issues/9",
+  "issueBodySha256": "a22a1465063996f0002e220ad247d49783a9b44ff9a4c9cf323c4663524b1e58",
+  "integrationBase": "e3f1ff25ad6d1d0750445983731c4b26f736e694",
+  "canonicalBranch": "automation/aut-001-scoped-policy",
+  "definition": {
+    "path": "tasks/definitions/aut-001.task.json",
+    "sha256": "1e71e3beda0f62454c37a2bd0e7d44084eccb9efbcae8f7268e3fc8ac6430802"
+  },
+  "requirement": {
+    "path": "requirements/aut-001.requirement.json",
+    "sha256": "f0eddb9ac69b03708cf7e52d8dbe2648f51efb92ffd3a5973fdfd157e704ba7d"
+  },
+  "observedAt": "2026-11-10T13:58:17.3139736-08:00",
+  "verifier": "Brain-Crumbs maintainer delegate",
+  "grant": "Implement, publish and merge this one eligible task after independent reviews and CI. Repository access-control changes are separately authorized.",
+  "prerequisite": {
+    "mergeRecordSha256": "d096ab07203525acb27f981967d592994ac75f46c3a4f47a1e1405e2ad2cca70",
+    "nativeDoneEvidence": "MIG-007::merge@1",
+    "transitiveReceipt": "migration/admissions/mig-007.json",
+    "taskId": "MIG-007",
+    "reviewedHead": "0ef0f17bd5cea9073113077683b73402f9925966",
+    "merge": "e3f1ff25ad6d1d0750445983731c4b26f736e694",
+    "pr": "https://github.com/Brain-Crumbs/Vibez/pull/18",
+    "exactHeadChecks": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T21:36:27Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42906511614/job/130145811653",
+        "name": "Build and test (Node)",
+        "startedAt": "2026-11-10T21:35:29Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T21:35:39Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42906511614/job/130145811769",
+        "name": "Schema and contract validation (Python)",
+        "startedAt": "2026-11-10T21:35:30Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T21:44:15Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42906511614/job/130145811289",
+        "name": "Seed validation (Windows)",
+        "startedAt": "2026-11-10T21:35:30Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      }
+    ]
+  },
+  "seed": {
+    "pr": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+    "reviewedHead": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+    "merge": "16a73b8071f5b9ef390d08504e325b779af291fe",
+    "seal": "fdebe9111ce7aa004566c4068a2c15a9a95ab00c",
+    "exactHeadChecks": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T17:45:43Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876/job/130011384994",
+        "name": "Build and test (Node)",
+        "startedAt": "2026-11-10T17:44:22Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T17:44:28Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876/job/130011384404",
+        "name": "Schema and contract validation (Python)",
+        "startedAt": "2026-11-10T17:44:21Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T17:52:27Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876/job/130011384752",
+        "name": "Seed validation (Windows)",
+        "startedAt": "2026-11-10T17:44:22Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      }
+    ],
+    "receipt": "migration/admissions/mig-003.json"
+  },
+  "independentAdmission": {
+    "architecture": "PASS, original controlled merge and exact evidence",
+    "uat": "PASS, native completion and user acceptance mapping",
+    "qa": "PASS, original native selector and state digest"
+  },
+  "deploymentEvidence": "Vibez main is currently unprotected. Live worker/controller separation requires separately authorized deployment."
+}

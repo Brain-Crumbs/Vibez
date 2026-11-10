@@ -2,10 +2,11 @@
   "schemaId": "ipt.module-contract",
   "schemaVersion": "1.1.0",
   "moduleId": "control-plane.controlled-merge",
-  "moduleVersion": "1.0.0",
+  "moduleVersion": "1.1.0",
   "structuralContract": {
     "interfaces": [
       "ControlledMergeController.merge(request): Promise<ControlledMergeResult>",
+      "ControlledMergeDependencies.mergeEffect? wraps the actual native merge provider call under trusted host policy, requires exactly one callback invocation and its original result",
       "ControlledMergeRequest { taskId, actorId, runId, occurredAt }",
       "ControlledMergeResult { taskId, lifecycleState: 'DONE', pullRequestNumber, sourceRevision, mergeCommitSha, evidenceLineageId, evidenceSequence }",
       "ControlledMergeErrorCode = INVALID_REQUEST | TASK_NOT_FOUND | TASK_STATE_NOT_MERGEABLE | BRANCH_REJECTED | NOT_MERGE_READY | HEAD_CHANGED | MERGE_PROVIDER_FAILED | MERGE_NOT_CONFIRMED | EVIDENCE_REJECTED | LIFECYCLE_REJECTED | LOCK_RELEASE_FAILED | STATE_CONFLICT | STATE_IO_FAILED",

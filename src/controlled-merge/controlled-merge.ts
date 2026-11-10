@@ -380,10 +380,26 @@ export class ControlledMergeController {
 
     let mergeResult: ControlledMergeProviderResult;
     try {
-      mergeResult = await this.dependencies.pullRequests.mergePullRequest({
-        number: readiness.pullRequestNumber,
-        expectedHeadSha: revision,
-      });
+      const params = { number: readiness.pullRequestNumber, expectedHeadSha: revision };
+      let invoked = false;
+      let confirmed: ControlledMergeProviderResult | undefined;
+      const execute = () => {
+        if (invoked) throw new ControlledMergeError("MERGE_NOT_CONFIRMED", "Merge effect already invoked.");
+        invoked = true;
+        if (this.dependencies.mergeEffect !== undefined) assertHeld();
+        if (this.dependencies.branchLifecycle.currentRevision() !== revision) {
+          throw new ControlledMergeError("HEAD_CHANGED", "Local revision changed immediately before merge.");
+        }
+        return this.dependencies.pullRequests.mergePullRequest(params).then(result => {
+          confirmed = result;
+          return result;
+        });
+      };
+      mergeResult = this.dependencies.mergeEffect === undefined ? await execute() :
+        await this.dependencies.mergeEffect(task, params, execute);
+      if (!invoked || confirmed !== mergeResult) {
+        throw new ControlledMergeError("MERGE_NOT_CONFIRMED", "Merge effect did not return the actual provider result.");
+      }
     } catch (error: unknown) {
       throw normalizeProviderError(task.taskId, error);
     }
@@ -1143,6 +1159,9 @@ export interface ControlledMergeTaskLock {
 }
 
 export interface ControlledMergeDependencies {
+  /** Optional trusted, exact-head authorization at the irreversible provider call. */
+  readonly mergeEffect?: (task: TaskBranchMetadata, request: MergePullRequestParams,
+    execute: () => Promise<ControlledMergeProviderResult>) => Promise<ControlledMergeProviderResult>;
   readonly registry: TaskRegistry;
   readonly stateStore: ControlledMergeStateStore;
   readonly taskLock: ControlledMergeTaskLock;
