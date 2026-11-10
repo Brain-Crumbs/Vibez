@@ -1,0 +1,22 @@
+{
+  "schemaId": "ipt.task",
+  "schemaVersion": "1.0.0",
+  "taskId": "CANARY-001",
+  "title": "Isolated marker fixture",
+  "objective": "Exercise the role gates and merge reconciliation on a disposable Git repository with a fixture PR provider.",
+  "inScope": ["Commit the fixture marker and exercise the inherited local workflow."],
+  "outOfScope": ["Live GitHub, historical canary state, and live review judgments."],
+  "dependencies": [],
+  "canonicalBranch": "bootstrap/boot-033-canary-e2e",
+  "allowedPaths": ["bootstrap/canary-proof.txt"],
+  "requirements": [],
+  "acceptanceCriteria": ["The marker is validated at the exact fixture revision and the simulated merge reconciles once."],
+  "validationPlan": ["Run the fixture build and test commands and exercise independent gate inputs."],
+  "affectedContracts": [
+    "control-plane.dev-validation",
+    "control-plane.local-agent-adapter",
+    "control-plane.orchestration-engine",
+    "control-plane.recovery-tools"
+  ],
+  "requiredReviewRoles": ["Developer", "QA", "Architect", "UAT/Product", "MergeController"]
+}

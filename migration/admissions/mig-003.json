@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "taskId": "MIG-003",
+  "repository": "Brain-Crumbs/Vibez",
+  "issue": "https://github.com/Brain-Crumbs/Vibez/issues/3",
+  "canonicalBranch": "migration/mig-003-provenance-extraction",
+  "mode": "pre-native seed acceptance",
+  "baseRevision": "4c838c1598fce5348c3a8052146b42e4eb05e1a4",
+  "seedRevision": "fdebe9111ce7aa004566c4068a2c15a9a95ab00c",
+  "seedTree": "17b69685026f63cec552f7965e5e5d713f6da0b4",
+  "sourceRevision": "5cd23ef5415f2d2140654551f9152339417e4b58",
+  "rightsDecision": "https://github.com/Brain-Crumbs/Vibez/issues/3#issuecomment-6747942125",
+  "rightsDecisionPR": "https://github.com/Brain-Crumbs/Vibez/pull/14",
+  "sourceRepairPR": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/84",
+  "sourceRepairCI": "https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/42538984027",
+  "prerequisite": {
+    "taskId": "MIG-002",
+    "issue": "https://github.com/Brain-Crumbs/Vibez/issues/2",
+    "mode": "historical pre-native acceptance",
+    "pr": "https://github.com/Brain-Crumbs/Vibez/pull/13",
+    "head": "23d7ae898acad6b0325182951512964bedb927fc",
+    "merge": "053a53956a66881b4d92356fcc9f1deca321e875",
+    "ci": [
+      {
+        "id": 128884359436,
+        "name": "Design contracts (ubuntu-latest)",
+        "head": "23d7ae898acad6b0325182951512964bedb927fc",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42530811897/job/128884359436",
+        "receiptSha256": "a091eb3ecc15cbfb5a691296d3a3d5b0b9a6b6bc2deb1a070930fc27b8e0bfa6"
+      },
+      {
+        "id": 128884359615,
+        "name": "Design contracts (windows-latest)",
+        "head": "23d7ae898acad6b0325182951512964bedb927fc",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42530811897/job/128884359615",
+        "receiptSha256": "17bfdf2d7d70afac9533018f0634aee3ad36903e40ece8877877a47fedac1faa"
+      }
+    ],
+    "reviews": [
+      {
+        "url": "https://github.com/Brain-Crumbs/Vibez/pull/13#issuecomment-6728103351",
+        "commentBodySha256": "8ac5b2171f41775809220d37c5b20dbfbcaf2503d89d65e528fc971a94962ffe",
+        "outcome": "PASS",
+        "originalReportSha256": "14e2a2b38433eb8e418fcef46deca9483370b0b8d2a9a4ca7e7152901f2f5baa",
+        "role": "QA"
+      },
+      {
+        "url": "https://github.com/Brain-Crumbs/Vibez/pull/13#issuecomment-6728104070",
+        "commentBodySha256": "cccfab01d6190440aa4e7568aa374689c6a5c827e8cfd3345195515dec559227",
+        "outcome": "PASS",
+        "originalReportSha256": "fbac5159e754acb8964ba6553373116027e82f071a5877a3b6db67c7aa90d06a",
+        "role": "Architecture"
+      },
+      {
+        "url": "https://github.com/Brain-Crumbs/Vibez/pull/13#issuecomment-6728105399",
+        "commentBodySha256": "302d15659bac634521cb8d0222e9d5802e7923200a7d079678ba29c9ea42a92c",
+        "outcome": "PASS",
+        "originalReportSha256": "028cf1e986772a643ad2b27b182cf69f4a8c91e0c05aa31c0b0897c6da694ade",
+        "role": "UAT/Product"
+      }
+    ]
+  },
+  "destinationPR": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+  "scopeSha256": "c0c8927f73972a999108a5e82acd3f8bc32c0cc640a86a93374e870ce2d87f2a"
+}

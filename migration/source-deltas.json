@@ -50,6 +50,89 @@
       "evidence": [],
       "disposition": "pending",
       "supersedes": null
+    },
+    {
+      "id": "DELTA-004",
+      "sourceIssue": "https://github.com/Brain-Crumbs/IPTFantasyFootball/issues/76",
+      "sourcePr": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/84",
+      "sourceCommit": "5cd23ef5415f2d2140654551f9152339417e4b58",
+      "sourcePaths": [
+        {
+          "path": "contracts/uat-review/README.md",
+          "blob": "b415e2fef469a082414fb407990a95e06dd60fde",
+          "sha256": "8ca048734719036312727d1d6dfe4be5ed592d0c2e057276d23edd8d862db575"
+        },
+        {
+          "path": "contracts/uat-review/module-contract.json",
+          "blob": "2b6f98327e1457e2b6253ca1c339d596e1dd6958",
+          "sha256": "d8ffed6f0045fe625fa57b594c3a69623cd831987b2d0bb33a37836b56840be8"
+        },
+        {
+          "path": "src/uat-review/uat-review.ts",
+          "blob": "5ea902cba87188e28f756b89b45b9856227999ec",
+          "sha256": "d8ad5bbe138bb8be2cdfb552ff978d21f043e9b209cc2757e54de2dd7fac0cfe"
+        },
+        {
+          "path": "tests/canary-e2e.test.mjs",
+          "blob": "2f55a95970ae6ad464682b405846fff309eb6a82",
+          "sha256": "5d6c13b06455894b1885c580af429d3569cf879193c69fe67195dc1eb4cf0ab9"
+        },
+        {
+          "path": "tests/helpers/canary-fixture.mjs",
+          "blob": "67a53a8747e8aafd4a3eeebedaa50a09576b1daa",
+          "sha256": "3c4fd9261595f0b2778900a7457055dc2dd824aee7e618c26596900a583f31dd"
+        },
+        {
+          "path": "tests/uat-review.test.mjs",
+          "blob": "6168725265005ebd07faaf86feefebdb6ff2e013",
+          "sha256": "6ff03d1ae005b63f45e47de61f198ba15be2ff286fc249fef5b1c3903423011d"
+        }
+      ],
+      "reason": "Accepted UAT handoff repair and contract-bearing regressions at the authorized export pin.",
+      "destinationOwner": "MIG-003",
+      "destinationPr": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+      "destinationCommit": "fdebe9111ce7aa004566c4068a2c15a9a95ab00c",
+      "destinationPaths": [
+        {
+          "path": "contracts/uat-review/README.md",
+          "blob": "b415e2fef469a082414fb407990a95e06dd60fde",
+          "sha256": "8ca048734719036312727d1d6dfe4be5ed592d0c2e057276d23edd8d862db575"
+        },
+        {
+          "path": "contracts/uat-review/module-contract.json",
+          "blob": "2b6f98327e1457e2b6253ca1c339d596e1dd6958",
+          "sha256": "d8ffed6f0045fe625fa57b594c3a69623cd831987b2d0bb33a37836b56840be8"
+        },
+        {
+          "path": "src/uat-review/uat-review.ts",
+          "blob": "5ea902cba87188e28f756b89b45b9856227999ec",
+          "sha256": "d8ad5bbe138bb8be2cdfb552ff978d21f043e9b209cc2757e54de2dd7fac0cfe"
+        },
+        {
+          "path": "tests/canary-e2e.test.mjs",
+          "blob": "e267e3a86d29862254f5cdfea211e879da3b9ab5",
+          "sha256": "dc0924f1072480a50ca658bdfe488fb6a68e61a80e2d5e3c906eb71a84b6efda"
+        },
+        {
+          "path": "tests/helpers/canary-fixture.mjs",
+          "blob": "e9e12dfcce09d551527c9f7f74f54d7feaa05eee",
+          "sha256": "8f6eedd472492c31787d4469981b7b22861204ea5bc95a114e96e9c1cb64834c"
+        },
+        {
+          "path": "tests/uat-review.test.mjs",
+          "blob": "6168725265005ebd07faaf86feefebdb6ff2e013",
+          "sha256": "6ff03d1ae005b63f45e47de61f198ba15be2ff286fc249fef5b1c3903423011d"
+        }
+      ],
+      "compatibility": "UAT engine and module contract preserve source bytes. Canary helper and end-to-end test changes confine the regression to a disposable fixture and keep all four affected contracts.",
+      "evidence": [
+        "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/84",
+        "https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/42538984027",
+        "migration/SEED_EXPORT.md",
+        "https://github.com/Brain-Crumbs/Vibez/pull/15"
+      ],
+      "disposition": "imported",
+      "supersedes": "DELTA-001"
     }
   ]
 }
