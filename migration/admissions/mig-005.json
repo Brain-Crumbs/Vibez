@@ -7,11 +7,11 @@
   "integrationBase": "b64ac4e1fa19c03d379245ad8bce6d384ecaf601",
   "canonicalBranch": "migration/mig-005-library-cli-package",
   "definition": {
-    "sha256": "40084f32fe7e2ae6ecace5192fd00f194ba1f10e8cf74e3d62515560abcd206c",
+    "sha256": "22b94496d2b8cbad7159f3f0e44b667680df8b3dc655c705315dc82b48c35fd3",
     "path": "tasks/definitions/mig-005.task.json"
   },
   "requirement": {
-    "sha256": "c5d85735522b5bb946c57f01327e14c1a63dfac24a9f3873a27a28b493cf4129",
+    "sha256": "90b54e6df3dfe04419d8cd82cc44e9de41c29223f3d0530dd84e510cff1b7c2d",
     "path": "requirements/mig-005.requirement.json"
   },
   "verifier": "Brain-Crumbs maintainer delegate",
