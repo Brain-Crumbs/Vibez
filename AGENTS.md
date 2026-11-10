@@ -1,34 +1,37 @@
 # Vibez operating instructions
 
-Read this file, [migration/README.md](migration/README.md), the assigned issue and
-[roadmap #1](https://github.com/Brain-Crumbs/Vibez/issues/1) before changing files.
-The inherited architectural invariants are the [source constitution at the audited
-revision](https://github.com/Brain-Crumbs/IPTFantasyFootball/blob/50ef51e7dd2443dd0cec644c04e8db1b7fd612f7/CONSTITUTION.md).
-Deterministic state outranks narrative; roles are independent; semantic consumer
-contracts, exact revision evidence, idempotency and controlled completion remain
-mandatory. No product work, arbitrary workflow graphs or synthetic DONE records.
+Read this file, [the constitution](CONSTITUTION.md), the assigned issue,
+[migration guidance](migration/SEED_EXPORT.md), and the [roadmap](https://github.com/Brain-Crumbs/Vibez/issues/1).
+Inspect affected semantic contracts and consumers before implementation.
+Deterministic state and revision-bound evidence govern decisions. Keep roles
+independent and preserve historical records.
 
-MIG-002 is a pre-native design task under the accepted
-[seed procedure](https://github.com/Brain-Crumbs/IPTFantasyFootball/blob/50ef51e7dd2443dd0cec644c04e8db1b7fd612f7/migration/SEED.md).
-The owner assigned exactly the next eligible task, publication and merge after
-independent QA, Architecture and UAT plus required CI. The earlier MIG-001
-instruction to stop at a ready PR applied to that prior assignment only.
+Use the issue's canonical branch from current main. Inspect existing work and
+verify accepted prerequisites before admitting the task. Explicit owner
+authorization governs publication and merge. Keep unrelated work outside the
+candidate.
 
-Use the exact canonical branch in the issue, based on current main. Inspect
-existing work; never overwrite it. Read every prerequisite's accepted evidence.
-Staged definitions are not assignments or selector input. Preserve source
-history and stopped canary records. Do not copy runtime state or approvals.
+MIG-003 is the last implementation under the [reviewed seed protocol](https://github.com/Brain-Crumbs/IPTFantasyFootball/blob/50ef51e7dd2443dd0cec644c04e8db1b7fd612f7/migration/SEED.md).
+Its acceptance is the reviewed GitHub PR, with the export receipt and exact-head
+checks. The active registry begins empty. Historical receipts document accepted
+prerequisites. They are not lifecycle state, assignments, or current approvals.
+Fixture workloads run in disposable repositories.
 
-For this task run the design checks in the README and the pinned engine's full
-build, tests, schema/contract and adversarial checks. Destination CI must check
-the PR head SHA, including the source inventory and pinned schema tooling.
-Require three distinct role agents to inspect the final revision. Fix findings,
-rerun affected checks and reviews after every revision, and retain reports with
-their exact SHA in the PR. Developer self-review is not independent approval.
+Before admitting MIG-004 or later, verify the accepted MIG-003 PR, source seed
+and CI on Vibez main, and the destination admission procedure. Configure a
+quiescent, project-local authoritative state root on a supported filesystem.
+Then register the authorized task through a reviewed change. Retain external and
+pre-native prerequisites as evidence-backed admission edges. Native tasks use
+the registry, lifecycle, independent reviews and controlled completion. The
+seed exception ends with MIG-003.
 
-Before merge, re-read branch/base/head, required exact-head checks, all reviews,
-unresolved threads, mergeability and any repository protection. Merge only the
-reviewed SHA within the owner's grant; never bypass protections. This seed PR
-acceptance is not a native lifecycle transition. Do not manufacture lifecycle
-records to represent it. MIG-003 records its historical prerequisite receipt.
-MIG-004 and later cannot use the pre-native seed exception.
+Run the [repository checks](README.md#build-and-validate-a-fresh-checkout) and
+any task-specific checks. Obtain independent QA, Architecture and UAT/Product
+reviews for the final revision. Resolve findings and repeat the affected
+checks and reviews after changes. Keep reviewer reports and exact-head
+validation in the PR.
+
+Before merging, verify branch, base, head, CI, reviews, discussion, mergeability
+and protection. Bind authorized integration to the reviewed head. Only the
+native controller can record native MERGED and DONE. Keep credentials, runtime
+state, exchange packets and live canary records outside the repository.

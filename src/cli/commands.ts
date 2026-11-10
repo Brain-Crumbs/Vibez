@@ -1,0 +1,68 @@
+import type { CommandDescriptor } from "./contracts.js";
+
+export const IMPLEMENTED_COMMANDS: readonly CommandDescriptor[] = [
+  { name: "recovery", summary: "Check consistency or apply explicitly confirmed, audited offline recovery (BOOT-032).", status: "implemented" },
+  { name: "explain", summary: "Explain task, transition, validation, review, and merge predicates without mutation (BOOT-031).", status: "implemented" },
+  {
+    name: "status",
+    summary: "Report read-only project progress, locks, evidence, blockers, and next work (BOOT-030).",
+    status: "implemented",
+  },
+  {
+    name: "manual",
+    summary: "Export role packets, import structured results, or wait for a local/manual provider run (BOOT-029).",
+    status: "implemented",
+  },
+  {
+    name: "help",
+    summary: "Describe the control-plane CLI and command contract.",
+    status: "implemented",
+  },
+  {
+    name: "version",
+    summary: "Print the CLI contract version.",
+    status: "implemented",
+  },
+  {
+    name: "next",
+    summary: "Resolve the next eligible task deterministically (BOOT-008).",
+    status: "implemented",
+  },
+  {
+    name: "start",
+    summary: "Begin or resume the developer task-start workflow (BOOT-013).",
+    status: "implemented",
+  },
+  {
+    name: "validate",
+    summary: "Run the deterministic developer validation gate (BOOT-016).",
+    status: "implemented",
+  },
+] as const;
+
+export const RESERVED_COMMANDS: readonly CommandDescriptor[] = [
+  {
+    name: "review",
+    summary: "Run structured review workflows (owned by BOOT-017+).",
+    status: "reserved",
+  },
+  {
+    name: "rework",
+    summary: "Drive the review rework and approval invalidation loop (owned by BOOT-021; behavior implemented, CLI wiring owned by BOOT-026+).",
+    status: "reserved",
+  },
+  {
+    name: "orchestrate",
+    summary: "Run the sequential orchestration engine end to end (library and BOOT-029 manual provider implemented; general workflow CLI composition remains reserved).",
+    status: "reserved",
+  },
+] as const;
+
+export const ALL_COMMANDS: readonly CommandDescriptor[] = [
+  ...IMPLEMENTED_COMMANDS,
+  ...RESERVED_COMMANDS,
+];
+
+export function isReservedCommand(name: string): boolean {
+  return RESERVED_COMMANDS.some((command) => command.name === name);
+}

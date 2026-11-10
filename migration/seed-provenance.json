@@ -1,0 +1,124 @@
+{
+  "adaptations": {
+    ".github/workflows/ci.yml": {
+      "reason": "Run the standalone exact-head workflow on Linux and Windows while retaining the two inherited policy contexts.",
+      "sha256": "5bd4af5e8fbc09724e725745761a8b1eb3ce496b8087d20eb95400d40e96721a"
+    },
+    ".gitignore": {
+      "reason": "Keep Vibez design-validation and local development outputs ignored.",
+      "sha256": "9aba268edb396b394108df0525a33761825fcbb5f478aa2fb0053c13145a7264"
+    },
+    "AGENTS.md": {
+      "reason": "Define Vibez seed integration and later native admission.",
+      "sha256": "84c18dbeea9d62eeaf2048766c92e5fbeabe291be69fde023f8aae9b31b2da5e"
+    },
+    "CONSTITUTION.md": {
+      "reason": "Bind the inherited invariants to Vibez authority and retain the immutable source reference.",
+      "sha256": "e2261d9c8c50bee2bfa59b300b794c89cec75f2fdafa80a6f611b35a1fc046e3"
+    },
+    "README.md": {
+      "reason": "Document the standalone build, tests, scope and operator entry points.",
+      "sha256": "5551022dec4c7c430b7c1b9f6159a2c66b7944aa54317cec01606ab3e23802e7"
+    },
+    "bootstrap/canary-proof.txt": {
+      "reason": "Relocate the unchanged marker to test fixtures.",
+      "sha256": "976a6b9f7757ae28518eca1d98dab96285c49e6791040f091c543d601669bc11"
+    },
+    "contracts/ci-enforcement/README.md": {
+      "reason": "Document the additional Windows CI job and the empty-registry boundary.",
+      "sha256": "c288ef3c8f706a843a9244f229f315ae538cdc569c3b7fd05aab3af338efa5fa"
+    },
+    "docs/ADVERSARIAL_TESTS.md": {
+      "reason": "Point to the fixture rehearsal and immutable historical retirement decision.",
+      "sha256": "719c193573df4d847f4181b053482eced1495a2398f750e9048e9a577e6296e7"
+    },
+    "docs/CI.md": {
+      "reason": "Describe the destination CI jobs, checkout and tooling.",
+      "sha256": "fd7579768ad55889fd7f276f7ced8b1783e6462e11eaf594ee2b59616ecdca3d"
+    },
+    "docs/DIAGNOSTICS.md": {
+      "reason": "Describe the empty active registry and isolate the historical canary example.",
+      "sha256": "0fb9f350d36a71d9082bb95796f1da85ddf886a06bb25f16b2fcfe4756920eef"
+    },
+    "docs/README.md": {
+      "reason": "Link Vibez governance and the fixture-only rehearsal.",
+      "sha256": "9989d83f48abff62b0d4486a6ab2c831a88caa7f15859fde09a66543711a8fb8"
+    },
+    "docs/STATUS.md": {
+      "reason": "Describe the seed registry rather than the active Fantasy Football workload.",
+      "sha256": "1713994c512186090baf50a9e0a8988caa07950ee184f2efc48d63548c2d220a"
+    },
+    "package.json": {
+      "reason": "Retain the private build identity and drop only the Fantasy Football admission suite and command.",
+      "sha256": "5623ecd74f52f8f88001346738ec790943c781738997aa118b5be05324139412"
+    },
+    "schemas/validate_repository_contracts.py": {
+      "reason": "Validate Vibez staged records and isolated task fixtures alongside real contracts and active definitions.",
+      "sha256": "7c2333454aed523d28afa88331f929b0842a22772031a31523824ba596af7caf"
+    },
+    "scripts/adversarial-mutations.mjs": {
+      "reason": "Use the canary fixtures rather than copying the active source registry.",
+      "sha256": "e8c0053489a9dca5eede5bda580d480dfe731e7bc20fcfd43dccefec2942bd3d"
+    },
+    "scripts/canary.mjs": {
+      "reason": "Require disposable Git and injected fixture adapters. Remove the live command and credential fallback.",
+      "sha256": "6f3d03ac080f0734efa90a60e62c306c7f7dfb444b2560d2e140a8e272d553dd"
+    },
+    "tests/canary-e2e.test.mjs": {
+      "reason": "Exercise the retained #76 contracts and assert the fixture-only assets and adapter boundaries.",
+      "sha256": "be0160327b826898ebe89e279eed9bff6918fd1663f3fde48dc93f741ef75bec"
+    },
+    "tests/ci-workflow.test.mjs": {
+      "reason": "Require a single exact-head Vibez checkout for each of the three jobs.",
+      "sha256": "0d70a139540528e875886b8c12c0c40affe891b3f0cc7091b12b99224d98182f"
+    },
+    "tests/helpers/canary-fixture.mjs": {
+      "reason": "Read the new synthetic fixture task instead of a source consumer definition.",
+      "sha256": "8f6eedd472492c31787d4469981b7b22861204ea5bc95a114e96e9c1cb64834c"
+    }
+  },
+  "authored": {
+    "docs/SEED_REHEARSAL.md": "Document the isolated rehearsal in Vibez.",
+    "migration/README.md": "Link the historical design to the seed record.",
+    "migration/SEED_EXPORT.md": "Record the seed procedure, compatibility, acceptance and rollback.",
+    "migration/SOURCE_DELTAS.md": "Identify the append-only repair import and source ownership.",
+    "migration/seed-provenance.json": "Record source and destination byte provenance.",
+    "scripts/seed_export.py": "Verify the sealed snapshot and replay the authorized export.",
+    "tests/fixtures/canary.task.json": "New disposable task fixture. The original consumer task stays in Fantasy Football.",
+    "tests/test_seed_export.py": "Exercise pin, path and credential-scan rejection."
+  },
+  "removed": {
+    ".github/workflows/design.yml": "The historical design workflow remains in the MIG-002 tree. Destination CI validates the seed without source checkouts."
+  },
+  "rightsDecision": "https://github.com/Brain-Crumbs/Vibez/issues/3#issuecomment-6747942125",
+  "scopeSha256": "c0c8927f73972a999108a5e82acd3f8bc32c0cc640a86a93374e870ce2d87f2a",
+  "sourceChanges": {
+    "contracts/uat-review/README.md": {
+      "blob": "b415e2fef469a082414fb407990a95e06dd60fde",
+      "sha256": "8ca048734719036312727d1d6dfe4be5ed592d0c2e057276d23edd8d862db575"
+    },
+    "contracts/uat-review/module-contract.json": {
+      "blob": "2b6f98327e1457e2b6253ca1c339d596e1dd6958",
+      "sha256": "d8ffed6f0045fe625fa57b594c3a69623cd831987b2d0bb33a37836b56840be8"
+    },
+    "src/uat-review/uat-review.ts": {
+      "blob": "5ea902cba87188e28f756b89b45b9856227999ec",
+      "sha256": "d8ad5bbe138bb8be2cdfb552ff978d21f043e9b209cc2757e54de2dd7fac0cfe"
+    },
+    "tests/canary-e2e.test.mjs": {
+      "blob": "2f55a95970ae6ad464682b405846fff309eb6a82",
+      "sha256": "5d6c13b06455894b1885c580af429d3569cf879193c69fe67195dc1eb4cf0ab9"
+    },
+    "tests/helpers/canary-fixture.mjs": {
+      "blob": "67a53a8747e8aafd4a3eeebedaa50a09576b1daa",
+      "sha256": "3c4fd9261595f0b2778900a7457055dc2dd824aee7e618c26596900a583f31dd"
+    },
+    "tests/uat-review.test.mjs": {
+      "blob": "6168725265005ebd07faaf86feefebdb6ff2e013",
+      "sha256": "6ff03d1ae005b63f45e47de61f198ba15be2ff286fc249fef5b1c3903423011d"
+    }
+  },
+  "sourceRepository": "Brain-Crumbs/IPTFantasyFootball",
+  "sourceRevision": "5cd23ef5415f2d2140654551f9152339417e4b58",
+  "version": 1
+}

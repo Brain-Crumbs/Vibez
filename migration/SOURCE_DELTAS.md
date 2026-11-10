@@ -2,23 +2,22 @@
 
 [source-deltas.json](source-deltas.json) is an append-oriented decision ledger,
 not task status. It distinguishes observed source integration from issue closure.
-The inventory baseline is the accepted MIG-001 merge. The workflow code still
-matches the engine pin; #76's contract-bearing UAT repair is not assumed present.
+The inventory baseline is the accepted MIG-001 merge. The appended #76 row
+identifies the accepted Fantasy Football repair and the sealed Vibez import.
+The original pending row preserves the earlier observation.
 
 For each delta retain a stable ID, source issue/PR and exact commit, source
 path/blob/SHA-256 list, reason for a source exception, destination owner/PR/commit,
 transformed destination paths/hashes, compatibility impact, validation/review
 evidence and pending/imported/excluded/superseded disposition. Nulls mean unknown
 and block an imported claim. Corrections append a superseding entry with reason;
-never silently change an accepted row. MIG-003 implements the reproducible
-compare/import tool and fills exact paths/hashes before importing. This task
-records the format and known outstanding work only.
+never silently change an accepted row. See the [seed verifier](SEED_EXPORT.md)
+for the reproducible source and destination comparison.
 
 FF #78 remains the sole general manual driver owner. MIG-006 imports that accepted
 implementation once, translating the reusable profile to the shared config.
-MIG-003 checks #76's actual accepted source fix and regression; closed issue state
-is insufficient. If it is still absent, obtain the owning fix through its issue
-and record its accepted delta rather than quietly repairing it in extraction.
+MIG-003 imports #76 from the accepted [Fantasy Football PR #84](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/84).
+The ledger records its six source and destination paths with the exact hashes.
 #75 retains planning/publication/application service and supervisor semantics;
 its HTTP transport is not a migration prerequisite.
 

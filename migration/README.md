@@ -1,5 +1,8 @@
 # MIG-002 extraction boundary and evidence
 
+For the implemented export, see the [MIG-003 seed record](SEED_EXPORT.md).
+This page records the design and acceptance conditions at the MIG-002 baseline.
+
 Inventory source: `Brain-Crumbs/IPTFantasyFootball` at
 `50ef51e7dd2443dd0cec644c04e8db1b7fd612f7` (accepted MIG-001 merge).
 The separate engine/tooling pin remains

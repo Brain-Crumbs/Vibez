@@ -1,49 +1,49 @@
 # Vibez
 
-Vibez is the planned reusable home of the deterministic agent development
-workflow. This repository currently contains the reviewed extraction design and
-its checks, **not an installable engine or a released package**.
+Vibez is the source home of the deterministic agent development workflow.
+This seed builds directly from a Vibez checkout. It uses the existing private
+development package identity while the public API and installation contract
+are prepared.
 
-This is [MIG-002](https://github.com/Brain-Crumbs/Vibez/issues/2), coordinated with
-the [roadmap](https://github.com/Brain-Crumbs/Vibez/issues/1) and
-[Fantasy Football #74](https://github.com/Brain-Crumbs/IPTFantasyFootball/issues/74).
+The [migration record](migration/SEED_EXPORT.md) links the audited source
+snapshot, export decision, scope, validation, and rollback. See the [roadmap](https://github.com/Brain-Crumbs/Vibez/issues/1)
+and [Fantasy Football #74](https://github.com/Brain-Crumbs/IPTFantasyFootball/issues/74)
+for ownership and sequencing.
 
-- [Migration inventory and execution evidence](migration/README.md)
-- [Public API and consumer seams](docs/PUBLIC_API.md)
-- [Project configuration and identity](docs/PROJECT_CONFIG.md)
-- [Compatibility, upgrade and rollback](docs/COMPATIBILITY.md)
-- [Distribution decisions and support](docs/SUPPORT.md)
-- [Two consumer walkthroughs](examples/README.md)
+## Build and validate a fresh checkout
 
-## Validate this design
-
-Use Python 3.11+ with `jsonschema` installed from the pinned source requirements.
-Clone the source into separate directories; do not use a production runtime store.
+Use Git, Node.js 20 or later, npm, and Python 3.11 or later. TypeScript and
+Python jsonschema are development tools. The compiled Node CLI needs neither
+Python nor a Fantasy Football checkout for ordinary commands.
 
 ```sh
-git clone https://github.com/Brain-Crumbs/IPTFantasyFootball.git .validation-source
-git -C .validation-source checkout --detach 50ef51e7dd2443dd0cec644c04e8db1b7fd612f7
-git clone https://github.com/Brain-Crumbs/IPTFantasyFootball.git .validation-engine
-git -C .validation-engine checkout --detach fbc46888ce0bd2af454f471561911a913d32e6fc
-npm --prefix .validation-engine ci
-npm --prefix .validation-engine run build
-python -m pip install -r .validation-engine/schemas/requirements.txt
-python scripts/check_design.py --source .validation-source --engine .validation-engine
+npm ci
+python -m pip install -r schemas/requirements.txt
+npm run build
+npm test
+python schemas/validate_fixtures.py
+python schemas/validate_repository_contracts.py
 python -m unittest discover -s tests -p 'test_*.py'
+python scripts/seed_export.py
+npm run test:adversarial:mutations
 ```
 
-The same commands work in PowerShell; use `npm.cmd` if script execution policy
-blocks `npm.ps1`, and quote paths containing spaces. The pinned engine build is
-required because the design audit imports its compiled registry/DAG. For the
-separate source-engine regression checks, run `npm ci`, `npm run build`,
-`npm test`, `python schemas/validate_fixtures.py`,
-`python schemas/validate_repository_contracts.py` and
-`npm run test:adversarial:mutations` from `.validation-engine` (use `npm.cmd` on
-Windows if required). Set `IPT_PYTHON` to that environment's Python executable
-when it differs from the `python` on PATH. There is no destination build yet.
+Use an isolated Python environment. In PowerShell, use `npm.cmd` if needed
+and set `$env:IPT_PYTHON` to the schema-enabled interpreter if `python` on
+PATH points elsewhere. The tests create disposable Git repositories. Use
+`npm run canary:rehearse` for a [local fixture walkthrough](docs/SEED_REHEARSAL.md).
 
-The design checker is read-only. It verifies exact Git blob coverage/hashes,
-module/CLI/epic traceability, staged records using the pinned schema, evidence
-hashes, documentation links and example shapes. Negative tests check the
-checker and schema; they do not claim runtime isolation, workflow completion,
-or independent product acceptance. MIG-004/007/008 own those implementation proofs.
+```sh
+node dist/cli/cli.js --help
+node dist/cli/cli.js --json status
+```
+
+A fresh checkout has an empty active registry. Follow [operating instructions](AGENTS.md)
+before registering or starting work. The project configuration examples describe
+the design for later portability work.
+
+- [CLI and operator documentation](docs/README.md)
+- [Public API design](docs/PUBLIC_API.md)
+- [Project configuration design](docs/PROJECT_CONFIG.md)
+- [Compatibility and rollback](docs/COMPATIBILITY.md)
+- [Support and distribution decisions](docs/SUPPORT.md)
