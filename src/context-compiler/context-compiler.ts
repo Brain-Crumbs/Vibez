@@ -309,6 +309,7 @@ function includeExternalArtifact(
   artifact: ContextArtifact,
   input: ContextCompileInput,
   dependencyTasks: readonly RegisteredTask[],
+  downstreamContracts: ReadonlySet<string>,
 ): { include: boolean; reason: ContextManifestExclusionReason } {
   const taskContractIds = new Set(input.task.affectedContracts);
   const dependencyContractIds = new Set(dependencyTasks.flatMap((task) => [...task.affectedContracts]));
@@ -366,7 +367,7 @@ function includeExternalArtifact(
       if (artifact.kind === "requirement" && input.task.requirements.includes(artifact.referenceId ?? "")) {
         return { include: true, reason: "UNRELATED" };
       }
-      if (artifact.kind === "contract" && (taskContract || dependencyContract)) {
+      if (artifact.kind === "contract" && (taskContract || dependencyContract || downstreamContracts.has(artifact.referenceId ?? ""))) {
         return { include: true, reason: "UNRELATED" };
       }
       if ((artifact.kind === "diff" || artifact.kind === "evidence") && local) {
@@ -498,6 +499,7 @@ export function compileRoleContext(input: ContextCompileInput): ContextPackage {
     }
   }
 
+  const downstreamContracts = new Set<string>();
   if (input.role === "Architect") {
     const currentAffectedContracts = input.artifacts.filter(
       (artifact) =>
@@ -507,11 +509,19 @@ export function compileRoleContext(input: ContextCompileInput): ContextPackage {
         revisionMatches(artifact, input.revision),
     );
     included.push(...derivedConsumerArtifacts(currentAffectedContracts));
+    for (const contract of currentAffectedContracts) {
+      if (typeof contract.content !== "object" || contract.content === null) continue;
+      const consumers = (contract.content as Record<string, unknown>).knownConsumers;
+      if (!Array.isArray(consumers)) continue;
+      for (const consumer of consumers) {
+        if (typeof consumer?.consumerId === "string") downstreamContracts.add(consumer.consumerId);
+      }
+    }
   }
 
   const excluded: ContextManifestExcludedEntry[] = [];
   for (const artifact of [...input.artifacts].sort(sourceArtifactSort)) {
-    const decision = includeExternalArtifact(artifact, input, dependencyTasks);
+    const decision = includeExternalArtifact(artifact, input, dependencyTasks, downstreamContracts);
     if (decision.include) {
       included.push(toCandidate(artifact, input.role));
     } else {

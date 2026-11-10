@@ -1,3 +1,4 @@
+import { packageSchemaPath } from "../project-assets/index.js";
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 
@@ -390,7 +391,7 @@ export async function loadTaskRegistryFromPaths(
   options: TaskRegistryLoadOptions = {},
 ): Promise<TaskRegistry> {
   const repositoryRoot = options.repositoryRoot ?? process.cwd();
-  const schemaPath = options.schemaPath ?? join(repositoryRoot, TASK_SCHEMA_RELATIVE_PATH);
+  const schemaPath = options.schemaPath ?? packageSchemaPath("task.schema.json");
   const loadedSchema = await loadTaskSchema(repositoryRoot, schemaPath);
   const diagnostics: TaskRegistryDiagnostic[] = [];
   const tasks = new Map<string, RegisteredTask>();
@@ -488,7 +489,7 @@ export async function loadTaskRegistry(options: TaskRegistryLoadOptions = {}): P
     ]);
   }
 
-  const schemaPath = options.schemaPath ?? join(repositoryRoot, TASK_SCHEMA_RELATIVE_PATH);
+  const schemaPath = options.schemaPath ?? packageSchemaPath("task.schema.json");
   return loadTaskRegistryFromPaths(paths, {
     repositoryRoot,
     schemaPath,

@@ -134,12 +134,14 @@ const RELEASE_CLAIM_STALE_MS = 5 * 60 * 1000;
 export class FileAssignmentLockStore implements AssignmentLockStore {
   readonly #root: string;
 
-  constructor(root: string) {
+  constructor(root: string, deferDirectory = false) {
     if (!root.trim()) throw new RangeError("Lock root must be non-empty.");
     this.#root = root;
-    mkdirSync(this.#root, { recursive: true });
-    mkdirSync(this.#historyRoot(), { recursive: true });
-    mkdirSync(this.#claimsRoot(), { recursive: true });
+    if (!deferDirectory) {
+      mkdirSync(this.#root, { recursive: true });
+      mkdirSync(this.#historyRoot(), { recursive: true });
+      mkdirSync(this.#claimsRoot(), { recursive: true });
+    }
   }
 
   acquire(request: AcquireAssignmentRequest): LockResult {

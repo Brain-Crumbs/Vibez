@@ -5,11 +5,19 @@ import { FileManualAgentProvider } from "../local-agent-adapter/index.js";
 
 const MAX_INPUT_BYTES = 4 * 1024 * 1024;
 
+export interface ConfiguredManual {
+  readonly exchange: string;
+  readonly provider?: FileManualAgentProvider;
+  readonly inputPath: (path: string, operation: "export" | "import" | "run") => string;
+  readonly verifyRequest: (request: AgentRunRequest) => void;
+}
+
 /** The manual surface only translates files to provider calls. It owns no gate. */
 export async function runManualCommand(
   args: readonly string[],
   repositoryRoot: string,
   signal?: AbortSignal,
+  configured?: ConfiguredManual,
 ): Promise<{ data: unknown; human: string }> {
   const operation = args[0];
   if (operation !== "export" && operation !== "import" && operation !== "run") {
@@ -20,26 +28,31 @@ export async function runManualCommand(
     throw new AgentProviderError("INVALID_REQUEST", `manual ${operation} requires exactly ${operation === "import" ? "<packet-id> <result-file> <exchange-dir>" : "<request-file> <exchange-dir>"}.`, false);
   }
   const root = resolve(repositoryRoot, args[expected - 1]!);
-  const provider = new FileManualAgentProvider(root, { repositoryRoot });
+  if (configured !== undefined && (configured.provider === undefined || root !== configured.exchange)) {
+    throw new AgentProviderError("INVALID_REQUEST", "Manual commands require the configured manual provider and exchange root.", false);
+  }
+  const provider = configured?.provider ?? new FileManualAgentProvider(root);
+  const input = (value: string) => configured?.inputPath(value, operation) ?? resolve(repositoryRoot, value);
   if (operation === "import") {
-    const imported = provider.importResult(args[1]!, readJson(resolve(repositoryRoot, args[2]!)));
+    const imported = provider.importResult(args[1]!, readJson(input(args[2]!)));
     return {
       data: { packetId: args[1], resultPath: imported.resultPath, reused: imported.reused, status: imported.result.status },
       human: `${imported.reused ? "Reused" : "Imported"} manual result for ${args[1]} (${imported.result.status}).\nResult: ${imported.resultPath}\nThe waiting provider can now read it; import itself runs no lifecycle gate.`,
     };
   }
-  const value = readJson(resolve(repositoryRoot, args[1]!));
+  const value = readJson(input(args[1]!));
   if (typeof value !== "object" || value === null || Array.isArray(value) || "signal" in value) {
     throw new AgentProviderError("INVALID_REQUEST", "Request file must contain an AgentRunRequest JSON object without a signal field; cancellation belongs to the running process.", false);
   }
   const request = value as AgentRunRequest;
+  configured?.verifyRequest(request);
   if (operation === "export") {
     const packet = provider.exportPacket(request);
     const packetPath = provider.packetPath(packet.packetId);
     const resultPath = provider.resultPath(packet.packetId);
     return {
       data: { packetId: packet.packetId, packetPath, resultPath },
-      human: `Exported role packet: ${packetPath}\nPacket ID: ${packet.packetId}\nRead its instructions in a fresh ${packet.role} session. Import the structured result with 'agent manual import'.\nResult destination: ${resultPath}`,
+      human: `Exported role packet: ${packetPath}\nPacket ID: ${packet.packetId}\nRead its instructions in a fresh ${packet.role} session. Import the structured result with ${configured === undefined ? "'agent manual import'" : "the configured host's manual import command"}.\nResult destination: ${resultPath}`,
     };
   }
   const result = await new AgentRunner({ provider }).run({ ...request, ...(signal === undefined ? {} : { signal }) });

@@ -5,6 +5,9 @@ import type { CliRunContext } from "./core.js";
 
 export async function runRecoveryCommand(args: readonly string[], context: CliRunContext) {
   const root = context.repositoryRoot ?? ".";
+  if (args.length === 1 && args[0] === "check" && context.recoveryCheck !== undefined) {
+    return context.recoveryCheck((context.now ?? (() => new Date().toISOString()))());
+  }
   if (args.length === 1 && args[0] === "check") return checkRecoveryState(root, {
     ...(context.taskRegistry === undefined ? {} : { registry: context.taskRegistry }),
     now: (context.now ?? (() => new Date().toISOString()))(),
@@ -13,6 +16,7 @@ export async function runRecoveryCommand(args: readonly string[], context: CliRu
   let request: unknown;
   try { request = JSON.parse(readFileSync(resolve(root, args[1]!), "utf8")); }
   catch { throw new RecoveryError("INVALID_REQUEST", "Recovery request file must contain readable valid JSON."); }
+  if (context.recoveryApply !== undefined) return context.recoveryApply(request);
   const admins = new Set((process.env.IPT_RECOVERY_ADMIN_ACTORS ?? "").split(",").map(value => value.trim()).filter(Boolean));
   const tools = await LocalRecoveryTools.create(root, {
     ...(context.taskRegistry === undefined ? {} : { registry: context.taskRegistry }),

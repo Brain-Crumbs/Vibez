@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "taskId": "MIG-004",
+  "repository": "Brain-Crumbs/Vibez",
+  "issue": "https://github.com/Brain-Crumbs/Vibez/issues/4",
+  "issueBodySha256": "0a30b17003aa5c17e34e89464113e8880e7f4a729628e94e13f28b97f4be7726",
+  "integrationBase": "16a73b8071f5b9ef390d08504e325b779af291fe",
+  "canonicalBranch": "migration/mig-004-portable-project-composition",
+  "definition": {
+    "sha256": "390e5de1f2466ee465542aa2f4f16df3a3c67c6a33d0ca8d2194d2c509523eb7",
+    "path": "tasks/definitions/mig-004.task.json"
+  },
+  "requirement": {
+    "sha256": "9e4120eadeeefc146c56aceef1d80a8f45a62174bee58e64abb593b2ee82dcf2",
+    "path": "requirements/mig-004.requirement.json"
+  },
+  "verifier": "Brain-Crumbs maintainer (delegated under the scoped owner request)",
+  "observedAt": "2026-11-10T10:08:48.9600022-08:00",
+  "grant": "The owner authorized implementing one eligible task, publishing its reviewed PR and merging after checks and reviews.",
+  "prerequisite": {
+    "taskId": "MIG-003",
+    "issue": "https://github.com/Brain-Crumbs/Vibez/issues/3",
+    "acceptance": "Historical pre-native seed acceptance. MIG-003 has no native lifecycle record. The original edge remains in the accepted migration plan and projects to an empty native dependency set for MIG-004.",
+    "pr": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+    "reviewedHead": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+    "merge": "16a73b8071f5b9ef390d08504e325b779af291fe",
+    "sealedRevision": "fdebe9111ce7aa004566c4068a2c15a9a95ab00c",
+    "approvedSource": "5cd23ef5415f2d2140654551f9152339417e4b58",
+    "exactHeadChecks": [
+      {
+        "head": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+        "url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876/job/130011384994",
+        "name": "Build and test (Node)",
+        "result": "SUCCESS"
+      },
+      {
+        "head": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+        "url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876/job/130011384404",
+        "name": "Schema and contract validation (Python)",
+        "result": "SUCCESS"
+      },
+      {
+        "head": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+        "url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876/job/130011384752",
+        "name": "Seed validation (Windows)",
+        "result": "SUCCESS"
+      }
+    ],
+    "mainCi": {
+      "url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42869658896",
+      "head": "16a73b8071f5b9ef390d08504e325b779af291fe",
+      "result": "success"
+    },
+    "reviews": [
+      {
+        "outcome": "PASS",
+        "revision": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+        "url": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+        "role": "QA",
+        "session": "/root/seed_qa",
+        "sha256": "29fb6acfe2e11a15b6426bb419b56cb3725caa0818c56bd0d2028d1b7c56e0db"
+      },
+      {
+        "outcome": "PASS",
+        "revision": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+        "url": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+        "role": "Architecture",
+        "session": "/root/seed_architecture",
+        "sha256": "304a16ba1d0f7d210ec176a3f84e10a0ca8d55bafd2730aca430e09e004411ee"
+      },
+      {
+        "outcome": "PASS",
+        "revision": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+        "url": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+        "role": "UAT/Product",
+        "session": "/root/seed_uat",
+        "sha256": "1e214dfdc930206d864248d68e2e233a795b84576a664960147b1f21365fcec9"
+      }
+    ],
+    "predecessorReceipt": "https://github.com/Brain-Crumbs/Vibez/blob/16a73b8071f5b9ef390d08504e325b779af291fe/migration/admissions/mig-003.json",
+    "originalPlan": "https://github.com/Brain-Crumbs/IPTFantasyFootball/blob/50ef51e7dd2443dd0cec644c04e8db1b7fd612f7/migration/plan.json",
+    "fetchedEvidence": [
+      {
+        "path": "migration/admissions/evidence/mig-004-pr15.json",
+        "source": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+        "sha256": "a7612dd61f8ae4b7452ac53fee3447acd4b102f2885871fe75dbc068ce47ce5a"
+      },
+      {
+        "path": "migration/admissions/evidence/mig-004-main-ci.json",
+        "source": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42869658896",
+        "sha256": "135b7beb7483df479d39ad36c1815024e2fb90f487fe368b5c14a2a21f6f1f94"
+      }
+    ]
+  }
+}

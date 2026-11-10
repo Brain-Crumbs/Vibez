@@ -2,18 +2,21 @@ import { canonicalJson } from "./json.js";
 
 type Schema = Record<string, unknown>;
 const object = (v: unknown): v is Schema => v !== null && typeof v === "object" && !Array.isArray(v);
-const KEYWORDS = new Set(["$schema", "$id", "title", "description", "$defs", "$ref", "type", "const", "enum", "minLength", "pattern", "format", "properties", "required", "additionalProperties", "items", "oneOf", "allOf", "if", "then"]);
+const KEYWORDS = new Set(["$schema", "$id", "title", "description", "$defs", "$ref", "type", "const", "enum", "minLength", "minItems", "uniqueItems", "minimum", "maximum", "pattern", "format", "properties", "required", "additionalProperties", "items", "oneOf", "allOf", "if", "then"]);
 
 /** Only the authored schemas' vocabulary is supported; new keywords fail closed. */
 export function assertSupportedSchema(schema: Schema): void {
   if (!object(schema)) throw new Error("Local-agent schema must be an object.");
   for (const [key, value] of Object.entries(schema)) {
     if (!KEYWORDS.has(key)) throw new Error(`Unsupported local-agent schema keyword '${key}'.`);
-    if (key === "type" && (typeof value !== "string" || !["object", "array", "string", "boolean", "number", "null"].includes(value))) throw new Error("Unsupported schema type.");
+    if (key === "type" && (typeof value !== "string" || !["object", "array", "string", "boolean", "number", "integer", "null"].includes(value))) throw new Error("Unsupported schema type.");
     if (key === "additionalProperties" && typeof value !== "boolean") throw new Error("Only boolean additionalProperties is supported.");
     if (key === "required" && (!Array.isArray(value) || value.some(v => typeof v !== "string"))) throw new Error("Invalid required schema list.");
     if (key === "enum" && (!Array.isArray(value) || value.length === 0)) throw new Error("Invalid schema enum.");
     if (key === "minLength" && (typeof value !== "number" || !Number.isInteger(value) || value < 0)) throw new Error("Invalid schema minLength.");
+    if (key === "minItems" && (typeof value !== "number" || !Number.isInteger(value) || value < 0)) throw new Error("Invalid schema minItems.");
+    if (key === "uniqueItems" && typeof value !== "boolean") throw new Error("Invalid schema uniqueItems.");
+    if ((key === "minimum" || key === "maximum") && (typeof value !== "number" || !Number.isFinite(value))) throw new Error("Invalid schema numeric bound.");
     if (key === "pattern") { if (typeof value !== "string") throw new Error("Invalid schema pattern."); new RegExp(value, "u"); }
     if (["$defs", "properties", "items", "if", "then"].includes(key) && !object(value)) throw new Error("Unsupported schema fragment.");
     if (["oneOf", "allOf"].includes(key) && (!Array.isArray(value) || value.length === 0)) throw new Error("Invalid schema alternatives.");
@@ -41,7 +44,7 @@ export function schemaErrors(value: unknown, schema: Schema, root: Schema = sche
   if (Object.hasOwn(schema, "const") && canonicalJson(value) !== canonicalJson(schema.const)) errors.push(`${path}: wrong constant`);
   if (Array.isArray(schema.enum) && !schema.enum.some(v => canonicalJson(v) === canonicalJson(value))) errors.push(`${path}: not an allowed value`);
   const type = Array.isArray(value) ? "array" : value === null ? "null" : typeof value;
-  if (typeof schema.type === "string" && type !== schema.type) return [...errors, `${path}: expected ${schema.type}`];
+  if (typeof schema.type === "string" && type !== schema.type && !(schema.type === "integer" && Number.isInteger(value))) return [...errors, `${path}: expected ${schema.type}`];
   if (typeof value === "string") {
     if (typeof schema.minLength === "number" && [...value].length < schema.minLength) errors.push(`${path}: too short`);
     if (typeof schema.pattern === "string" && !new RegExp(schema.pattern, "u").test(value)) errors.push(`${path}: invalid string`);
@@ -57,7 +60,15 @@ export function schemaErrors(value: unknown, schema: Schema, root: Schema = sche
       else if (schema.additionalProperties === false) errors.push(`${path}.${key}: unexpected property`);
     }
   }
-  if (Array.isArray(value) && object(schema.items)) value.forEach((v, i) => errors.push(...schemaErrors(v, schema.items as Schema, root, `${path}[${i}]`)));
+  if (typeof value === "number") {
+    if (typeof schema.minimum === "number" && value < schema.minimum) errors.push(`${path}: below minimum`);
+    if (typeof schema.maximum === "number" && value > schema.maximum) errors.push(`${path}: above maximum`);
+  }
+  if (Array.isArray(value)) {
+    if (typeof schema.minItems === "number" && value.length < schema.minItems) errors.push(`${path}: too few items`);
+    if (schema.uniqueItems === true && new Set(value.map(canonicalJson)).size !== value.length) errors.push(`${path}: duplicate items`);
+    if (object(schema.items)) value.forEach((v, i) => errors.push(...schemaErrors(v, schema.items as Schema, root, `${path}[${i}]`)));
+  }
   if (Array.isArray(schema.oneOf)) {
     const matches = schema.oneOf.filter(s => object(s) && schemaErrors(value, s, root, path).length === 0).length;
     if (matches !== 1) errors.push(`${path}: must match exactly one allowed result shape`);

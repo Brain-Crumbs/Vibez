@@ -398,7 +398,7 @@ export function createLocalReviewFramework(repositoryRoot = "."): ReviewFramewor
   const stateRoot = join(repositoryRoot, LOCAL_AGENT_STATE_RELATIVE_PATH);
   const evidenceRoot = join(stateRoot, "evidence");
   return new ReviewFramework({
-    evidenceStore: new FileEvidenceStore(evidenceRoot, { repositoryRoot }),
+    evidenceStore: new FileEvidenceStore(evidenceRoot),
     evidenceLocation: `${evidenceRoot} (lineage <taskId>::role::<role>)`,
   });
 }

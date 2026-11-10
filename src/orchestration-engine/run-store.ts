@@ -295,10 +295,10 @@ export class FileOrchestrationRunStore implements OrchestrationRunStore {
   private held: string | undefined;
   private readonly lockPath: string;
 
-  constructor(private readonly root: string) {
+  constructor(private readonly root: string, deferDirectory = false) {
     if (!text(root)) throw new RunStoreError("INVALID_JOURNAL", "Run-store root must be a nonempty trimmed path.");
     this.lockPath = join(root, ".orchestration.lock");
-    try { mkdirSync(root, { recursive: true }); } catch (error: unknown) { io(error, "create orchestration journal directory"); }
+    try { if (!deferDirectory) mkdirSync(root, { recursive: true }); } catch (error: unknown) { io(error, "create orchestration journal directory"); }
   }
 
   get(key: string): OrchestrationRunJournal | null {

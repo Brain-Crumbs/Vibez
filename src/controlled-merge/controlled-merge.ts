@@ -1227,9 +1227,9 @@ export class FileControlledMergeTaskLock implements ControlledMergeTaskLock {
   private readonly staleLockMs: number;
   private readonly heartbeatIntervalMs: number;
 
-  constructor(private readonly root: string, options: FileControlledMergeTaskLockOptions = {}) {
+  constructor(private readonly root: string, options: FileControlledMergeTaskLockOptions = {}, deferDirectory = false) {
     if (root.trim().length === 0) throw new RangeError("Task lock root must be non-empty.");
-    mkdirSync(root, { recursive: true });
+    if (!deferDirectory) mkdirSync(root, { recursive: true });
     this.staleLockMs = options.staleLockMs ?? STALE_LOCK_MS;
     this.heartbeatIntervalMs = options.heartbeatIntervalMs ?? DEFAULT_HEARTBEAT_INTERVAL_MS;
   }
@@ -2389,7 +2389,7 @@ export async function createLocalControlledMergeController(
   const branchLifecycle = new GitBranchLifecycleAdapter(new LocalGitBranchOperations(repositoryRoot));
   const stateRoot = join(repositoryRoot, LOCAL_AGENT_STATE_RELATIVE_PATH);
   const lifecycleRoot = join(stateRoot, "lifecycle");
-  const evidenceStore = new FileEvidenceStore(join(stateRoot, "evidence"), { repositoryRoot });
+  const evidenceStore = new FileEvidenceStore(join(stateRoot, "evidence"));
   const stateStore = new FileControlledMergeStateStore(lifecycleRoot);
   const taskLock = new FileControlledMergeTaskLock(lifecycleRoot);
   const lockStore = new FileAssignmentLockStore(join(stateRoot, "assignments"));

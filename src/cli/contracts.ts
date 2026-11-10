@@ -25,6 +25,7 @@ export type ErrorCode =
   | "RECOVERY_STATE_CONFLICT"
   | "RECOVERY_AUDIT_INVALID"
   | "RECOVERY_RECOVERY_BUSY"
+  | "PROJECT_CONFIGURATION_REQUIRED"
   | "INTERNAL_ERROR";
 
 export interface CliError {

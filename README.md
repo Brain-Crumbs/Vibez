@@ -39,8 +39,8 @@ node dist/cli/cli.js --json status
 ```
 
 A fresh checkout has an empty active registry. Follow [operating instructions](AGENTS.md)
-before registering or starting work. The project configuration examples describe
-the design for later portability work.
+before registering or starting work. To select a different checkout, use the
+[configured runtime guide](docs/CONFIGURED_RUNTIME.md).
 
 - [CLI and operator documentation](docs/README.md)
 - [Public API design](docs/PUBLIC_API.md)
