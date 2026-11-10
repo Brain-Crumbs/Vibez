@@ -123,6 +123,16 @@ test("configured graph uses package assets and literal validators with isolated 
   assert.equal(result.outcome, "PASS");
   assert.deepEqual(result.checks.map(check => check.validatorId), ["python-test"]);
   assert.ok(existsSync(a.config.paths.evidence));
+  const audit = await a.diagnostics.audit(taskId);
+  assert.equal(audit.projectIdentity, a.config.projectIdentity);
+  assert.ok(audit.evidence.some(item => item.engine?.configDigest === a.config.configDigest && item.outcome === "PASS"));
+  assert.equal(audit.providerAttempts[0].authority, "OBSERVATION_ONLY");
+  assert.equal(audit.providerAttempts[0].state, "PENDING");
+  const preflight = await a.diagnostics.checkUpgrade({ targetPackageVersion: "0.1.0-mig007.0",
+    quiescence: { localWritersDrained: true, externalSessionsDrained: true } });
+  assert.equal(preflight.compatible, false);
+  assert.ok(preflight.findings.includes("UNSETTLED_EXTERNAL_PACKET"), JSON.stringify(preflight));
+
   assert.ok(!existsSync(join(alpha.root, "schemas")) && !existsSync(join(alpha.root, ".agent")));
   assert.ok(!existsSync(b.config.paths.state));
   assert.equal(a.qaReview.prepareContext({ taskId }).context.artifacts.some(artifact => artifact.kind === "diff"), true);

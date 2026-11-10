@@ -269,7 +269,7 @@ export class DeveloperValidationGate {
       taskId: task.taskId,
       expectedState: record.currentState,
       toState,
-      eventId: `dev-validation:${task.taskId}:${request.runId}:${record.currentState}->${toState}`,
+      eventId: `dev-validation:${task.taskId}:${request.runId}:${record.currentState}->${toState}:${record.history.length + 1}`,
       occurredAt: request.occurredAt,
       reason: `Developer validation gate transition ${record.currentState} -> ${toState} (${outcome}).`,
       evidenceRef,

@@ -171,3 +171,9 @@ The PR must report exact executed results and fixture evidence; this mapping is 
 ## Windows durability boundary
 
 On Windows, file contents are fsynced and publication remains atomic, but Node cannot fsync directories. Process-interruption recovery is supported; directory-entry durability across OS crash or power loss is not guaranteed. Use a POSIX filesystem host when that stronger durability is required.
+
+MIG-007 adds read-only [upgrade compatibility inspection](COMPATIBILITY.md)
+alongside recovery. Audit and preflight never perform recovery or claim
+quiescence from file observations alone. A historical validation ID collision
+from the old writer can be inspected without editing the lifecycle record.
+Unknown versions and unresolved writer signals block the package handoff.

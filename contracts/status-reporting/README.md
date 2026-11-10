@@ -154,3 +154,14 @@ Required reachable producer-output ranges:
 ## BOOT-032 recovery consumer
 
 `control-plane.recovery-tools` depends on `read-only-project-status`, `latest-revision-bound-evidence-status`. reuse read-only lifecycle/assignment/revision/evidence dependencies without store initialization. corrupt individual records must remain explicit findings or apply blockers. Accepted and required reachable outputs: valid local source observations, null missing records and source errors. Existing producer behavior and version are unchanged; this records the new consumer. See [the recovery contract](../recovery-tools/README.md) for offline mutation/audit boundaries.
+
+## MIG-007 historical validation labels
+
+The original validation writer could reuse an event label after legal rework
+under the same assignment run. Local readers accept the original records only
+when the producer label, task, actor and run match, the intervening lifecycle
+shows legal rework, and both revisions resolve to distinct, ordered validator
+evidence sequences. The view preserves the original label and sequence. Other
+duplicate identities remain invalid. New validation events include their
+lifecycle ordinal in the label. Evidence and lifecycle schema versions are
+unchanged.

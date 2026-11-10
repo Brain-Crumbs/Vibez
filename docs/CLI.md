@@ -265,3 +265,10 @@ All errors are non-zero. The top-level JSON envelope remains unchanged; `start`,
 ## Provider neutrality
 
 The CLI imports no AI SDK and requires no provider credential. BOOT-029 uses the provider-neutral runner and local/manual file adapter. The operator controls the external role session; no desktop UI automation is provided. BOOT-013 and BOOT-016 retain their repository-native workflow boundaries.
+
+MIG-007 adds `vibez [--json] audit <task-id>` and
+`vibez [--json] upgrade check <package-version> [quiescent]`. Both are
+read-only and preserve the v1 envelope. Use the configured host or the
+diagnostics library export for configured paths. See the
+[compatibility and rollback guide](COMPATIBILITY.md) for report semantics,
+writer verification and the protected backup procedure.
