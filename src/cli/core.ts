@@ -1,3 +1,4 @@
+import { readPackageIdentity } from "../project-assets/identity.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { runRecoveryCommand, renderRecoveryResult } from "./recovery.js";
@@ -28,7 +29,6 @@ import { ALL_COMMANDS, IMPLEMENTED_COMMANDS, RESERVED_COMMANDS, isReservedComman
 import { AgentProviderError } from "../agent-provider/index.js";
 import { runManualCommand, type ConfiguredManual } from "./manual.js";
 import {
-  CLI_VERSION,
   EXIT_CODES,
   OUTPUT_SCHEMA_VERSION,
   type CliError,
@@ -273,11 +273,19 @@ export async function runCli(
         message: `Command 'version' does not accept arguments: ${parsed.rest.join(" ")}`,
       });
     }
+    let version: string;
+    try {
+      version = readPackageIdentity().version;
+    } catch (error) {
+      return fail("version", parsed.json, EXIT_CODES.INTERNAL_ERROR, {
+        code: "INTERNAL_ERROR", message: error instanceof Error ? error.message : String(error),
+      });
+    }
     return succeed(
       "version",
       parsed.json,
-      { cliVersion: CLI_VERSION, outputSchemaVersion: OUTPUT_SCHEMA_VERSION },
-      `ipt-agent ${CLI_VERSION} (output schema ${OUTPUT_SCHEMA_VERSION})`,
+      { cliVersion: version, outputSchemaVersion: OUTPUT_SCHEMA_VERSION },
+      `ipt-agent ${version} (output schema ${OUTPUT_SCHEMA_VERSION})`,
     );
   }
 

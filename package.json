@@ -1,25 +1,131 @@
 {
-  "name": "@iptfantasyfootball/control-plane",
-  "version": "0.1.0",
+  "name": "@brain-crumbs/vibez",
+  "version": "0.1.0-mig005.1",
   "private": true,
-  "description": "Private Vibez workflow seed build. Package distribution is decided separately.",
+  "description": "Vibez workflow library and CLI (private candidate).",
   "type": "module",
   "bin": {
-    "agent": "./dist/cli/cli.js"
+    "agent": "dist/cli/cli.js",
+    "vibez": "dist/cli/cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test tests/cli.test.mjs tests/task-registry.test.mjs tests/dependency-graph.test.mjs tests/next-task.test.mjs tests/lifecycle-state-machine.test.mjs tests/assignment-lock.test.mjs tests/git-branch-lifecycle.test.mjs tests/context-compiler.test.mjs tests/context-compiler-review-regressions.test.mjs tests/dev-start.test.mjs tests/validation-framework.test.mjs tests/evidence-store.test.mjs tests/dev-validation.test.mjs tests/review-framework.test.mjs tests/qa-review.test.mjs tests/architecture-review.test.mjs tests/uat-review.test.mjs tests/review-rework.test.mjs tests/pr-lifecycle.test.mjs tests/ci-workflow.test.mjs tests/merge-readiness.test.mjs tests/controlled-merge.test.mjs tests/agent-provider.test.mjs tests/orchestration-engine.test.mjs tests/orchestration-run-store.test.mjs tests/local-agent-adapter.test.mjs tests/manual-cli.test.mjs tests/status-reporting.test.mjs tests/status-source.test.mjs tests/workflow-diagnostics.test.mjs tests/diagnostics-cli.test.mjs tests/recovery-tools.test.mjs tests/recovery-check.test.mjs tests/recovery-cli.test.mjs tests/canary-e2e.test.mjs tests/adversarial-workflow.test.mjs tests/project-services.test.mjs",
+    "test": "npm run build && node --test tests/cli.test.mjs tests/task-registry.test.mjs tests/dependency-graph.test.mjs tests/next-task.test.mjs tests/lifecycle-state-machine.test.mjs tests/assignment-lock.test.mjs tests/git-branch-lifecycle.test.mjs tests/context-compiler.test.mjs tests/context-compiler-review-regressions.test.mjs tests/dev-start.test.mjs tests/validation-framework.test.mjs tests/evidence-store.test.mjs tests/dev-validation.test.mjs tests/review-framework.test.mjs tests/qa-review.test.mjs tests/architecture-review.test.mjs tests/uat-review.test.mjs tests/review-rework.test.mjs tests/pr-lifecycle.test.mjs tests/ci-workflow.test.mjs tests/merge-readiness.test.mjs tests/controlled-merge.test.mjs tests/agent-provider.test.mjs tests/orchestration-engine.test.mjs tests/orchestration-run-store.test.mjs tests/local-agent-adapter.test.mjs tests/manual-cli.test.mjs tests/status-reporting.test.mjs tests/status-source.test.mjs tests/workflow-diagnostics.test.mjs tests/diagnostics-cli.test.mjs tests/recovery-tools.test.mjs tests/recovery-check.test.mjs tests/recovery-cli.test.mjs tests/canary-e2e.test.mjs tests/adversarial-workflow.test.mjs tests/project-services.test.mjs tests/packed-package.test.mjs",
     "preagent": "npm run build",
     "agent": "node dist/cli/cli.js",
     "canary:rehearse": "npm run build && node scripts/canary-rehearsal.mjs",
     "test:adversarial": "npm run build && node --test tests/adversarial-workflow.test.mjs",
-    "test:adversarial:mutations": "npm run build && node scripts/adversarial-mutations.mjs"
+    "test:adversarial:mutations": "npm run build && node scripts/adversarial-mutations.mjs",
+    "pack:candidate": "node scripts/pack-candidate.mjs",
+    "test:package": "npm run build && node --test tests/packed-package.test.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": "^22.0.0 || ^24.0.0"
   },
   "devDependencies": {
     "typescript": "5.8.3"
-  }
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/public/index.d.ts",
+        "default": "./dist/public/index.js"
+      }
+    },
+    "./config": {
+      "import": {
+        "types": "./dist/public/config.d.ts",
+        "default": "./dist/public/config.js"
+      }
+    },
+    "./assets": {
+      "import": {
+        "types": "./dist/public/assets.d.ts",
+        "default": "./dist/public/assets.js"
+      }
+    },
+    "./registry": {
+      "import": {
+        "types": "./dist/public/registry.d.ts",
+        "default": "./dist/public/registry.js"
+      }
+    },
+    "./lifecycle": {
+      "import": {
+        "types": "./dist/public/lifecycle.d.ts",
+        "default": "./dist/public/lifecycle.js"
+      }
+    },
+    "./context": {
+      "import": {
+        "types": "./dist/public/context.d.ts",
+        "default": "./dist/public/context.js"
+      }
+    },
+    "./validation": {
+      "import": {
+        "types": "./dist/public/validation.d.ts",
+        "default": "./dist/public/validation.js"
+      }
+    },
+    "./evidence": {
+      "import": {
+        "types": "./dist/public/evidence.d.ts",
+        "default": "./dist/public/evidence.js"
+      }
+    },
+    "./review": {
+      "import": {
+        "types": "./dist/public/review.d.ts",
+        "default": "./dist/public/review.js"
+      }
+    },
+    "./workflow": {
+      "import": {
+        "types": "./dist/public/workflow.d.ts",
+        "default": "./dist/public/workflow.js"
+      }
+    },
+    "./providers": {
+      "import": {
+        "types": "./dist/public/providers.d.ts",
+        "default": "./dist/public/providers.js"
+      }
+    },
+    "./integration": {
+      "import": {
+        "types": "./dist/public/integration.d.ts",
+        "default": "./dist/public/integration.js"
+      }
+    },
+    "./diagnostics": {
+      "import": {
+        "types": "./dist/public/diagnostics.d.ts",
+        "default": "./dist/public/diagnostics.js"
+      }
+    },
+    "./cli": {
+      "import": {
+        "types": "./dist/public/cli.d.ts",
+        "default": "./dist/public/cli.js"
+      }
+    }
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "schemas/v1/*.schema.json",
+    "contracts/*/module-contract.json",
+    "docs/specs/project-config.schema.json",
+    "examples/alpha/vibez.config.json",
+    "examples/beta/vibez.config.json",
+    "docs/INSTALL.md",
+    "docs/PUBLIC_API.md",
+    "NOTICE.md",
+    "docs/CLI.md",
+    "docs/COMPATIBILITY.md",
+    "docs/CONFIGURED_RUNTIME.md",
+    "docs/SUPPORT.md"
+  ],
+  "license": "UNLICENSED"
 }

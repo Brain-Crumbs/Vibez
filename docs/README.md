@@ -4,6 +4,8 @@ Human-readable architecture and operating documentation introduced by later boot
 
 ## Active bootstrap documents
 
+- [Install and verify Vibez](INSTALL.md) — build a private tarball and run the installed library and executable.
+
 - [CLI setup and commands](CLI.md) — build and operate the local CLI from a Vibez checkout.
 - [ROLE_MODEL.md](ROLE_MODEL.md) — BOOT-002 normative responsibilities, context visibility, prohibited actions, output shape, and approval authority for Developer, QA, Architect, UAT/Product, and Merge Controller roles.
 - [Isolated rehearsal](SEED_REHEARSAL.md) — exercise the inherited gates and packet adapter in a disposable Git repository.

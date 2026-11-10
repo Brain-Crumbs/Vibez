@@ -7,7 +7,7 @@ explicit blockers under AC-05; MIG-003/005/008 must enforce the relevant gate.
 | Decision | Disposition | Accountable owner and resolution criterion |
 | --- | --- | --- |
 | Repository | Brain-Crumbs/Vibez, public, accepted | Owner selected destination; MIG-003 verifies rights before copying source |
-| Package | Propose `@brain-crumbs/vibez`, single ESM package, no CJS guarantee | Brain-Crumbs confirms scope/name control and collision check before MIG-005 artifact identity is fixed; unresolved |
+| Package | Private candidate uses provisional `@brain-crumbs/vibez`, single ESM package, no CJS guarantee | Brain-Crumbs confirms scope/name control and collision check before approving a distributed artifact identity. The public registry returned no published package for that name during MIG-005; scope control remains unresolved |
 | Channel | Immutable versioned tarball plus SHA-256 first; no npm publication | Brain-Crumbs approves actual release location/access and immutability policy before MIG-008; public npm requires a later explicit decision |
 | Source/license rights | Scoped owner authorization for the MIG-003 source snapshot | [Decision and audit](https://github.com/Brain-Crumbs/Vibez/issues/3#issuecomment-6747942125). MIG-003 verifies each included path against the exact snapshot and records any required notices or exclusions before copying |
 | Runtime | Target Node 22 and 24 LTS, ESM, npm lockfile | MIG-005 establishes engines/package semantics; MIG-008 passes both majors. Historical Node 20 build remains a compatibility probe, not a security/support promise |
@@ -30,12 +30,15 @@ Use the [owner decision and scope digest](https://github.com/Brain-Crumbs/Vibez/
 to verify the exact candidate set. Keep required upstream notices and exclude
 any material with unclear redistribution rights until permission is recorded.
 Changes to the source revision or expanded scope require a refreshed decision.
-Package distribution requires its separate channel and rights decision.
+Package distribution requires its separate channel and rights decision. The
+private candidate has `UNLICENSED` metadata and ships the source export
+notice. Generating and testing the tarball locally grants no distribution rights.
 
 ## Support and release evidence
 
-Node runtime targets are proposed support requirements, not evidence of current
-installed compatibility. The pinned design-validation engine still declares
+The package manifest targets Node 22 and 24. MIG-005 CI exercises the packed
+binary on Ubuntu with Node 22 and Windows with Node 24. MIG-008 owns the full
+installed consumer matrix. The pinned design-validation engine still declares
 Node >=20. MIG-002 checks design on Python 3.11 and local Windows Python; the
 engine regression suite does not prove the future package matrix.
 

@@ -19,21 +19,34 @@ export function readPackageJson(path: string): { document: Record<string, unknow
   } catch {
     throw new Error(`Missing Vibez package asset '${path}'. Reinstall the complete package.`);
   }
-  const document: unknown = JSON.parse(content);
+  let document: unknown;
+  try {
+    document = JSON.parse(content);
+  } catch {
+    throw new Error(`Invalid JSON in Vibez package asset '${path}'. Reinstall the complete package.`);
+  }
   if (document === null || typeof document !== "object" || Array.isArray(document)) {
     throw new Error(`Vibez package asset '${path}' must be a JSON object.`);
   }
   return { document: document as Record<string, unknown>, sha256: createHash("sha256").update(content).digest("hex") };
 }
 
+function listAssetDirectory(path: string) {
+  try {
+    return readdirSync(join(packageRoot, path), { withFileTypes: true });
+  } catch {
+    throw new Error(`Missing or unreadable Vibez package asset directory '${path}'. Reinstall the complete package.`);
+  }
+}
+
 export function getAssetCatalog() {
-  const schemas = readdirSync(join(packageRoot, "schemas/v1")).filter(name => name.endsWith(".schema.json")).sort()
+  const schemas = listAssetDirectory("schemas/v1").map(entry => entry.name).filter(name => name.endsWith(".schema.json")).sort()
     .map(name => {
       const path = `schemas/v1/${name}`;
       const asset = readPackageJson(path);
       return Object.freeze({ id: String(asset.document.$id), path, sha256: asset.sha256 });
     });
-  const contracts = readdirSync(join(packageRoot, "contracts"), { withFileTypes: true })
+  const contracts = listAssetDirectory("contracts")
     .filter(entry => entry.isDirectory() && entry.name !== "examples").map(entry => entry.name).sort()
     .map(name => {
       const path = `contracts/${name}/module-contract.json`;

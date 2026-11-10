@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "taskId": "MIG-005",
+  "repository": "Brain-Crumbs/Vibez",
+  "issue": "https://github.com/Brain-Crumbs/Vibez/issues/5",
+  "issueBodySha256": "e66b9e2f71fbb4a5317147a6479c3efe94a5f836afeb97011384f357111be7c3",
+  "integrationBase": "b64ac4e1fa19c03d379245ad8bce6d384ecaf601",
+  "canonicalBranch": "migration/mig-005-library-cli-package",
+  "definition": {
+    "sha256": "22b94496d2b8cbad7159f3f0e44b667680df8b3dc655c705315dc82b48c35fd3",
+    "path": "tasks/definitions/mig-005.task.json"
+  },
+  "requirement": {
+    "sha256": "90b54e6df3dfe04419d8cd82cc44e9de41c29223f3d0530dd84e510cff1b7c2d",
+    "path": "requirements/mig-005.requirement.json"
+  },
+  "verifier": "Brain-Crumbs maintainer delegate",
+  "observedAt": "2026-11-10T11:48:28.6499358-08:00",
+  "grant": "Implement one eligible issue, publish its reviewed PR and merge when checks and reviews are satisfied. No package distribution grant.",
+  "prerequisite": {
+    "taskId": "MIG-004",
+    "issue": "https://github.com/Brain-Crumbs/Vibez/issues/4",
+    "pr": "https://github.com/Brain-Crumbs/Vibez/pull/16",
+    "reviewedHead": "cb04494ed388b61d2da61532a557a972f6d207a2",
+    "merge": "b64ac4e1fa19c03d379245ad8bce6d384ecaf601",
+    "lifecycle": "Native DONE verified in the original Vibez project store",
+    "mergeEvidence": "MIG-004::merge@1",
+    "exactHeadChecks": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T18:43:38Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42877878560/job/130045995385",
+        "name": "Build and test (Node)",
+        "startedAt": "2026-11-10T18:42:26Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T18:42:39Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42877878560/job/130045996036",
+        "name": "Schema and contract validation (Python)",
+        "startedAt": "2026-11-10T18:42:27Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T18:50:49Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42877878560/job/130045995881",
+        "name": "Seed validation (Windows)",
+        "startedAt": "2026-11-10T18:42:26Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      }
+    ],
+    "mainCi": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42879503202",
+    "transitiveReceipt": "migration/admissions/mig-004.json"
+  }
+}

@@ -1,13 +1,12 @@
 export const OUTPUT_SCHEMA_VERSION = "1.0.0" as const;
-export const CLI_VERSION = "0.1.0" as const;
 
-export const EXIT_CODES = {
+export const EXIT_CODES = Object.freeze({
   SUCCESS: 0,
   USAGE_ERROR: 2,
   NOT_IMPLEMENTED: 3,
   WORKFLOW_BLOCKED: 4,
   INTERNAL_ERROR: 70,
-} as const;
+} as const);
 
 export type ExitCode = (typeof EXIT_CODES)[keyof typeof EXIT_CODES];
 
@@ -42,7 +41,7 @@ export interface OutputEnvelope<T> {
 }
 
 export interface CommandDescriptor {
-  name: string;
-  summary: string;
-  status: "implemented" | "reserved";
+  readonly name: string;
+  readonly summary: string;
+  readonly status: "implemented" | "reserved";
 }
