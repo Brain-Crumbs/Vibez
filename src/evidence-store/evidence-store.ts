@@ -105,7 +105,7 @@ export class FileEvidenceStore implements EvidenceStore {
   readonly #schemas: ReadonlyMap<SupportedEvidenceSchemaId, LoadedSchema>;
   readonly #readOnly: boolean;
 
-  constructor(root: string, options: { readonly repositoryRoot?: string; readonly readOnly?: boolean } = {}) {
+  constructor(root: string, options: { readonly repositoryRoot?: string; readonly readOnly?: boolean; readonly deferDirectory?: boolean } = {}) {
     if (!root.trim()) throw new RangeError("Evidence store root must be non-empty.");
     this.#root = root;
     this.#readOnly = options.readOnly ?? false;
@@ -115,6 +115,7 @@ export class FileEvidenceStore implements EvidenceStore {
       schemas.set(schemaId, loadSchema(repositoryRoot, schemaId));
     }
     this.#schemas = schemas;
+    if (!this.#readOnly && options.deferDirectory !== true) mkdirSync(this.#root, { recursive: true });
   }
 
   record(payload: unknown): RecordResult {

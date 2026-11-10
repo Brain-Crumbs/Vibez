@@ -71,6 +71,11 @@ function fixture(t, name, adjust = () => {}, parent = tmpdir()) {
 test("configured graph uses package assets and literal validators with isolated state", async t => {
   const alpha = fixture(t, "alpha");
   const beta = fixture(t, "beta");
+  const dependency = JSON.parse(readFileSync(join(alpha.root, "planning/tasks/demo.task.json"), "utf8"));
+  alpha.put("planning/tasks/dependent.task.json", { ...dependency, taskId: "DEMO-002", title: "Dependent consumer",
+    canonicalBranch: "feature/dependent", dependencies: [taskId], requirements: [], allowedPaths: ["consumer.txt"] });
+  alpha.git("add", ".");
+  alpha.git("commit", "-m", "Register a dependent that shares the producer contract");
   const installed = mkdtempSync(join(tmpdir(), "vibez installed "));
   t.after(() => rmSync(installed, { recursive: true, force: true }));
   for (const path of ["package.json", "dist", "schemas", "contracts", "docs/specs"]) {
@@ -142,7 +147,9 @@ test("configured graph uses package assets and literal validators with isolated 
   assert.equal(recovery.findings.some(finding => finding.code === "VALIDATION_EVIDENCE_MISSING"), false);
   await assert.rejects(createProjectServices(alpha.location, { ...alpha.host, identity: "different-host@1" }), /bound to another project/);
   const reverted = await createInstalledServices(alpha.location, alpha.host);
-  assert.equal(reverted.status.read(now).tasks[0].state, "MERGE_READY");
+  const finalStatus = reverted.status.read(now);
+  assert.equal(finalStatus.tasks.find(task => task.taskId === taskId).state, "MERGE_READY");
+  assert.equal(finalStatus.tasks.find(task => task.taskId === "DEMO-002").state, "PLANNED");
   assert.equal(existsSync(join(installed, ".vibez")), false);
   assert.equal(existsSync(join(alpha.root, ".agent")), false);
 });

@@ -41,7 +41,7 @@ Loads local repository task definitions into a deterministic, schema-validated r
 ## Invariants
 
 - Stable task ID is the registry key.
-- Local repository schema is authoritative; no remote schema lookup is permitted.
+- The package-owned task schema is authoritative by default. Trusted low-level callers can explicitly supply a local schema path. The configured project graph always uses the package schema.
 - Loader performs no dependency eligibility resolution.
 - Loader performs no lifecycle transition, assignment, GitHub synchronization, or agent-provider call.
 - Diagnostics are sorted before being exposed.

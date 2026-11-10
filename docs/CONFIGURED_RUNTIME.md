@@ -118,7 +118,7 @@ versions retain their existing identities.
 
 The project identity record is host-local in the selected checkout's Git
 directory. A task's first authorized assignment also binds its input
-identities. Tracked product files and affected project contracts within the declared task scope can change between Developer start and validation. Later role packets read those contracts at the candidate revision. The original Developer invocation and review evidence keep their own revision identities. Changes to the config, host, requirements or contracts outside the task scope stop affected work before stale evidence or an old operation is reused. Preserve the binding
+identities. Tracked product files and affected project contracts within the declared task scope can change between Developer start and validation. Later role packets read those contracts at the candidate revision. The original Developer invocation and review evidence keep their own revision identities. Changes to the config or host stop the project. A change to requirements or contracts outside the active task scope stops that task before stale evidence or an old operation is reused. An unstarted dependent resolves shared contracts at its own exact revision. Preserve the binding
 files with the corresponding state when diagnosing a stopped run.
 After configured state is bound, the legacy executable refuses to open
 that checkout implicitly. Legacy source-checkout factories remain available

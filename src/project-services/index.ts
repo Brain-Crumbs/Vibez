@@ -131,7 +131,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
         ? { artifactId: artifact.artifactId, kind: artifact.kind, sourcePath: artifact.sourcePath }
         : artifact) });
   };
-  const taskInputs = new Map([...registry].map(([id, task]) => [id, inputsAt(task, config.revision)]));
+  for (const task of registry.values()) context.artifactsFor(task, registry, config.revision);
   const validatorBinding = validatorResolver.resolve([...registry.values()][0]!, config.revision);
   const executionBinding = digest({
     config: config.configDigest, project: config.projectIdentity, worktree: config.worktreeIdentity, assets: catalog,
@@ -155,7 +155,16 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     }
   }
 
-  function assertCurrent(): void {
+  function assertTaskBinding(taskId: string, revision: string): void {
+    const original = readTaskBinding(taskId);
+    if (original === null) return;
+    const task = registry.get(taskId);
+    if (task === undefined || inputsAt(task, revision) !== original) {
+      throw new ConfigError("IDENTITY_CONFLICT", `Tracked inputs for task '${taskId}' changed. Preserve its history and reconcile the original binding before continuing.`);
+    }
+  }
+
+  function assertCurrent(taskId?: string): void {
     const revision = projectGit(projectRoot, ["rev-parse", "--verify", "HEAD"]).trim();
     config.assertCurrent(revision);
     if (registryIdentity(revision) !== registryDigest || context.load(revision).policyDigest !== contextPolicyDigest ||
@@ -164,12 +173,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     }
     for (const name of writablePaths) verifyTree(paths[name]);
     config.assertBinding(executionBinding);
-    for (const [id, task] of registry) {
-      const original = readTaskBinding(id);
-      if (inputsAt(task, revision) !== taskInputs.get(id) || (original !== null && original !== taskInputs.get(id))) {
-        throw new ConfigError("IDENTITY_CONFLICT", `Tracked inputs for task '${id}' changed. Preserve its history and reconcile the original binding before continuing.`);
-      }
-    }
+    if (taskId !== undefined) assertTaskBinding(taskId, revision);
   }
 
   function guarded<Args extends unknown[], Result>(method: (...args: Args) => Result): (...args: Args) => Result {
@@ -179,16 +183,24 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     };
   }
 
+  function taskGuarded<Request extends { readonly taskId: string }, Result>(method: (request: Request) => Result): (request: Request) => Result {
+    return request => {
+      assertCurrent(request?.taskId);
+      return method(request);
+    };
+  }
+
   function prepareWrite(...directories: string[]): void {
     assertCurrent();
     config.bindStorage(executionBinding);
     for (const directory of directories) mkdirSync(directory, { recursive: true });
   }
 
-  const fileEvidence = new FileEvidenceStore(paths.evidence);
+  const fileEvidence = new FileEvidenceStore(paths.evidence, { deferDirectory: true });
   const source = await createLocalStatusDependencies(projectRoot, registry, { state: paths.state, evidence: paths.evidence, evidenceStore: fileEvidence });
   const lifecycle = new FileDeveloperStartStateStore(lifecycleRoot, true);
   const stateStore = { get: source.lifecycle.get, save: (...args: Parameters<typeof lifecycle.save>) => {
+    assertCurrent(args[0].taskId);
     prepareWrite(lifecycleRoot);
     lifecycle.save(...args);
   } };
@@ -199,15 +211,16 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     acquire: (request: Parameters<typeof assignmentFiles.acquire>[0]) => {
       const task = registry.get(request.taskId);
       if (task === undefined) throw new ConfigError("IDENTITY_CONFLICT", "Task is missing its configured inputs.");
+      const currentRevision = gitOperations.currentRevision();
+      assertTaskBinding(task.taskId, currentRevision);
+      const bound = inputsAt(task, currentRevision);
       const target = gitOperations.localBranchExists(task.canonicalBranch) ? task.canonicalBranch : integrationTarget;
       const revision = projectGit(projectRoot, ["rev-parse", "--verify", `refs/heads/${target}`]).trim();
       config.assertRevisionConfig(revision);
-      if (registryIdentity(revision) !== registryDigest || inputsAt(task, revision) !== taskInputs.get(task.taskId)) {
+      if (registryIdentity(revision) !== registryDigest || inputsAt(task, revision) !== bound) {
         throw new ConfigError("IDENTITY_CONFLICT", "Canonical branch has different configured task inputs.");
       }
       prepareWrite(join(assignmentsRoot, ".history"), join(assignmentsRoot, ".claims"));
-      const bound = taskInputs.get(request.taskId);
-      if (bound === undefined) throw new ConfigError("IDENTITY_CONFLICT", "Task is missing its configured inputs.");
       try {
         writeFileSync(taskBindingPath(request.taskId), bound, { flag: "wx", encoding: "utf8" });
       } catch (error) {
@@ -229,6 +242,9 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     record: (payload: unknown) => {
       const validation = fileEvidence.validate(payload);
       if (!validation.ok) return validation;
+      if (typeof payload === "object" && payload !== null && "taskId" in payload && typeof payload.taskId === "string") {
+        assertCurrent(payload.taskId);
+      }
       prepareWrite(paths.evidence);
       return fileEvidence.record(payload);
     },
@@ -284,16 +300,16 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
   });
 
   const developerStart = { start: guarded(startGate.start.bind(startGate)) };
-  const developerValidation = { validate: guarded(validationGate.validate.bind(validationGate)) };
-  const qaReview = { prepareContext: guarded(qa.prepareContext.bind(qa)), review: guarded(qa.review.bind(qa)) };
-  const architectureReview = { prepareContext: guarded(architecture.prepareContext.bind(architecture)), review: guarded(architecture.review.bind(architecture)) };
-  const uatReview = { prepareContext: guarded(uat.prepareContext.bind(uat)), review: guarded(uat.review.bind(uat)) };
+  const developerValidation = { validate: taskGuarded(validationGate.validate.bind(validationGate)) };
+  const qaReview = { prepareContext: taskGuarded(qa.prepareContext.bind(qa)), review: taskGuarded(qa.review.bind(qa)) };
+  const architectureReview = { prepareContext: taskGuarded(architecture.prepareContext.bind(architecture)), review: taskGuarded(architecture.review.bind(architecture)) };
+  const uatReview = { prepareContext: taskGuarded(uat.prepareContext.bind(uat)), review: taskGuarded(uat.review.bind(uat)) };
   const reviewRework = {
-    enterRework: guarded(rework.enterRework.bind(rework)),
-    resumeDevelopment: guarded(rework.resumeDevelopment.bind(rework)),
-    getApprovalStatus: guarded(rework.getApprovalStatus.bind(rework)),
+    enterRework: taskGuarded(rework.enterRework.bind(rework)),
+    resumeDevelopment: taskGuarded(rework.resumeDevelopment.bind(rework)),
+    getApprovalStatus: taskGuarded(rework.getApprovalStatus.bind(rework)),
   };
-  const controlledMerge = { merge: guarded((request: Parameters<typeof merge.merge>[0]) => {
+  const controlledMerge = { merge: taskGuarded((request: Parameters<typeof merge.merge>[0]) => {
     if (host.authorizeMerge === undefined) throw new ConfigError("IDENTITY_CONFLICT", "Controlled merge requires an explicit host authority.");
     return merge.merge(request);
   }) };
@@ -332,6 +348,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
       }
     },
     verifyRequest: request => {
+      assertCurrent(request.taskId);
       const task = registry.get(request.taskId);
       if (task === undefined || !task.requiredReviewRoles.includes(request.role) ||
         branchLifecycle.currentRevision() !== request.revisionIdentity) {
@@ -342,6 +359,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
   const recoveryCheck = guarded((now: string) => checkRecoveryState(projectRoot, { registry, now, paths: statePaths, source, validatorResolver }));
   const recoveryApply = guarded((request: unknown) => {
     const parsed = parseRecoveryRequest(request);
+    assertCurrent(parsed.taskId);
     if (host.authorizeRecovery?.(parsed) !== true) throw new ConfigError("IDENTITY_CONFLICT", "Recovery requires explicit host authority.");
     return recovery.apply(parsed);
   });
@@ -351,7 +369,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     evidence: { getHistory: guarded(fileEvidence.getHistory.bind(fileEvidence)), getCurrent: guarded(fileEvidence.getCurrent.bind(fileEvidence)) },
     validatorResolver,
     developerStart, developerValidation, qaReview, architectureReview, uatReview, reviewRework,
-    pullRequests: { ensurePullRequest: guarded(async (request: Parameters<typeof pr.ensurePullRequest>[0]) => {
+    pullRequests: { ensurePullRequest: taskGuarded(async (request: Parameters<typeof pr.ensurePullRequest>[0]) => {
       const revision = branchLifecycle.currentRevision();
       if (host.authorizePublication?.({ repository, taskId: request.taskId, revision }) !== true) {
         throw new ConfigError("IDENTITY_CONFLICT", "Host publication authorization is required.");
@@ -359,11 +377,18 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
       return pr.ensurePullRequest(request);
     }) },
     ci: host.integration.ci,
-    mergeReadiness: { evaluate: guarded(readiness.evaluate.bind(readiness)) },
+    mergeReadiness: { evaluate: taskGuarded(readiness.evaluate.bind(readiness)) },
     controlledMerge,
-    orchestration: { increaseRetryBudget: guarded(budget.increase), run: guarded((request: OrchestrationRunRequest) => engine.run({
-      ...request, timeoutMs: Math.min(request.timeoutMs ?? document.budgets.operationTimeoutMs, document.budgets.operationTimeoutMs),
-    })) },
+    orchestration: {
+      increaseRetryBudget: taskGuarded(budget.increase),
+      run: guarded((request: OrchestrationRunRequest) => {
+        const key = request.idempotencyKey ?? request.runId;
+        const start = runStore.get(key)?.values.start as { taskId?: string } | undefined;
+        if (start?.taskId !== undefined) assertTaskBinding(start.taskId, gitOperations.currentRevision());
+        return engine.run({ ...request,
+          timeoutMs: Math.min(request.timeoutMs ?? document.budgets.operationTimeoutMs, document.budgets.operationTimeoutMs) });
+      }),
+    },
     status: { read: readStatus },
     diagnostics: {
       explainTask: guarded(diagnostics.explainTask.bind(diagnostics)),
@@ -390,6 +415,12 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     },
   };
   assertCurrent();
+  const currentBranch = gitOperations.currentBranch();
+  for (const task of registry.values()) {
+    if (task.canonicalBranch === currentBranch && source.lifecycle.get(task.taskId)?.currentState !== "DONE") {
+      assertTaskBinding(task.taskId, config.revision);
+    }
+  }
   return Object.freeze(services);
 }
 

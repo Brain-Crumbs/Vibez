@@ -33,7 +33,7 @@
     ],
     "invariants": [
       "registry key equals record taskId",
-      "local repository task schema is authoritative",
+      "package-owned task schema is authoritative by default; trusted low-level callers may explicitly supply schemaPath",
       "reader support does not advance automatically when the local schema version changes",
       "no remote schema or network lookup occurs",
       "dependency eligibility and lifecycle state are not interpreted",
