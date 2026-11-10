@@ -70,7 +70,9 @@ The supported ruleset profile has two parts.
 Use the authenticated GitHub rules-for-branch endpoint and complete ruleset
 details, including bypass actors, to verify the active configuration.
 Pass the results and the permissions from the trusted installation-token
-issuer to verifyGitHubProtection. Fail closed if observations are missing,
+issuer to verifyGitHubProtection, together with independently pinned expected
+repository/ref, check-writer App IDs, controller App ID, host time and an
+observation lifetime of at most 30 seconds. Fail closed if observations are missing,
 expired, incomplete, or from another repository or branch. Read-only token
 permissions must correspond to the credentials actually present in each
 role environment. Verify that workers cannot reach the controller's
@@ -102,7 +104,10 @@ compatible binding. Human-only actions report HUMAN_REQUIRED and require an
 explicit operator decision through the ordinary manual boundary.
 
 Records expose grant/config digests, task/revision and exact PR number where
-applicable, decision and fixed reason, charge and operation ID. Keep commands,
+applicable, approved role/principal or validator/command identities, observed-fact
+digest, decision and fixed reason, charge and operation ID. Unknown actions
+are represented by a null action. Active aborts append one denial linked to
+the original operation. Keep commands,
 model output, credentials and hidden reasoning outside the policy ledger.
 Policy decisions supplement native evidence and do not confer a review or
 record DONE.

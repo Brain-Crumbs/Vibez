@@ -22,4 +22,4 @@ export type { HostDecision, HostGrant, ScopeDenial, ScopedAction, ScopedCapabili
 export { commandPolicyDigest, scopedAgentProvider, scopedValidator } from "../host-policy/worker.js";
 export type { ScopedAgentLimits, ScopedWorkerRuntime } from "../host-policy/worker.js";
 export { scopedMergeEffect } from "../host-policy/merge.js";
-export { verifyGitHubProtection, type GitHubProtectionObservation } from "../host-policy/github-protection.js";
+export { verifyGitHubProtection, type GitHubProtectionObservation, type GitHubProtectionRequirements } from "../host-policy/github-protection.js";

@@ -50,7 +50,7 @@ function fixture(t) {
 }
 
 const operation = { action: "agent", taskId: "AUT-001", revision: head,
-  principal: "developer", role: "Developer", maxTurns: 2, maxCostMicros: 60, timeoutMs: 500 };
+  principal: "developer", role: "Developer", provider: "runner", tools: ["read"], network: "none", maxTurns: 2, maxCostMicros: 60, timeoutMs: 500 };
 const unused = async () => assert.fail("denied operation invoked an external boundary");
 
 test("strict grant parser rejects version, duplicate principals and dangerous paths", t => {
@@ -121,6 +121,7 @@ test("revocation aborts active writer and requires verified drain after an uncer
   state.revoked = true;
   await assert.rejects(current, { code: "INACTIVE_GRANT" });
   assert.equal(signal.aborted, true);
+  assert.equal(policy.decisions().filter(record => record.reason === "INACTIVE_GRANT").length, 1);
   const first = policy.decisions()[0].operationId;
   policy.close();
   const restored = new ScopedHostPolicy(options);
@@ -161,6 +162,7 @@ test("the provider and validator adapters charge actual launches and narrow work
   await assert.rejects(provider.run({ ...request, toolPermissionPolicy: { allowedTools: ["shell"], networkAccess: "full" } }),
     { code: "OUT_OF_SCOPE" });
   assert.equal(invoked, 0);
+  assert.equal(policy.decisions().at(-1).decision, "deny");
   assert.deepEqual(await provider.run(request), { outcome: "PASS" });
   await assert.rejects(scopedValidator(policy, runtime, { ...command, args: ["foreign"] }, "AUT-001", head).execute(),
     { code: "OUT_OF_SCOPE" });
@@ -176,11 +178,25 @@ test("GitHub profile requires source-pinned checks, distinct no-bypass rules and
   rules.push({ type: "update", ruleset_id: 2 });
   const rulesets = [{ id: 1, enforcement: "active", bypass_actors: [] }, { id: 2, enforcement: "active",
     bypass_actors: [{ actor_type: "Integration", actor_id: 23, bypass_mode: "pull_request" }] }];
-  const observation = { rules, rulesets, trustedCheckSources: { test: 14 }, controllerAppId: 23,
+  const expected = { repository: "owner/repo", integrationRef: "main", nowMs: 1000, maxAgeMs: 1000,
+    trustedCheckSources: { test: 14 }, controllerAppId: 23 };
+  const observation = { rules, rulesets, repository: "owner/repo", integrationRef: "main", observedAtMs: 1000,
     workerPermissions: [{ metadata: "read", contents: "read", pull_requests: "read" }] };
-  assert.doesNotThrow(() => verifyGitHubProtection(observation));
-  for (const change of [{ rules: [] }, { rulesets: [rulesets[1]] }, { trustedCheckSources: { test: 99 } },
-    { workerPermissions: [{ metadata: "read", contents: "write" }] }, { controllerAppId: 14 }]) {
-    assert.throws(() => verifyGitHubProtection({ ...observation, ...change }), { code: "PROTECTION_REQUIRED" });
+  assert.doesNotThrow(() => verifyGitHubProtection(observation, expected));
+  for (const change of [{ rules: [] }, { rulesets: [rulesets[1]] }, { repository: "foreign/repo" },
+    { workerPermissions: [{ metadata: "read", contents: "write" }] }, { observedAtMs: 1001 }, { integrationRef: "other" }, { observedAtMs: -10000 }]) {
+    assert.throws(() => verifyGitHubProtection({ ...observation, ...change }, expected), { code: "PROTECTION_REQUIRED" });
   }
+});
+
+test("runtime review and unknown action denial cannot journal untrusted input", async t => {
+  const { options, onCleanup } = fixture(t);
+  const policy = new ScopedHostPolicy(options);
+  onCleanup(() => policy.close());
+  await assert.rejects(policy.execute({ action: "review", taskId: "AUT-001", revision: head,
+    role: "Developer", principal: "developer" }, unused), { code: "OUT_OF_SCOPE" });
+  await assert.rejects(policy.execute({ action: { credential: "secret-marker" }, taskId: "AUT-001", revision: head },
+    unused), { code: "OUT_OF_SCOPE" });
+  assert.equal(policy.decisions().at(-1).action, null);
+  assert.equal(JSON.stringify(policy.decisions()).includes("secret-marker"), false);
 });

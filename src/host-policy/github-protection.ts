@@ -1,10 +1,20 @@
 import { HostPolicyError } from "./index.js";
 
-export interface GitHubProtectionObservation {
-  readonly rules: readonly unknown[];
-  readonly rulesets: readonly unknown[];
+export interface GitHubProtectionRequirements {
+  readonly repository: string;
+  readonly integrationRef: string;
+  readonly nowMs: number;
+  readonly maxAgeMs: number;
   readonly trustedCheckSources: Readonly<Record<string, number>>;
   readonly controllerAppId: number;
+}
+
+export interface GitHubProtectionObservation {
+  readonly repository: string;
+  readonly integrationRef: string;
+  readonly observedAtMs: number;
+  readonly rules: readonly unknown[];
+  readonly rulesets: readonly unknown[];
   /** Actual narrowed GitHub App installation-token permissions from the trusted issuer. */
   readonly workerPermissions: readonly Readonly<Record<string, string>>[];
 }
@@ -19,9 +29,15 @@ function object(value: unknown): Record<string, unknown> | undefined {
  * integration branch and complete authenticated details for their rulesets,
  * including bypass actors. Missing or redacted fields fail closed.
  */
-export function verifyGitHubProtection(observation: GitHubProtectionObservation): void {
+export function verifyGitHubProtection(observation: GitHubProtectionObservation, expected: GitHubProtectionRequirements): void {
   const fail = () => { throw new HostPolicyError("PROTECTION_REQUIRED"); };
-  const { workerPermissions, controllerAppId, trustedCheckSources } = observation;
+  const { workerPermissions } = observation;
+  const { controllerAppId, trustedCheckSources } = expected;
+  if (observation.repository !== expected.repository || observation.integrationRef !== expected.integrationRef ||
+    !Number.isSafeInteger(expected.nowMs) || !Number.isSafeInteger(observation.observedAtMs) ||
+    !Number.isSafeInteger(expected.maxAgeMs) || expected.maxAgeMs <= 0 || expected.maxAgeMs > 30000 ||
+    observation.observedAtMs < 0 || observation.observedAtMs > expected.nowMs ||
+    expected.nowMs - observation.observedAtMs > expected.maxAgeMs) fail();
   if (workerPermissions.length === 0 || !Number.isSafeInteger(controllerAppId) || controllerAppId <= 0 ||
     workerPermissions.some(permissions => permissions.metadata !== "read" ||
       Object.entries(permissions).some(([scope, access]) => !["metadata", "contents", "pull_requests"].includes(scope) ||

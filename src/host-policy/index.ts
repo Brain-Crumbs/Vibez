@@ -75,7 +75,8 @@ type ActionBase = { readonly taskId: string; readonly revision: string };
 export type ScopedOperation = ActionBase & (
   | { readonly action: "start" | "rework" | "push" | "publish" }
   | { readonly action: "agent"; readonly role: ScopedRole; readonly principal: string;
-      readonly maxTurns: number; readonly maxCostMicros: number; readonly timeoutMs: number }
+      readonly maxTurns: number; readonly maxCostMicros: number; readonly timeoutMs: number;
+      readonly provider: string; readonly tools: readonly string[]; readonly network: "none" | "restricted" | "full" }
   | { readonly action: "validator"; readonly validatorId: string; readonly commandDigest: string; readonly timeoutMs: number }
   | { readonly action: "review"; readonly role: Exclude<ScopedRole, "Developer">; readonly principal: string }
   | { readonly action: "ready" | "merge"; readonly pullRequestNumber: number }
@@ -111,15 +112,21 @@ export interface HostDecision {
   readonly configDigest: string;
   readonly occurredAtMs: number;
   readonly decision: "allow" | "deny" | "settled";
-  readonly action: ScopedAction;
+  readonly action: ScopedAction | null;
   readonly taskId: string | null;
   readonly revision: string | null;
   readonly pullRequestNumber: number | null;
   readonly operationId: string;
+  readonly role: ScopedRole | null;
+  readonly principal: string | null;
+  readonly validatorId: string | null;
+  readonly commandDigest: string | null;
+  readonly observedFactsDigest: string;
   readonly charge: Charge;
   readonly reason?: ScopeDenial;
 }
 
+const actions: readonly ScopedAction[] = ["start", "agent", "validator", "review", "rework", "push", "publish", "ready", "merge"];
 const revisionPattern = /^[a-f0-9]{40}$/;
 const zero: Charge = Object.freeze({ turns: 0, commands: 0, cost: 0, ms: 0, reworks: 0 });
 const count = (value: number, minimum = 1) => Number.isSafeInteger(value) && value >= minimum;
@@ -220,6 +227,12 @@ export class ScopedHostPolicy {
     if (record.schemaVersion !== "1.0.0" || record.grantDigest !== this.grantDigest ||
       record.configDigest !== this.grant.configDigest || !count(record.occurredAtMs, 0) ||
       !["allow", "deny", "settled"].includes(record.decision) ||
+      (record.action !== null && !actions.includes(record.action)) ||
+      !/^[a-f0-9]{64}$/.test(record.observedFactsDigest) ||
+      (record.role !== null && !this.grant.roles.some(role => role.role === record.role && role.principal === record.principal)) ||
+      (record.role === null && record.principal !== null) ||
+      (record.validatorId !== null && !this.grant.validators.some(validator => validator.id === record.validatorId &&
+        validator.commandDigest === record.commandDigest)) ||
       !/^[a-f0-9-]{36}$/.test(record.operationId) ||
       !record.charge || Object.keys(zero).some(key => !count(record.charge[key as keyof Charge], 0))) {
       throw new HostPolicyError("STORAGE_UNAVAILABLE");
@@ -276,7 +289,12 @@ export class ScopedHostPolicy {
     if (grant.humanOnly.includes(operation.action)) return "HUMAN_REQUIRED";
     if (!revisionPattern.test(operation.revision) || observation.revision !== operation.revision) return "STALE_HEAD";
     if (operation.action === "agent" || operation.action === "review") {
-      if (!grant.roles.some(role => role.role === operation.role && role.principal === operation.principal)) return "OUT_OF_SCOPE";
+      const role = grant.roles.find(role => role.role === operation.role && role.principal === operation.principal);
+      if (!role || (operation.action === "review" && role.role === "Developer")) return "OUT_OF_SCOPE";
+      if (operation.action === "agent" && (operation.provider !== role.provider ||
+        !Array.isArray(operation.tools) || operation.tools.some(tool => !role.tools.includes(tool)) ||
+        !["none", "restricted"].includes(operation.network) ||
+        (role.network === "none" && operation.network !== "none"))) return "OUT_OF_SCOPE";
     }
     if (operation.action === "validator" && !grant.validators.some(validator => validator.id === operation.validatorId &&
       validator.commandDigest === operation.commandDigest)) return "OUT_OF_SCOPE";
@@ -317,12 +335,19 @@ export class ScopedHostPolicy {
       totals.turns + charge.turns > maxAgentTurns || totals.cost + charge.cost > maxCostMicros ||
       totals.commands + charge.commands > maxCommands || totals.ms + charge.ms > maxRuntimeMs ||
       totals.reworks + charge.reworks > maxReworks)) reason = "BUDGET_EXHAUSTED";
+    const approvedRole = (operation.action === "agent" || operation.action === "review") ?
+      this.grant.roles.find(role => role.role === operation.role && role.principal === operation.principal) : undefined;
+    const approvedValidator = operation.action === "validator" ?
+      this.grant.validators.find(validator => validator.id === operation.validatorId && validator.commandDigest === operation.commandDigest) : undefined;
     const record: HostDecision = {
       schemaVersion: "1.0.0", grantDigest: this.grantDigest, configDigest: this.grant.configDigest, occurredAtMs: now,
-      decision: reason ? "deny" : "allow", action: operation.action, taskId: task?.taskId ?? null,
+      decision: reason ? "deny" : "allow", action: actions.includes(operation.action) ? operation.action : null, taskId: task?.taskId ?? null,
       revision: revisionPattern.test(operation.revision) ? operation.revision : null,
       pullRequestNumber: (operation.action === "merge" || operation.action === "ready") && count(operation.pullRequestNumber) ?
-        operation.pullRequestNumber : null, operationId: randomUUID(), charge: reason ? zero : charge,
+        operation.pullRequestNumber : null, operationId: randomUUID(),
+      role: approvedRole?.role ?? null, principal: approvedRole?.principal ?? null,
+      validatorId: approvedValidator?.id ?? null, commandDigest: approvedValidator?.commandDigest ?? null,
+      observedFactsDigest: digest(JSON.parse(JSON.stringify(observation))), charge: reason ? zero : charge,
       ...(reason ? { reason } : {}),
     };
     this.#record(record);
@@ -330,17 +355,25 @@ export class ScopedHostPolicy {
 
     const controller = new AbortController();
     this.#running.add(record.operationId);
+    const abort = (reason: ScopeDenial) => {
+      if (controller.signal.aborted) return;
+      try {
+        this.#record({ ...record, decision: "deny", occurredAtMs: this.#now(), charge: zero, reason });
+      } finally {
+        controller.abort(new HostPolicyError(reason));
+      }
+    };
     const check = () => {
       try {
         this.#assertLease();
         const denial = this.#denial(operation, this.#observe(operation), this.#now());
-        if (denial) controller.abort(new HostPolicyError(denial));
+        if (denial) abort(denial);
       } catch {
-        controller.abort(new HostPolicyError("STORAGE_UNAVAILABLE"));
+        abort("STORAGE_UNAVAILABLE");
       }
     };
     const deadline = metered ? Math.min(charge.ms, this.grant.expiresAtMs - now) : this.grant.expiresAtMs - now;
-    const timer = setTimeout(() => controller.abort(new HostPolicyError("INACTIVE_GRANT")), Math.min(deadline, 2_147_483_647));
+    const timer = setTimeout(() => abort("INACTIVE_GRANT"), Math.min(deadline, 2_147_483_647));
     const poll = setInterval(check, 100);
     try {
       check();

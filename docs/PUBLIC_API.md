@@ -84,3 +84,9 @@ include provenance/time/currency, bound artifact reads, and redact secrets.
 Authorization for plan publication, execution, PR publication and exact-head merge
 is distinct; existing grants need no redundant confirmation. HTTP/local security,
 planner implementation and new supervision semantics remain #75's work.
+
+The integration export also provides ScopedHostPolicy, parseHostGrant,
+scopedAgentProvider, scopedValidator, scopedMergeEffect and
+verifyGitHubProtection. The configured ProjectHost accepts mergeEffect
+alongside its existing exact-head authorization callback. Their host trust
+and persistence requirements are in [the unattended host guide](UNATTENDED_HOST.md).

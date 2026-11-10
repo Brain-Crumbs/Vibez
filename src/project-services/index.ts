@@ -4,7 +4,7 @@ import { AgentProviderError, AgentRunner, type AgentProvider } from "../agent-pr
 import { ArchitectureReviewGate, RepositoryArchitectureContextSource } from "../architecture-review/index.js";
 import { FileAssignmentLockStore } from "../assignment-lock/index.js";
 import { runCli, type CliRunContext } from "../cli/core.js";
-import { ControlledMergeController, FileControlledMergeTaskLock, type ControlledMergePullRequestPort } from "../controlled-merge/index.js";
+import { ControlledMergeController, FileControlledMergeTaskLock, type ControlledMergeDependencies, type ControlledMergePullRequestPort } from "../controlled-merge/index.js";
 import { DeveloperStartWorkflow, FileDeveloperStartStateStore } from "../dev-start/index.js";
 import { DeveloperValidationGate } from "../dev-validation/index.js";
 import { FileEvidenceStore } from "../evidence-store/index.js";
@@ -51,6 +51,7 @@ export interface ProjectHost {
   readonly hasCredentialReference?: (id: string) => boolean;
   readonly integration: ProjectIntegration;
   readonly authorizePublication?: (request: { repository: string; taskId: string; revision: string }) => boolean;
+  readonly mergeEffect?: ControlledMergeDependencies["mergeEffect"];
   readonly authorizeMerge?: (request: { repository: string; number: number; expectedHeadSha: string }) => boolean;
   readonly authorizeRetryBudget?: (grant: RetryBudgetGrant) => boolean;
   readonly authorizeRecovery?: (request: RecoveryRequest) => boolean;
@@ -305,6 +306,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
   const integration = host.integration.merge;
   const merge = new ControlledMergeController({ ...common, lockStore, integrationTarget, mergeReadiness: readiness,
     taskLock: new FileControlledMergeTaskLock(lifecycleRoot, {}, true),
+    ...(host.mergeEffect === undefined ? {} : { mergeEffect: host.mergeEffect }),
     pullRequests: {
       findPullRequestsByHead: integration.findPullRequestsByHead.bind(integration),
       getPullRequest: integration.getPullRequest.bind(integration),
