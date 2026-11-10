@@ -357,11 +357,15 @@ export class ScopedHostPolicy {
     this.#running.add(record.operationId);
     const abort = (reason: ScopeDenial) => {
       if (controller.signal.aborted) return;
+      let effectiveReason = reason;
       try {
         this.#record({ ...record, decision: "deny", occurredAtMs: this.#now(), charge: zero, reason });
-      } finally {
-        controller.abort(new HostPolicyError(reason));
+      } catch {
+        // Cancellation must still reach the external writer if audit storage
+        // is unavailable. Its original reservation remains unresolved.
+        effectiveReason = "STORAGE_UNAVAILABLE";
       }
+      controller.abort(new HostPolicyError(effectiveReason));
     };
     const check = () => {
       try {

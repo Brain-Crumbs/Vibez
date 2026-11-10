@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, renameSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -199,4 +199,27 @@ test("runtime review and unknown action denial cannot journal untrusted input", 
     unused), { code: "OUT_OF_SCOPE" });
   assert.equal(policy.decisions().at(-1).action, null);
   assert.equal(JSON.stringify(policy.decisions()).includes("secret-marker"), false);
+});
+
+test("unavailable audit storage cancels work without escaping timer or poll callbacks", async t => {
+  for (const mode of ["revoked", "deadline"]) {
+    const child = await t.test(mode, async t => {
+      const { options, state, onCleanup } = fixture(t);
+      const policy = new ScopedHostPolicy(options);
+      onCleanup(() => policy.close());
+      const archive = options.ledgerDirectory + "-offline";
+      const current = policy.execute({ ...operation, timeoutMs: mode === "deadline" ? 30 : 500 }, async ({ signal }) =>
+        new Promise((resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason), { once: true })));
+      renameSync(options.ledgerDirectory, archive);
+      state.revoked = mode === "revoked";
+      try {
+        await assert.rejects(current, { code: "STORAGE_UNAVAILABLE" });
+      } finally {
+        renameSync(archive, options.ledgerDirectory);
+      }
+      assert.equal(policy.decisions().length, 1);
+      state.revoked = false;
+      await assert.rejects(policy.execute(operation, unused), { code: "WRITER_PENDING" });
+    });
+  }
 });
