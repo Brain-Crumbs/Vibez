@@ -53,6 +53,8 @@ export interface ResolvedProjectConfig {
   readonly revision: string;
   readonly paths: Readonly<Record<PathName, string>>;
   assertCurrent(revision?: string): void;
+  assertStorage(): void;
+  assertRevisionConfig(revision: string): void;
   assertBinding(executionBinding: string): void;
   bindStorage(executionBinding: string): void;
 }
@@ -196,6 +198,19 @@ function resolveDocumentPaths(projectRoot: string, configPath: string, config: P
   return paths;
 }
 
+function readTrackedConfig(root: string, revision: string, path: string): unknown {
+  let text: string;
+  try {
+    text = projectGit(root, ["show", `${revision}:${path}`]);
+  } catch (error) {
+    if (error instanceof ConfigError && error.code === "TOOL_UNAVAILABLE") {
+      throw new ConfigError("INPUT_MISSING", "Selected config is missing at the target Git revision.");
+    }
+    throw error;
+  }
+  return readJson(text, "tracked project config");
+}
+
 export function resolveProjectConfig(location: ProjectLocation): ResolvedProjectConfig {
   if (!isAbsolute(location.projectRoot)) throw new ConfigError("UNSAFE_PATH", "Select an absolute project root.");
   let projectRoot: string;
@@ -218,7 +233,7 @@ export function resolveProjectConfig(location: ProjectLocation): ResolvedProject
   const revision = projectGit(projectRoot, ["rev-parse", "--verify", "HEAD"]).trim();
   const configPath = checkedProjectPath(projectRoot, location.configPath, "file");
   if (!lstatExists(configPath)) throw new ConfigError("INPUT_MISSING", "Selected config is missing. Initialize and commit it before use.");
-  const config = parseProjectConfig(readJson(projectGit(projectRoot, ["show", `${revision}:${location.configPath}`]), "tracked project config"));
+  const config = parseProjectConfig(readTrackedConfig(projectRoot, revision, location.configPath));
   const configDigest = digest(config);
   const projectIdentity = digest([config.project.repository.toLowerCase(), config.project.id, folded(gitCommonDir)]);
   const worktreeIdentity = digest([projectIdentity, config.worktree.id, folded(projectRoot)]);
@@ -226,21 +241,44 @@ export function resolveProjectConfig(location: ProjectLocation): ResolvedProject
   const identityFile = join(gitCommonDir, "vibez-project.json");
   const binding = (executionBinding: string) => canonicalJson({ executionBinding, worktreeIdentity, writablePaths: writablePaths.map(name => folded(paths[name])) });
 
-  function assertCurrent(expected = projectGit(projectRoot, ["rev-parse", "--verify", "HEAD"]).trim()): void {
-    if (projectGit(projectRoot, ["rev-parse", "--verify", "HEAD"]).trim() !== expected ||
+  function assertStorage(): void {
+    if (folded(realpathSync(projectRoot)) !== folded(projectRoot) ||
       folded(realpathSync(resolve(projectRoot, projectGit(projectRoot, ["rev-parse", "--git-common-dir"]).trim()))) !== folded(gitCommonDir) ||
       projectGit(projectRoot, ["worktree", "list", "--porcelain", "-z"]).split("\0").filter(part => part.startsWith("worktree ")).length !== 1) {
-      throw new ConfigError("IDENTITY_CONFLICT", "Project revision changed or the repository has multiple worktrees. Use a single dedicated worktree.");
+      throw new ConfigError("IDENTITY_CONFLICT", "Use the original dedicated worktree and Git directory.");
     }
-    checkRepository(projectRoot, config);
-    const gitConfig = readJson(projectGit(projectRoot, ["show", `${expected}:${location.configPath}`]), "tracked project config");
+    for (const name of writablePaths) {
+      const path = checkedProjectPath(projectRoot, config.paths[name], "directory");
+      let ancestor = path;
+      while (!lstatExists(ancestor)) ancestor = dirname(ancestor);
+      verifyStorage(ancestor, location.verifyLocalStorage);
+    }
+    if (process.platform === "linux") {
+      const mounted = readFileSync("/proc/self/mountinfo", "utf8").split("\n").filter(Boolean).map(row =>
+        row.split(" ")[4]?.replace(/\\([0-7]{3})/g, (_, octal: string) => String.fromCharCode(parseInt(octal, 8))));
+      if (mounted.some(path => path !== undefined && path !== projectRoot && inside(projectRoot, path) &&
+        writablePaths.some(name => inside(paths[name], path) || inside(path, paths[name])))) {
+        throw new ConfigError("UNSUPPORTED_STORAGE", "Configured runtime paths cannot cross nested mounts.");
+      }
+    }
+  }
+
+  function assertRevisionConfig(expected: string): void {
+    const gitConfig = readTrackedConfig(projectRoot, expected, location.configPath);
     checkedProjectPath(projectRoot, location.configPath, "file");
     if (digest(gitConfig) !== configDigest || digest(readJson(readFileSync(configPath, "utf8"), "working project config")) !== configDigest) {
       throw new ConfigError("IDENTITY_CONFLICT", "Project configuration changed. Reload the graph after quiescing the original workflow.");
     }
-    for (const name of [...inputPaths, ...writablePaths]) {
-      checkedProjectPath(projectRoot, config.paths[name], name === "contextPolicy" ? "file" : "directory");
+  }
+
+  function assertCurrent(expected = projectGit(projectRoot, ["rev-parse", "--verify", "HEAD"]).trim()): void {
+    assertStorage();
+    if (projectGit(projectRoot, ["rev-parse", "--verify", "HEAD"]).trim() !== expected) {
+      throw new ConfigError("IDENTITY_CONFLICT", "Selected project revision changed.");
     }
+    checkRepository(projectRoot, config);
+    assertRevisionConfig(expected);
+    for (const name of inputPaths) checkedProjectPath(projectRoot, config.paths[name], name === "contextPolicy" ? "file" : "directory");
   }
 
   function assertBinding(executionBinding: string): void {
@@ -253,7 +291,7 @@ export function resolveProjectConfig(location: ProjectLocation): ResolvedProject
   for (const name of inputPaths) {
     if (!lstatExists(paths[name])) throw new ConfigError("INPUT_MISSING", `Configured ${name} input is missing.`);
   }
-  return Object.freeze({ document: config, configPath, configDigest, projectRoot, gitCommonDir, projectIdentity, worktreeIdentity, revision, paths, assertCurrent,
+  return Object.freeze({ document: config, configPath, configDigest, projectRoot, gitCommonDir, projectIdentity, worktreeIdentity, revision, paths, assertCurrent, assertStorage, assertRevisionConfig,
     assertBinding,
     bindStorage(executionBinding: string): void {
       assertCurrent();

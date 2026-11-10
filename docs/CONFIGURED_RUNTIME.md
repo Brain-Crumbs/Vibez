@@ -43,8 +43,7 @@ const location = {
 };
 ```
 
-The Windows storage callback is a trusted deployment check. The host should
-check the actual volume and sync policy before returning true. In a fixture,
+The Windows storage callback is a trusted deployment check. The runtime calls it for the checkout and existing ancestors of runtime roots. The host should check the actual volume and sync policy before returning true. In a fixture,
 the callback may attest to its known local test volume.
 
 ## Supply a host
@@ -119,9 +118,7 @@ versions retain their existing identities.
 
 The project identity record is host-local in the selected checkout's Git
 directory. A task's first authorized assignment also binds its input
-identities. Tracked product files can change between Developer start and
-validation. Changed config, host, or task inputs stop affected work
-before stale evidence or an old operation is reused. Preserve the binding
+identities. Tracked product files and affected project contracts within the declared task scope can change between Developer start and validation. Later role packets read those contracts at the candidate revision. The original Developer invocation and review evidence keep their own revision identities. Changes to the config, host, requirements or contracts outside the task scope stop affected work before stale evidence or an old operation is reused. Preserve the binding
 files with the corresponding state when diagnosing a stopped run.
 After configured state is bound, the legacy executable refuses to open
 that checkout implicitly. Legacy source-checkout factories remain available
@@ -152,8 +149,7 @@ directories. Record their paths and hashes before changing binaries. Restore
 the exact prior compatible package, host identity and committed config. Run
 doctor and status and verify they read the original history. If the binding
 or a stored version differs, keep the store untouched for quiescent
-compatibility reconciliation. The legacy executable does not fall back to
-`.agent/state` when a configured binding is present. Moving or adopting
+compatibility reconciliation. The config-aware executable rejects implicit access to a bound checkout. Keep pre-MIG-004 executables out of bound checkouts because they predate that check. Moving or adopting
 historical state is covered by [the compatibility plan](COMPATIBILITY.md).
 
 ## Verification

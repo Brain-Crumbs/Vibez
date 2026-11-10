@@ -48,6 +48,7 @@ export interface FileManualAgentProviderOptions {
   readonly pollIntervalMs?: number;
   readonly deferDirectory?: boolean;
   readonly beforeWrite?: () => void;
+  readonly configuredHost?: true;
 }
 
 const INSTRUCTIONS = Object.freeze([
@@ -60,11 +61,21 @@ const INSTRUCTIONS = Object.freeze([
   "Import using agent manual import <packet-id> <result-file> <exchange-dir>. The waiting agent manual run <request-file> <exchange-dir> receives the result; exporting and importing alone never advance workflow state.",
   "Keep the packet and published result unchanged. Exact retries reuse them; changed context, policy, binding, or result conflicts are rejected. A local cancellation/timeout only stops waiting, so stop external work separately if needed.",
 ]);
+const CONFIGURED_INSTRUCTIONS = Object.freeze(INSTRUCTIONS.map(instruction => {
+  if (instruction.startsWith("Create a JSON response")) {
+    return instruction.replace("See schemas/v1/local-agent-result.schema.json.", "Use schemas/v1/local-agent-result.schema.json from the installed Vibez package.");
+  }
+  if (instruction.startsWith("Import using")) {
+    return "Use the configured host CLI to import the response from the configured responses root. The host runs manual import <packet-id> <result-file> <exchange-dir>. A configured host waiting on manual run receives it; exporting and importing alone never advance workflow state.";
+  }
+  return instruction;
+}));
 
 /** An exchange-file adapter only: it owns no lifecycle, evidence or merge authority. */
 export class FileManualAgentProvider implements AgentProvider {
   readonly providerId = LOCAL_MANUAL_PROVIDER_ID;
   readonly #root: string;
+  readonly #instructions: readonly string[];
   readonly #beforeWrite: (() => void) | undefined;
   readonly #pollIntervalMs: number;
   readonly #packetSchema: Record<string, unknown>;
@@ -77,6 +88,7 @@ export class FileManualAgentProvider implements AgentProvider {
     this.#root = resolve(root);
     this.#pollIntervalMs = poll;
     this.#beforeWrite = options.beforeWrite;
+    this.#instructions = options.configuredHost ? CONFIGURED_INSTRUCTIONS : INSTRUCTIONS;
     const repositoryRoot = options.repositoryRoot ?? packageRoot;
     this.#packetSchema = loadSchema(join(repositoryRoot, "schemas/v1/local-agent-packet.schema.json"));
     this.#resultSchema = loadSchema(join(repositoryRoot, "schemas/v1/local-agent-result.schema.json"));
@@ -100,7 +112,7 @@ export class FileManualAgentProvider implements AgentProvider {
       const contextIdentity = hash(inputs.contextPackage);
       const inputIdentity = hash({ contextPackage: inputs.contextPackage, toolPermissionPolicy: inputs.toolPermissionPolicy });
       const binding: LocalAgentBinding = { ...identity(inputs), packetId: hash(identity(inputs)), contextIdentity, inputIdentity };
-      packet = { schemaId: "ipt.local-agent-packet", schemaVersion: "1.0.0", ...binding, contextPackage: inputs.contextPackage, toolPermissionPolicy: inputs.toolPermissionPolicy, resultBinding: binding, instructions: INSTRUCTIONS };
+      packet = { schemaId: "ipt.local-agent-packet", schemaVersion: "1.0.0", ...binding, contextPackage: inputs.contextPackage, toolPermissionPolicy: inputs.toolPermissionPolicy, resultBinding: binding, instructions: this.#instructions };
       this.#validatePacket(packet, "INVALID_REQUEST");
     } catch (cause: unknown) { throw normalize(cause, "INVALID_REQUEST", false); }
     const path = this.packetPath(packet.packetId);
@@ -163,7 +175,7 @@ export class FileManualAgentProvider implements AgentProvider {
       if (packet.contextPackage.taskId !== packet.taskId || packet.contextPackage.role !== packet.role || packet.contextPackage.sourceRevision !== packet.revisionIdentity) throw new Error("Compiled context does not match task/role/revision.");
       if (packet.contextIdentity !== hash(packet.contextPackage) || packet.inputIdentity !== hash({ contextPackage: packet.contextPackage, toolPermissionPolicy: packet.toolPermissionPolicy }) || packet.packetId !== hash(identity(packet))) throw new Error("Packet content/identity hash does not match.");
       if (canonicalJson(packet.resultBinding) !== canonicalJson(bindingFrom(packet))) throw new Error("Packet result binding does not match.");
-      if (canonicalJson(packet.instructions) !== canonicalJson(INSTRUCTIONS)) throw new Error("Packet handoff instructions were changed.");
+      if (canonicalJson(packet.instructions) !== canonicalJson(this.#instructions)) throw new Error("Packet handoff instructions were changed.");
     } catch (cause: unknown) { throw normalize(cause, code, false); }
   }
 

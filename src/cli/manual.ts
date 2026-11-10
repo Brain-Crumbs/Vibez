@@ -52,7 +52,7 @@ export async function runManualCommand(
     const resultPath = provider.resultPath(packet.packetId);
     return {
       data: { packetId: packet.packetId, packetPath, resultPath },
-      human: `Exported role packet: ${packetPath}\nPacket ID: ${packet.packetId}\nRead its instructions in a fresh ${packet.role} session. Import the structured result with 'agent manual import'.\nResult destination: ${resultPath}`,
+      human: `Exported role packet: ${packetPath}\nPacket ID: ${packet.packetId}\nRead its instructions in a fresh ${packet.role} session. Import the structured result with ${configured === undefined ? "'agent manual import'" : "the configured host's manual import command"}.\nResult destination: ${resultPath}`,
     };
   }
   const result = await new AgentRunner({ provider }).run({ ...request, ...(signal === undefined ? {} : { signal }) });

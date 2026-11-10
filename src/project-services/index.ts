@@ -90,7 +90,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
   const contextPolicyDigest = context.load(config.revision).policyDigest;
   const validatorResolver = configuredValidators(config, host.executors);
   const manual = document.providers.execution === "local-manual"
-    ? new FileManualAgentProvider(paths.exchange, { deferDirectory: true, beforeWrite: () => prepareWrite() }) : undefined;
+    ? new FileManualAgentProvider(paths.exchange, { deferDirectory: true, configuredHost: true, beforeWrite: () => prepareWrite() }) : undefined;
   const provider = manual ?? host.providers?.get(document.providers.execution);
   if (provider === undefined) throw new ConfigError("TOOL_UNAVAILABLE", `Execution provider '${document.providers.execution}' is unavailable.`);
   const registryFiles = trackedFiles(config, config.revision, document.paths.tasks, ".task.json");
@@ -120,8 +120,17 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     throw new ConfigError("TOOL_UNAVAILABLE", "Execution provider lacks the configured role, timeout, or cancellation capabilities.");
   }
 
-  const inputsAt = (task: NonNullable<ReturnType<TaskRegistry["get"]>>, revision: string) =>
-    digest({ task, artifacts: context.artifactsFor(task, registry, revision).map(({ revision: _revision, ...artifact }) => artifact) });
+  const inputsAt = (task: NonNullable<ReturnType<TaskRegistry["get"]>>, revision: string) => {
+    const artifacts = context.artifactsFor(task, registry, revision);
+    const projectContracts = artifacts.some(artifact => artifact.kind === "contract" && !artifact.sourcePath.startsWith("vibez-package:"));
+    const scopedPaths = projectContracts && task.allowedPaths.length
+      ? new Set(projectGit(projectRoot, ["ls-files", "-z", "--", ...task.allowedPaths.map(path => `:(glob)${path}`)]).split("\0"))
+      : new Set<string>();
+    return digest({ task, artifacts: artifacts.map(({ revision: _revision, ...artifact }) =>
+      artifact.kind === "contract" && scopedPaths.has(artifact.sourcePath)
+        ? { artifactId: artifact.artifactId, kind: artifact.kind, sourcePath: artifact.sourcePath }
+        : artifact) });
+  };
   const taskInputs = new Map([...registry].map(([id, task]) => [id, inputsAt(task, config.revision)]));
   const validatorBinding = validatorResolver.resolve([...registry.values()][0]!, config.revision);
   const executionBinding = digest({
@@ -188,6 +197,14 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     get: assignmentFiles.get.bind(assignmentFiles),
     getAudit: assignmentFiles.getAudit.bind(assignmentFiles),
     acquire: (request: Parameters<typeof assignmentFiles.acquire>[0]) => {
+      const task = registry.get(request.taskId);
+      if (task === undefined) throw new ConfigError("IDENTITY_CONFLICT", "Task is missing its configured inputs.");
+      const target = gitOperations.localBranchExists(task.canonicalBranch) ? task.canonicalBranch : integrationTarget;
+      const revision = projectGit(projectRoot, ["rev-parse", "--verify", `refs/heads/${target}`]).trim();
+      config.assertRevisionConfig(revision);
+      if (registryIdentity(revision) !== registryDigest || inputsAt(task, revision) !== taskInputs.get(task.taskId)) {
+        throw new ConfigError("IDENTITY_CONFLICT", "Canonical branch has different configured task inputs.");
+      }
       prepareWrite(join(assignmentsRoot, ".history"), join(assignmentsRoot, ".claims"));
       const bound = taskInputs.get(request.taskId);
       if (bound === undefined) throw new ConfigError("IDENTITY_CONFLICT", "Task is missing its configured inputs.");
@@ -198,10 +215,16 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
       }
       return assignmentFiles.acquire(request);
     },
-    release: guarded(assignmentFiles.release.bind(assignmentFiles)),
+    release: (request: Parameters<typeof assignmentFiles.release>[0]) => {
+      config.assertStorage();
+      verifyTree(paths.state);
+      config.assertBinding(executionBinding);
+      return assignmentFiles.release(request);
+    },
     recoverStale: guarded(assignmentFiles.recoverStale.bind(assignmentFiles)),
   };
-  const branchLifecycle = new GitBranchLifecycleAdapter(new LocalGitBranchOperations(projectRoot), integrationTarget);
+  const gitOperations = new LocalGitBranchOperations(projectRoot);
+  const branchLifecycle = new GitBranchLifecycleAdapter(gitOperations, integrationTarget);
   const evidenceStore = {
     record: (payload: unknown) => {
       const validation = fileEvidence.validate(payload);
@@ -223,7 +246,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
   const validationGate = new DeveloperValidationGate({ ...common, validatorResolver });
   const qa = new QaReviewGate({ ...review, contextSource: new RepositoryQaContextSource(projectRoot, integrationTarget, context.artifactsFor, remote) });
   const architecture = new ArchitectureReviewGate({ ...review, contextSource: new RepositoryArchitectureContextSource(projectRoot, integrationTarget,
-    (task, tasks, revision) => context.artifactsFor(task, tasks, revision), remote) });
+    (task, tasks, revision) => context.artifactsFor(task, tasks, revision, true), remote) });
   const uat = new UatReviewGate({ ...review, contextSource: { artifactsFor: (task, tasks, revision, role) =>
     role === "Developer" ? context.artifactsFor(task, tasks, revision) : [] } });
   const rework = new ReviewReworkGate({ ...common, taskLock: {

@@ -35,7 +35,7 @@ function fixture(t, name, adjust = () => {}, parent = tmpdir()) {
   put("planning/tasks/demo.task.json", {
     schemaId: "ipt.task", schemaVersion: "1.0.0", taskId, title: "Configured project fixture",
     objective: "Use a project with no local core schemas", inScope: ["Make a fixture change"], outOfScope: ["External activity"],
-    dependencies: [], canonicalBranch: taskBranch, allowedPaths: ["product.txt"], requirements: ["DEMO-001-R1"],
+    dependencies: [], canonicalBranch: taskBranch, allowedPaths: ["product.txt", "planning/contracts/demo.json"], requirements: ["DEMO-001-R1"],
     acceptanceCriteria: ["The configured command receives the literal argument"], validationPlan: ["Run the configured validator"],
     affectedContracts: ["control-plane.dev-start", "consumer.product"], requiredReviewRoles: ["Developer", "MergeController"],
   });
@@ -43,7 +43,9 @@ function fixture(t, name, adjust = () => {}, parent = tmpdir()) {
     schemaId: "ipt.requirement", schemaVersion: "1.0.0", requirementId: "DEMO-001-R1", taskId,
     statement: "Only the configured fixture validator runs.", acceptanceCriteria: ["The configured validator receives one literal argument."], sourceRefs: [],
   });
-  put("planning/contracts/demo.json", { moduleId: "consumer.product", moduleVersion: "1.0.0" });
+  put("planning/contracts/demo.json", { moduleId: "consumer.product", moduleVersion: "1.0.0",
+    knownConsumers: [{ consumerId: "consumer.downstream", expects: ["Product output remains consumable."] }] });
+  put("planning/contracts/downstream.json", { moduleId: "consumer.downstream", moduleVersion: "1.0.0" });
   put("planning/policy.json", { description: "Fixture policy" });
   writeFileSync(join(root, ".gitignore"), ".vibez/\n");
   git("add", ".");
@@ -101,10 +103,16 @@ test("configured graph uses package assets and literal validators with isolated 
     revisionIdentity: start.sourceRevision, toolPermissionPolicy: { allowedTools: [], networkAccess: "none" } });
   const exported = await a.cli(["--json", "manual", "export", requestPath, alpha.config.paths.exchange]);
   assert.equal(exported.exitCode, 0, exported.stdout + exported.stderr);
-  assert.equal(existsSync(JSON.parse(exported.stdout).data.packetPath), true);
+  const packet = JSON.parse(readFileSync(JSON.parse(exported.stdout).data.packetPath, "utf8"));
+  assert.ok(packet.instructions.some(line => line.includes("configured host CLI")));
+  assert.ok(packet.instructions.some(line => line.includes("installed Vibez package")));
+  assert.ok(packet.instructions.every(line => !line.includes("agent manual import")));
   assert.equal((await runCli(["--json", "status"], { repositoryRoot: alpha.root })).exitCode, 4);
   writeFileSync(join(alpha.root, "product.txt"), "validated fixture revision\n");
-  alpha.git("add", "product.txt");
+  const producerPath = "planning/contracts/demo.json";
+  const producer = JSON.parse(readFileSync(join(alpha.root, producerPath), "utf8"));
+  alpha.put(producerPath, { ...producer, moduleVersion: "1.1.0" });
+  alpha.git("add", "product.txt", producerPath);
   alpha.git("commit", "-m", "Change fixture");
   const result = await a.developerValidation.validate({ taskId, actorId: "developer", runId: "validation", occurredAt: now });
   assert.equal(result.outcome, "PASS");
@@ -122,6 +130,10 @@ test("configured graph uses package assets and literal validators with isolated 
   ]) {
     const { context } = gate.prepareContext({ taskId });
     assert.equal(context.sourceRevision, result.revision);
+    assert.equal(context.artifacts.some(artifact => artifact.artifactId === "contract:consumer.downstream"), reviewerId === "architect");
+    if (reviewerId === "architect") {
+      assert.equal(context.artifacts.find(artifact => artifact.artifactId === "contract:consumer.product").content.moduleVersion, "1.1.0");
+    }
     const judgment = gate.review({ taskId, reviewerId, runId: `review-${reviewerId}`, occurredAt: now, context,
       outcome: "PASS", findings: [], details });
     assert.equal(judgment.outcome, "PASS");
@@ -206,4 +218,19 @@ test("host-authorized retry increases preserve an exhausted run across a reload"
   assert.equal(provider.requests.length, 2);
   assert.equal(provider.requests[0].runId, provider.requests[1].runId);
   await assert.rejects(reopened.orchestration.increaseRetryBudget(grant), /stale/);
+});
+
+
+test("start preflights the canonical branch before assignment and checkout", async t => {
+  const { root, git, location, host } = fixture(t, "branch-drift");
+  git("switch", "-c", taskBranch);
+  git("rm", "vibez.config.json");
+  git("commit", "-m", "Remove target config");
+  git("switch", "main");
+  const services = await createProjectServices(location, host);
+  assert.throws(() => services.developerStart.start({ ownerId: "developer", runId: "branch-drift", occurredAt: now }),
+    /config is missing at the target Git revision/);
+  assert.equal(git("branch", "--show-current"), "main");
+  assert.equal(existsSync(join(root, ".git/vibez-project.json")), false);
+  assert.equal(existsSync(join(root, ".vibez")), false);
 });
