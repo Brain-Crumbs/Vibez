@@ -91,7 +91,7 @@
       "reason": "Accepted UAT handoff repair and contract-bearing regressions at the authorized export pin.",
       "destinationOwner": "MIG-003",
       "destinationPr": null,
-      "destinationCommit": "5fe04f352801c6b64c31ac1c7a49b0d75b77f5dd",
+      "destinationCommit": "8a82d9ec896448a9b433d8ebbdbce74cae6cae7f",
       "destinationPaths": [
         {
           "path": "contracts/uat-review/README.md",
