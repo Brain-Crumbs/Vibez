@@ -1,6 +1,10 @@
 import type { CommandDescriptor } from "./contracts.js";
 
-export const IMPLEMENTED_COMMANDS: readonly CommandDescriptor[] = [
+function freezeCommands(commands: CommandDescriptor[]): readonly CommandDescriptor[] {
+  return Object.freeze(commands.map(command => Object.freeze(command)));
+}
+
+export const IMPLEMENTED_COMMANDS = freezeCommands([
   { name: "recovery", summary: "Check consistency or apply explicitly confirmed, audited offline recovery (BOOT-032).", status: "implemented" },
   { name: "explain", summary: "Explain task, transition, validation, review, and merge predicates without mutation (BOOT-031).", status: "implemented" },
   {
@@ -20,7 +24,7 @@ export const IMPLEMENTED_COMMANDS: readonly CommandDescriptor[] = [
   },
   {
     name: "version",
-    summary: "Print the CLI contract version.",
+    summary: "Print the installed package version and CLI output schema version.",
     status: "implemented",
   },
   {
@@ -38,9 +42,9 @@ export const IMPLEMENTED_COMMANDS: readonly CommandDescriptor[] = [
     summary: "Run the deterministic developer validation gate (BOOT-016).",
     status: "implemented",
   },
-] as const;
+]);
 
-export const RESERVED_COMMANDS: readonly CommandDescriptor[] = [
+export const RESERVED_COMMANDS = freezeCommands([
   {
     name: "review",
     summary: "Run structured review workflows (owned by BOOT-017+).",
@@ -56,12 +60,12 @@ export const RESERVED_COMMANDS: readonly CommandDescriptor[] = [
     summary: "Run the sequential orchestration engine end to end (library and BOOT-029 manual provider implemented; general workflow CLI composition remains reserved).",
     status: "reserved",
   },
-] as const;
+]);
 
-export const ALL_COMMANDS: readonly CommandDescriptor[] = [
+export const ALL_COMMANDS = Object.freeze([
   ...IMPLEMENTED_COMMANDS,
   ...RESERVED_COMMANDS,
-];
+]);
 
 export function isReservedCommand(name: string): boolean {
   return RESERVED_COMMANDS.some((command) => command.name === name);

@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 
 export const DEFAULT_VALIDATOR_TIMEOUT_MS = 120_000 as const;
 
-export const VALIDATOR_CATEGORIES = [
+export const VALIDATOR_CATEGORIES = Object.freeze([
   "test",
   "lint",
   "type-check",
@@ -10,7 +10,7 @@ export const VALIDATOR_CATEGORIES = [
   "contract",
   "repository-invariant",
   "task-specific",
-] as const;
+] as const);
 
 export type ValidatorCategory = (typeof VALIDATOR_CATEGORIES)[number];
 

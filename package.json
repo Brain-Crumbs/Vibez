@@ -1,6 +1,6 @@
 {
   "name": "@brain-crumbs/vibez",
-  "version": "0.1.0-mig005.0",
+  "version": "0.1.0-mig005.1",
   "private": true,
   "description": "Vibez workflow library and CLI (private candidate).",
   "type": "module",
@@ -121,7 +121,11 @@
     "examples/beta/vibez.config.json",
     "docs/INSTALL.md",
     "docs/PUBLIC_API.md",
-    "NOTICE.md"
+    "NOTICE.md",
+    "docs/CLI.md",
+    "docs/COMPATIBILITY.md",
+    "docs/CONFIGURED_RUNTIME.md",
+    "docs/SUPPORT.md"
   ],
   "license": "UNLICENSED"
 }

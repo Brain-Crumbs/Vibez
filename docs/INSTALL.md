@@ -46,7 +46,9 @@ other global tools. Both installations provide `agent` as an alias for
 `version` command reads the installed manifest.
 
 Repository primitives such as `status` and `next` use the checkout from
-which the executable is invoked. Use [the configured graph](CONFIGURED_RUNTIME.md)
+which the executable is invoked. For an empty registry, create and track an
+empty marker such as `tasks/definitions/.gitkeep` before calling `status` or `next`.
+Use [the configured graph](CONFIGURED_RUNTIME.md)
 to address an explicitly selected project from another working directory.
 The general `review`, `rework` and `orchestrate` commands still return exit
 3. Manual packet commands keep their existing behavior. See the

@@ -60,7 +60,8 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
       .map(entry => "contracts/" + entry.name + "/module-contract.json"),
     "docs/specs/project-config.schema.json", "examples/alpha/vibez.config.json", "examples/beta/vibez.config.json",
   ];
-  const included = new Set([...assets, "package.json", "NOTICE.md", "README.md", "docs/INSTALL.md", "docs/PUBLIC_API.md"]);
+  const included = new Set([...assets, "package.json", "NOTICE.md", "README.md", "docs/INSTALL.md", "docs/PUBLIC_API.md",
+    "docs/CLI.md", "docs/COMPATIBILITY.md", "docs/CONFIGURED_RUNTIME.md", "docs/SUPPORT.md"]);
   for (const path of included) assert.ok(paths.has(path), path);
   for (const path of paths) assert.ok(included.has(path) || /^dist\/.+\.(js|d\.ts)$/.test(path), "Unexpected packaged file " + path);
   assert.deepEqual(Object.keys(manifest.exports), Object.keys(publicApi).map(path => "." + path));

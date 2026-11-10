@@ -10,7 +10,7 @@ are supported. No CommonJS guarantee in v1. Internal modules remain separate.
 The following is the deliberate supported list. Named existing interfaces keep
 their producer/consumer meanings and associated request/result/error/port types;
 MIG-005 must enumerate those types in declarations without exporting unrelated
-implementation helpers. The [machine map](../migration/capabilities.json) covers
+implementation helpers. The [machine map](https://github.com/Brain-Crumbs/Vibez/blob/b64ac4e1fa19c03d379245ad8bce6d384ecaf601/migration/capabilities.json) covers
 all 24 source modules, source contracts, current tests and downstream test owners.
 
 | Subpath | Supported capability and principal API | Semantic boundary |

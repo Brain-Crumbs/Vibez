@@ -93,7 +93,7 @@ npm run agent -- status
 npm run --silent agent -- --json status
 ```
 
-No positional arguments are accepted. Human and JSON views derive from one read-only `ProjectStatus` result with `data.statusVersion: "1.0.0"`, `scope: "LOCAL_REGISTERED_TASKS"`, observation timestamp, progress/phase counts, active tasks, canonical branches/revisions, lifecycle stages, assignments, latest evidence currency/outcomes, concrete blockers, and BOOT-008 next eligibility. See [STATUS.md](STATUS.md) for the full payload semantics and source boundaries.
+No positional arguments are accepted. Human and JSON views derive from one read-only `ProjectStatus` result with `data.statusVersion: "1.0.0"`, `scope: "LOCAL_REGISTERED_TASKS"`, observation timestamp, progress/phase counts, active tasks, canonical branches/revisions, lifecycle stages, assignments, latest evidence currency/outcomes, concrete blockers, and BOOT-008 next eligibility. See [STATUS.md](https://github.com/Brain-Crumbs/Vibez/blob/b64ac4e1fa19c03d379245ad8bce6d384ecaf601/docs/STATUS.md) for the full payload semantics and source boundaries.
 
 A valid empty or blocked observation succeeds (exit `0`); invalid or changing authoritative input fails closed (exit `70`). An empty local registry is not project completion. Status does not fetch GitHub/remote state, mutate runtime state, recover locks, run gates, or declare cutover. The stable top-level JSON envelope is unchanged.
 
@@ -107,7 +107,7 @@ npm run --silent agent -- --json explain transition <request-file>
 npm run --silent agent -- --json explain merge <task-id>
 ```
 
-The [diagnostics guide](DIAGNOSTICS.md) defines all five scopes, the full `TransitionRequest` input, required-validator resolution, declared review-gap auditing, and read-only merge configuration. Output uses the unchanged envelope with `command: "explain"` and `data.diagnosticsVersion: "1.0.0"`. Each finding has `code`, `condition: missing|failed|stale|blocked`, `predicate`, `message`, relevant `references`, and actionable `remediation`. Human output renders the same immutable result. `clear` means no observed failures within the named scope, not gate approval or permission to act.
+The [diagnostics guide](https://github.com/Brain-Crumbs/Vibez/blob/b64ac4e1fa19c03d379245ad8bce6d384ecaf601/docs/DIAGNOSTICS.md) defines all five scopes, the full `TransitionRequest` input, required-validator resolution, declared review-gap auditing, and read-only merge configuration. Output uses the unchanged envelope with `command: "explain"` and `data.diagnosticsVersion: "1.0.0"`. Each finding has `code`, `condition: missing|failed|stale|blocked`, `predicate`, `message`, relevant `references`, and actionable `remediation`. Human output renders the same immutable result. `clear` means no observed failures within the named scope, not gate approval or permission to act.
 
 Exactly two positional arguments are required. Invalid subject/target, request transport/role policy, or unregistered task uses exit `2`; malformed or observably changing authoritative input uses exit `70`, with no partial successful data. A successfully explained block exits `0`, including missing merge configuration. `explain merge` reads real PR/CI state only when `GITHUB_REPOSITORY` and existing `GITHUB_TOKEN` or `GH_TOKEN` read access are configured. It does not authenticate or display secrets. Other explain subjects need no remote source. No explain command mutates workflow state, creates state directories, runs validators/reviews, fetches Git refs, repairs blockers, or merges.
 
@@ -201,7 +201,7 @@ npm run --silent agent -- --json manual import <packet-id> <result-file> <exchan
 npm run --silent agent -- --json manual run <request-file> <exchange-dir>
 ```
 
-The [standalone local/manual operator guide](LOCAL_AGENT_ADAPTER.md) provides complete request/result examples, an offline fixture round-trip, external permission/session requirements, and existing orchestration-library integration. No AI vendor credentials or SDK are needed.
+The [standalone local/manual operator guide](https://github.com/Brain-Crumbs/Vibez/blob/b64ac4e1fa19c03d379245ad8bce6d384ecaf601/docs/LOCAL_AGENT_ADAPTER.md) provides complete request/result examples, an offline fixture round-trip, external permission/session requirements, and existing orchestration-library integration. No AI vendor credentials or SDK are needed.
 
 A request file is one `AgentRunRequest` JSON object with exact `contextPackage` and `toolPermissionPolicy`; `signal` is forbidden in JSON. CLI request/result input files must be regular files within 4 MiB UTF-8, and the resulting complete packet/envelope must also fit the adapter's bound. Paths resolve relative to the CLI's repository root. Export validates/persists the complete role packet and returns `data: { packetId, packetPath, resultPath }`. It reuses the same packet for an identical request; changed context or policy under the same identity is rejected.
 
@@ -222,7 +222,7 @@ npm run --silent agent -- --json recovery check
 npm run --silent agent -- --json recovery apply <request-file>
 ```
 
-See [RECOVERY.md](RECOVERY.md) for request examples, exact-state preconditions, operator quiescence, host authorization, interrupted reviews, immutable intent/result audit and unsupported repair cases. Check is read-only; its `consistent: false` is a successful observation (exit 0). Apply is explicit offline mutation bounded to assignment release/transfer, original-journal token release, or legal administrative rework reset. It cannot approve or complete a task.
+See [RECOVERY.md](https://github.com/Brain-Crumbs/Vibez/blob/b64ac4e1fa19c03d379245ad8bce6d384ecaf601/docs/RECOVERY.md) for request examples, exact-state preconditions, operator quiescence, host authorization, interrupted reviews, immutable intent/result audit and unsupported repair cases. Check is read-only; its `consistent: false` is a successful observation (exit 0). Apply is explicit offline mutation bounded to assignment release/transfer, original-journal token release, or legal administrative rework reset. It cannot approve or complete a task.
 
 Both return payload `recoveryVersion: "1.0.0"` within the unchanged CLI envelope, with command `recovery`. Apply returns historical `APPLIED` plus audit hashes/path, never present workflow readiness. Invalid request/transport is exit 2, expected repair conflicts/denials exit 4, and unexpected failures exit 70. Recovery errors use `RECOVERY_<code>` including INVALID_REQUEST, PRECONDITION_FAILED, OVERRIDE_DENIED, STATE_CONFLICT, AUDIT_INVALID and RECOVERY_BUSY. CLI override authorization is the separately configured comma-separated `IPT_RECOVERY_ADMIN_ACTORS` allowlist (default deny), an OS/operator trust boundary rather than authentication.
 
