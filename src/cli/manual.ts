@@ -1,5 +1,9 @@
-import { closeSync, constants, fstatSync, openSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { assertLocalGateHistory } from "../status-reporting/local-source.js";
+import { loadTaskRegistry } from "../task-registry/index.js";
+import { recordLocalProvenance } from "../history/native-writer.js";
+import { digest } from "../project-config/index.js";
+import { closeSync, constants, existsSync, fstatSync, openSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { AgentProviderError, AgentRunner, type AgentRunRequest } from "../agent-provider/index.js";
 import { FileManualAgentProvider } from "../local-agent-adapter/index.js";
 
@@ -9,6 +13,7 @@ export interface ConfiguredManual {
   readonly exchange: string;
   readonly provider?: FileManualAgentProvider;
   readonly inputPath: (path: string, operation: "export" | "import" | "run") => string;
+  readonly verifyTaskHistory?: (taskId: string) => void;
   readonly verifyRequest: (request: AgentRunRequest) => void;
 }
 
@@ -31,9 +36,23 @@ export async function runManualCommand(
   if (configured !== undefined && (configured.provider === undefined || root !== configured.exchange)) {
     throw new AgentProviderError("INVALID_REQUEST", "Manual commands require the configured manual provider and exchange root.", false);
   }
-  const provider = configured?.provider ?? new FileManualAgentProvider(root);
+  const provider = configured?.provider ?? new FileManualAgentProvider(root, {
+    deferDirectory: true,
+    afterExport: ({ taskId, role, runId, actorId, revisionIdentity, providerId }) => {
+      if (existsSync(join(repositoryRoot, ".git"))) recordLocalProvenance(repositoryRoot,
+        digest({ taskId, role, runId, actorId, revisionIdentity }), null, providerId);
+    },
+  });
   const input = (value: string) => configured?.inputPath(value, operation) ?? resolve(repositoryRoot, value);
+  async function verifyHistory(taskId: string): Promise<void> {
+    if (configured !== undefined) configured.verifyTaskHistory?.(taskId);
+    else if (existsSync(join(repositoryRoot, "tasks/definitions"))) {
+      const registry = await loadTaskRegistry({ repositoryRoot });
+      assertLocalGateHistory(repositoryRoot, registry, taskId);
+    }
+  }
   if (operation === "import") {
+    await verifyHistory(provider.readPacket(args[1]!).taskId);
     const imported = provider.importResult(args[1]!, readJson(input(args[2]!)));
     return {
       data: { packetId: args[1], resultPath: imported.resultPath, reused: imported.reused, status: imported.result.status },
@@ -45,7 +64,8 @@ export async function runManualCommand(
     throw new AgentProviderError("INVALID_REQUEST", "Request file must contain an AgentRunRequest JSON object without a signal field; cancellation belongs to the running process.", false);
   }
   const request = value as AgentRunRequest;
-  configured?.verifyRequest(request);
+  if (configured === undefined) await verifyHistory(request.taskId);
+  else configured.verifyRequest(request);
   if (operation === "export") {
     const packet = provider.exportPacket(request);
     const packetPath = provider.packetPath(packet.packetId);

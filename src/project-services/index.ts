@@ -10,6 +10,9 @@ import { DeveloperValidationGate } from "../dev-validation/index.js";
 import { FileEvidenceStore } from "../evidence-store/index.js";
 import { GitBranchLifecycleAdapter, LocalGitBranchOperations } from "../git-branch-lifecycle/index.js";
 import { FileManualAgentProvider } from "../local-agent-adapter/index.js";
+import { checkProjectUpgrade, readProjectAudit, type UpgradeCheckRequest } from "../history/index.js";
+import { evidenceReceiptIdentity, provenanceFor, recordProvenance } from "../history/provenance.js";
+import { readEvidenceHistories } from "../status-reporting/local-source.js";
 import { MergeReadinessPolicyEngine, type MergeReadinessPrPort, type MergeReadinessCiPort } from "../merge-readiness/index.js";
 import { FileOrchestrationRunStore, SequentialOrchestrationEngine, type OrchestrationRunRequest } from "../orchestration-engine/index.js";
 import { PullRequestLifecycleAdapter, type PullRequestOperations } from "../pr-lifecycle/index.js";
@@ -41,6 +44,8 @@ export interface ProjectIntegration {
 export interface ProjectHost {
   /** Stable ID/version covering adapter implementations and trusted policy. */
   readonly identity: string;
+  /** SHA-256 of the installed artifact, if the host independently verified it. */
+  readonly verifiedArtifactSha256?: string;
   readonly executors: ReadonlyMap<string, ProjectValidatorCommand>;
   readonly providers?: ReadonlyMap<string, AgentProvider>;
   readonly hasCredentialReference?: (id: string) => boolean;
@@ -90,7 +95,10 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
   const contextPolicyDigest = context.load(config.revision).policyDigest;
   const validatorResolver = configuredValidators(config, host.executors);
   const manual = document.providers.execution === "local-manual"
-    ? new FileManualAgentProvider(paths.exchange, { deferDirectory: true, configuredHost: true, beforeWrite: () => prepareWrite() }) : undefined;
+    ? new FileManualAgentProvider(paths.exchange, { deferDirectory: true, configuredHost: true, beforeWrite: () => prepareWrite(),
+      afterExport: ({ taskId, role, runId, actorId, revisionIdentity }) =>
+        recordProvenance(auditRoot, digest({ taskId, role, runId, actorId, revisionIdentity }), null, engineProvenance, () => prepareWrite(auditRoot)),
+    }) : undefined;
   const provider = manual ?? host.providers?.get(document.providers.execution);
   if (provider === undefined) throw new ConfigError("TOOL_UNAVAILABLE", `Execution provider '${document.providers.execution}' is unavailable.`);
   const registryFiles = trackedFiles(config, config.revision, document.paths.tasks, ".task.json");
@@ -138,6 +146,11 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     package: readPackageJson("package.json").sha256, contextPolicy: contextPolicyDigest, host: host.identity,
     provider: capabilities.providerId, validators: validatorBinding,
   });
+  const engineProvenance = provenanceFor(config, executionBinding, contextPolicyDigest, capabilities.providerId, host.verifiedArtifactSha256);
+  const auditRoot = join(paths.operations, "audit-provenance");
+  const historyConfig = { configPath: location.configPath,
+    ...(location.verifyLocalStorage === undefined ? {} : { verifyLocalStorage: location.verifyLocalStorage }) };
+  const historyLocation = { repositoryRoot: projectRoot, config: historyConfig };
   const lifecycleRoot = join(paths.state, "lifecycle");
   const assignmentsRoot = join(paths.state, "assignments");
   const orchestrationRoot = join(paths.operations, "orchestration");
@@ -183,9 +196,17 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     };
   }
 
+  function assertTaskHistory(taskId: string): void {
+    if (!registry.has(taskId)) return;
+    source.lifecycle.get(taskId);
+    source.assignments.get(taskId);
+    readEvidenceHistories(paths.evidence, taskId, fileEvidence);
+  }
+
   function taskGuarded<Request extends { readonly taskId: string }, Result>(method: (request: Request) => Result): (request: Request) => Result {
     return request => {
       assertCurrent(request?.taskId);
+      if (typeof request?.taskId === "string") assertTaskHistory(request.taskId);
       return method(request);
     };
   }
@@ -196,7 +217,10 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     for (const directory of directories) mkdirSync(directory, { recursive: true });
   }
 
-  const fileEvidence = new FileEvidenceStore(paths.evidence, { deferDirectory: true });
+  const fileEvidence = new FileEvidenceStore(paths.evidence, { deferDirectory: true, afterAppend: record => {
+    const { subject, recordSha256 } = evidenceReceiptIdentity(record);
+    recordProvenance(auditRoot, subject, recordSha256, engineProvenance, () => prepareWrite(auditRoot));
+  } });
   const source = await createLocalStatusDependencies(projectRoot, registry, { state: paths.state, evidence: paths.evidence, evidenceStore: fileEvidence });
   const lifecycle = new FileDeveloperStartStateStore(lifecycleRoot, true);
   const stateStore = { get: source.lifecycle.get, save: (...args: Parameters<typeof lifecycle.save>) => {
@@ -299,7 +323,13 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     registry, paths: statePaths, source, ...(host.authorizeRecovery === undefined ? {} : { authorizeOverride: host.authorizeRecovery }),
   });
 
-  const developerStart = { start: guarded(startGate.start.bind(startGate)) };
+  function assertRegistryHistory(): void {
+    for (const taskId of registry.keys()) assertTaskHistory(taskId);
+  }
+  const developerStart = { start: guarded((request: Parameters<typeof startGate.start>[0]) => {
+    assertRegistryHistory();
+    return startGate.start(request);
+  }) };
   const developerValidation = { validate: taskGuarded(validationGate.validate.bind(validationGate)) };
   const qaReview = { prepareContext: taskGuarded(qa.prepareContext.bind(qa)), review: taskGuarded(qa.review.bind(qa)) };
   const architectureReview = { prepareContext: taskGuarded(architecture.prepareContext.bind(architecture)), review: taskGuarded(architecture.review.bind(architecture)) };
@@ -328,7 +358,12 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
         return runStore.withLock(action);
       },
     },
-    agentRunner: { run: guarded(agentRunner.run.bind(agentRunner)) },
+    agentRunner: { run: guarded((request: Parameters<typeof agentRunner.run>[0]) => {
+      const { taskId, role, runId, actorId, revisionIdentity } = request;
+      assertTaskBinding(taskId, gitOperations.currentRevision());
+      recordProvenance(auditRoot, digest({ taskId, role, runId, actorId, revisionIdentity }), null, engineProvenance, () => prepareWrite(auditRoot));
+      return agentRunner.run(request);
+    }) },
     retryPolicy: { maxAttempts: document.budgets.maxAttempts, delayMs: document.budgets.retryDelayMs },
     timeoutMsFor: () => document.budgets.providerTimeoutMs,
     maxAttemptsFor: budget.effective,
@@ -347,8 +382,13 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
         throw new AgentProviderError("INVALID_REQUEST", "Use a relative manual input file under the configured intake or response root.", false);
       }
     },
+    verifyTaskHistory: taskId => {
+      assertCurrent(taskId);
+      assertTaskHistory(taskId);
+    },
     verifyRequest: request => {
       assertCurrent(request.taskId);
+      assertTaskHistory(request.taskId);
       const task = registry.get(request.taskId);
       if (task === undefined || !task.requiredReviewRoles.includes(request.role) ||
         branchLifecycle.currentRevision() !== request.revisionIdentity) {
@@ -382,6 +422,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     orchestration: {
       increaseRetryBudget: taskGuarded(budget.increase),
       run: guarded((request: OrchestrationRunRequest) => {
+        assertRegistryHistory();
         const key = request.idempotencyKey ?? request.runId;
         const start = runStore.get(key)?.values.start as { taskId?: string } | undefined;
         if (start?.taskId !== undefined) assertTaskBinding(start.taskId, gitOperations.currentRevision());
@@ -391,6 +432,8 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     },
     status: { read: readStatus },
     diagnostics: {
+      audit: (taskId: string) => readProjectAudit(historyLocation, taskId),
+      checkUpgrade: (request: Omit<UpgradeCheckRequest, "repositoryRoot" | "config">) => checkProjectUpgrade({ ...request, ...historyLocation }),
       explainTask: guarded(diagnostics.explainTask.bind(diagnostics)),
       explainTransition: guarded(diagnostics.explainTransition.bind(diagnostics)),
       explainValidation: guarded(diagnostics.explainValidation.bind(diagnostics)),
@@ -406,7 +449,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
         if (record !== null) taskStates.set(taskId, record.currentState);
       }
       const cliContext: CliRunContext = {
-        configuredProject: true, repositoryRoot: projectRoot, taskRegistry: registry, taskStates, developerStartWorkflow: developerStart,
+        configuredProject: true, historyConfig, repositoryRoot: projectRoot, taskRegistry: registry, taskStates, developerStartWorkflow: developerStart,
         developerValidationGate: developerValidation, projectStatusReporter: { read: readStatus }, workflowDiagnostics: diagnostics,
         recoveryCheck, recoveryApply, configuredManual,
         ...(signal === undefined ? {} : { signal }),

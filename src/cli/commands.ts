@@ -5,6 +5,8 @@ function freezeCommands(commands: CommandDescriptor[]): readonly CommandDescript
 }
 
 export const IMPLEMENTED_COMMANDS = freezeCommands([
+  { name: "audit", summary: "Inspect recorded task history and revision-bound evidence without exporting payload text.", status: "implemented" },
+  { name: "upgrade", summary: "Check read-only package compatibility and writer quiescence.", status: "implemented" },
   { name: "recovery", summary: "Check consistency or apply explicitly confirmed, audited offline recovery (BOOT-032).", status: "implemented" },
   { name: "explain", summary: "Explain task, transition, validation, review, and merge predicates without mutation (BOOT-031).", status: "implemented" },
   {

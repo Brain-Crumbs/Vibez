@@ -1,10 +1,10 @@
+import { createLocalEvidenceWriter } from "../history/native-writer.js";
 import type { GitHubFetchInit, GitHubFetchResponse } from "../github-http.js";
 import { existsSync, linkSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { FileAssignmentLockStore, type AssignmentLockRecord, type LockResult } from "../assignment-lock/index.js";
 import { LOCAL_AGENT_STATE_RELATIVE_PATH } from "../dev-start/index.js";
 import {
-  FileEvidenceStore,
   mergeEvidenceLineageId,
   type RecordResult,
   type StoredEvidenceRecord,
@@ -2390,7 +2390,7 @@ export async function createLocalControlledMergeController(
   const branchLifecycle = new GitBranchLifecycleAdapter(new LocalGitBranchOperations(repositoryRoot));
   const stateRoot = join(repositoryRoot, LOCAL_AGENT_STATE_RELATIVE_PATH);
   const lifecycleRoot = join(stateRoot, "lifecycle");
-  const evidenceStore = new FileEvidenceStore(join(stateRoot, "evidence"));
+  const evidenceStore = createLocalEvidenceWriter(repositoryRoot);
   const stateStore = new FileControlledMergeStateStore(lifecycleRoot);
   const taskLock = new FileControlledMergeTaskLock(lifecycleRoot);
   const lockStore = new FileAssignmentLockStore(join(stateRoot, "assignments"));

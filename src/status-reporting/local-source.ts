@@ -9,7 +9,7 @@ import {
   validationEvidenceLineageId,
   type StoredEvidenceRecord,
 } from "../evidence-store/index.js";
-import type { LifecycleRecord } from "../lifecycle/index.js";
+import { getTransitionRule, type LifecycleRecord } from "../lifecycle/index.js";
 import {
   loadTaskRegistry,
   TASK_LIFECYCLE_STATES,
@@ -39,7 +39,7 @@ export async function createLocalStatusDependencies(
   // a changed view. Caching here would silently defeat that concurrency check.
   return {
     registry: tasks,
-    lifecycle: { get: (taskId) => tasks.has(taskId) ? readLifecycle(stateRoot, taskId) : null },
+    lifecycle: { get: (taskId) => tasks.has(taskId) ? readLifecycle(stateRoot, evidenceRoot, taskId, store) : null },
     assignments: { get: (taskId) => {
       const task = tasks.get(taskId);
       return task === undefined ? null : readAssignment(stateRoot, task);
@@ -66,13 +66,30 @@ export function readLocalLifecycleStates(
   repositoryRoot: string,
   registry: TaskRegistry,
 ): ReadonlyMap<string, TaskLifecycleState> {
+  const stateRoot = join(repositoryRoot, ".agent/state");
+  const evidenceRoot = join(stateRoot, "evidence");
+  const store = new FileEvidenceStore(evidenceRoot, { readOnly: true });
   const states = new Map<string, TaskLifecycleState>();
   for (const [taskId, task] of registry) {
     assertTaskIdentity(taskId, task);
-    const state = readLifecycle(join(repositoryRoot, ".agent/state"), taskId);
+    const state = readLifecycle(stateRoot, evidenceRoot, taskId, store);
     if (state !== null) states.set(taskId, state.currentState);
   }
   return states;
+}
+
+/** Validate existing inputs before the default local CLI constructs any writable stores. */
+export function assertLocalGateHistory(repositoryRoot: string, registry: TaskRegistry, selected?: string): void {
+  const stateRoot = join(repositoryRoot, ".agent/state");
+  const evidenceRoot = join(stateRoot, "evidence");
+  const store = new FileEvidenceStore(evidenceRoot, { readOnly: true });
+  for (const [taskId, task] of registry) {
+    if (selected !== undefined && selected !== taskId) continue;
+    assertTaskIdentity(taskId, task);
+    readLifecycle(stateRoot, evidenceRoot, taskId, store);
+    readAssignment(stateRoot, task);
+    readEvidenceHistories(evidenceRoot, taskId, store);
+  }
 }
 
 function assertTaskIdentity(taskId: string, task: RegisteredTask): void {
@@ -80,7 +97,7 @@ function assertTaskIdentity(taskId: string, task: RegisteredTask): void {
     `Registry task identity '${taskId}' is invalid.`);
 }
 
-function readLifecycle(stateRoot: string, taskId: string): LifecycleRecord | null {
+function readLifecycle(stateRoot: string, evidenceRoot: string, taskId: string, store: FileEvidenceStore): LifecycleRecord | null {
   const path = join(stateRoot, "lifecycle", `${taskId}.lifecycle.json`);
   const raw = readOptionalJson(path);
   if (raw === null) return null;
@@ -91,7 +108,7 @@ function readLifecycle(stateRoot: string, taskId: string): LifecycleRecord | nul
   requireCondition(raw.taskId === taskId && isState(raw.currentState) && Array.isArray(raw.history),
     `${path}: invalid lifecycle task/state/history.`);
   const history = raw.history as unknown[];
-  const eventIds = new Set<string>();
+  const eventIds = new Map<string, number>();
   let priorState: string | undefined;
   for (const [index, event] of history.entries()) {
     const context = `${path}: history[${index}]`;
@@ -99,8 +116,6 @@ function readLifecycle(stateRoot: string, taskId: string): LifecycleRecord | nul
     requireKeys(event, ["eventId", "taskId", "fromState", "toState", "occurredAt", "reason", "evidenceRef",
       "actorId", "runId", "revisionIdentity"], context);
     requireText(event.eventId, `${context}.eventId`);
-    requireCondition(!eventIds.has(event.eventId), `${context}: duplicate event identity.`);
-    eventIds.add(event.eventId);
     requireText(event.reason, `${context}.reason`);
     requireDate(event.occurredAt, `${context}.occurredAt`);
     requireCondition(isState(event.toState), `${context}: invalid target state.`);
@@ -115,6 +130,13 @@ function readLifecycle(stateRoot: string, taskId: string): LifecycleRecord | nul
     for (const key of ["evidenceRef", "actorId", "runId", "revisionIdentity"]) {
       if (key in event) requireText(event[key], `${context}.${key}`);
     }
+    const previous = eventIds.get(event.eventId);
+    if (previous !== undefined) {
+      const first = history[previous] as JsonObject;
+      requireCondition(legacyValidationRepeat(taskId, first, event, history.slice(previous + 1, index), evidenceRoot, store),
+        `${context}: duplicate event identity.`);
+    }
+    eventIds.set(event.eventId, index);
     priorState = event.toState as string;
   }
   requireCondition(priorState === undefined || priorState === raw.currentState,
@@ -123,16 +145,51 @@ function readLifecycle(stateRoot: string, taskId: string): LifecycleRecord | nul
   return deepFreeze(raw) as unknown as LifecycleRecord;
 }
 
+// The original validation writer reused the assignment run ID after rework.
+// Accept only the known producer shape with newer, independently resolved
+// evidence. Keep both historical labels and record bytes unchanged.
+function legacyValidationRepeat(
+  taskId: string, prior: JsonObject, next: JsonObject, between: readonly unknown[], evidenceRoot: string, store: FileEvidenceStore,
+): boolean {
+  if (typeof next.runId !== "string" || next.runId !== prior.runId || typeof next.actorId !== "string" ||
+    next.actorId !== prior.actorId || next.fromState !== "IN_DEVELOPMENT" || prior.fromState !== next.fromState ||
+    !["DEV_VALIDATED", "DEV_VALIDATION_FAILED"].includes(String(next.toState)) || prior.toState !== next.toState ||
+    next.eventId !== `dev-validation:${taskId}:${next.runId}:IN_DEVELOPMENT->${next.toState}` ||
+    !between.some(event => isObject(event) && event.fromState === "REWORK_REQUIRED" && event.toState === "IN_DEVELOPMENT") ||
+    !between.every(event => isObject(event) && isState(event.fromState) && isState(event.toState) &&
+      getTransitionRule(event.fromState, event.toState) !== null)) return false;
+  const readBatch = (event: JsonObject) => {
+    if (typeof event.evidenceRef !== "string" || typeof event.revisionIdentity !== "string") return null;
+    const batch = new Map<string, number>();
+    for (const ref of event.evidenceRef.split(",")) {
+      const match = /^([A-Z]+-[0-9]{3,}::validator::[^@,]+)@([1-9][0-9]*)$/.exec(ref);
+      if (!match || !match[1]!.startsWith(`${taskId}::validator::`) || batch.has(match[1]!)) return null;
+      const lineage = match[1]!;
+      const sequence = Number(match[2]);
+      const record = readLineageHistory(evidenceRoot, encodeLineageDirectory(lineage), taskId, store)[sequence - 1];
+      if (record?.payload.revisionIdentity !== event.revisionIdentity) return null;
+      batch.set(lineage, sequence);
+    }
+    return batch;
+  };
+  const before = readBatch(prior);
+  const after = readBatch(next);
+  return before !== null && after !== null && [...after].every(([lineage, sequence]) => sequence > (before.get(lineage) ?? 0));
+}
+
 function readAssignment(stateRoot: string, task: RegisteredTask): AssignmentLockRecord | null {
   const path = join(stateRoot, "assignments", `${task.taskId}.lock.json`);
   const raw = readOptionalJson(path);
-  if (raw === null) return null;
+  return raw === null ? null : parseStoredAssignment(raw, task.taskId, path);
+}
+
+export function parseStoredAssignment(raw: unknown, taskId: string, path: string): AssignmentLockRecord {
   requireObject(raw, path);
   requireKeys(raw, ["schemaId", "schemaVersion", "lockId", "taskId", "canonicalBranch", "ownerId", "runId",
     "status", "acquiredAt", "expiresAt", "releasedAt"], path);
   requireCondition(raw.schemaId === "ipt.assignment-lock" && typeof raw.schemaVersion === "string" && VERSIONS.includes(raw.schemaVersion),
     `${path}: unsupported assignment schema identity/version.`);
-  requireCondition(raw.taskId === task.taskId, `${path}: assignment task identity mismatch.`);
+  requireCondition(raw.taskId === taskId, `${path}: assignment task identity mismatch.`);
   for (const key of ["lockId", "ownerId", "canonicalBranch"]) requireText(raw[key], `${path}.${key}`);
   if (raw.schemaVersion === "1.1.0" || "runId" in raw) requireText(raw.runId, `${path}.runId`);
   requireCondition(typeof raw.status === "string" && ["ACTIVE", "RELEASED", "STALE"].includes(raw.status), `${path}: invalid lock status.`);
@@ -174,7 +231,7 @@ function readRevision(repositoryRoot: string, task: RegisteredTask): string | nu
   return revision;
 }
 
-function readEvidenceHistories(
+export function readEvidenceHistories(
   root: string,
   taskId: string,
   store: FileEvidenceStore,

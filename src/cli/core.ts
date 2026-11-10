@@ -1,3 +1,5 @@
+import { assertLocalGateHistory } from "../status-reporting/local-source.js";
+import { checkProjectUpgrade, readProjectAudit, type HistoryLocation } from "../history/index.js";
 import { readPackageIdentity } from "../project-assets/identity.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -44,6 +46,7 @@ export interface CliRunResult {
 
 export interface CliRunContext {
   configuredProject?: true;
+  historyConfig?: HistoryLocation["config"];
   recoveryCheck?: (now: string) => Promise<Awaited<ReturnType<typeof import("../recovery-tools/index.js").checkRecoveryState>>>;
   recoveryApply?: (request: unknown) => ReturnType<import("../recovery-tools/index.js").LocalRecoveryTools["apply"]>;
   configuredManual?: ConfiguredManual;
@@ -134,6 +137,8 @@ function helpText(): string {
     "",
     "Usage:",
     "  agent [--json] <command>",
+    "  agent [--json] audit <task-id>",
+    "  agent [--json] upgrade check <package-version> [quiescent]",
     "  agent [--json] recovery check",
     "  agent [--json] recovery apply <request-file>",
     "  agent [--json] explain task|validation|reviews|merge <task-id>",
@@ -313,6 +318,32 @@ export async function runCli(
     }
   }
 
+  if (parsed.command === "audit" || parsed.command === "upgrade") {
+    const [first, version, confirmation, extra] = parsed.rest;
+    const audit = parsed.command === "audit";
+    const valid = audit ? parsed.rest.length === 1 && /^[A-Z]+-[0-9]{3,}$/.test(first ?? "") :
+      first === "check" && version !== undefined && (confirmation === undefined || confirmation === "quiescent") && extra === undefined;
+    if (!valid) return fail(parsed.command, parsed.json, EXIT_CODES.USAGE_ERROR, {
+      code: "USAGE_UNEXPECTED_ARGUMENT",
+      message: audit ? "Usage: audit <task>" : "Usage: upgrade check <package-version> [quiescent]",
+    });
+    const location: HistoryLocation = { repositoryRoot: context.repositoryRoot ?? ".",
+      ...(context.historyConfig === undefined ? {} : { config: context.historyConfig }) };
+    try {
+      if (audit) {
+        const report = await readProjectAudit(location, first!);
+        return succeed("audit", parsed.json, report, JSON.stringify(report, null, 2));
+      }
+      const report = await checkProjectUpgrade({ ...location, targetPackageVersion: version!,
+        ...(confirmation === "quiescent" ? { quiescence: { localWritersDrained: true, externalSessionsDrained: true } } : {}) });
+      return succeed("upgrade", parsed.json, report, JSON.stringify(report, null, 2));
+    } catch {
+      return fail(parsed.command, parsed.json, EXIT_CODES.WORKFLOW_BLOCKED, {
+        code: "HISTORY_UNAVAILABLE", message: "Inspect the original checkout, task and configured history. Preserve the original records.",
+      });
+    }
+  }
+
   if (parsed.command === "recovery") {
     try {
       const result = await runRecoveryCommand(parsed.rest, context);
@@ -374,6 +405,9 @@ export async function runCli(
     }
 
     try {
+      if (context.developerStartWorkflow === undefined) {
+        assertLocalGateHistory(context.repositoryRoot ?? ".", await registryFor(context));
+      }
       const workflow = context.developerStartWorkflow
         ?? await createLocalDeveloperStartWorkflow(context.repositoryRoot ?? ".");
       const result = workflow.start({
@@ -418,6 +452,9 @@ export async function runCli(
     }
 
     try {
+      if (context.developerValidationGate === undefined) {
+        assertLocalGateHistory(context.repositoryRoot ?? ".", await registryFor(context), taskId);
+      }
       const gate = context.developerValidationGate
         ?? await createLocalDeveloperValidationGate(context.repositoryRoot ?? ".");
       const result = await gate.validate({

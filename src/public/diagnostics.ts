@@ -1,3 +1,5 @@
+export { checkProjectUpgrade, readProjectAudit, historyCompatibility, verifyHistoryBackup,
+  type HistoryLocation, type UpgradeCheckRequest } from "../history/index.js";
 export { ProjectStatusReporter } from "../status-reporting/status-reporting.js";
 export type * from "../status-reporting/status-reporting.js";
 export { WorkflowDiagnostics } from "../workflow-diagnostics/diagnostics.js";

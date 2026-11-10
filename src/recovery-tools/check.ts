@@ -9,6 +9,7 @@ import { parseOrchestrationRunJournal } from "../orchestration-engine/run-store.
 import { createLocalStatusDependencies, type StatusReportingDependencies } from "../status-reporting/index.js";
 import { loadTaskRegistry, type RegisteredTask, type TaskRegistry } from "../task-registry/index.js";
 import { WorkflowDiagnostics } from "../workflow-diagnostics/index.js";
+import { inspectEvidenceReferences } from "./evidence-integrity.js";
 import { parseRecoveryRequest, recoveryHash } from "./recovery.js";
 
 export interface RecoveryCheckFinding {
@@ -217,41 +218,17 @@ function inspectHistory(task: RegisteredTask, lifecycle: LifecycleRecord, histor
   if (GATED_STATES.includes(lifecycle.currentState) && !lifecycle.history.some(event => event.toState === lifecycle.currentState)) {
     add("LIFECYCLE_PROVENANCE_MISSING", path, `Lifecycle '${lifecycle.currentState}' has no recorded transition.`, INSPECT, task.taskId);
   }
-  for (const event of lifecycle.history) {
+  for (const [index, event] of lifecycle.history.entries()) {
     if (event.fromState != null && getTransitionRule(event.fromState, event.toState) === null) {
       add("ILLEGAL_LIFECYCLE_HISTORY", path, `Event '${event.eventId}' records an illegal ${event.fromState} -> ${event.toState} transition.`, INSPECT, task.taskId);
     }
-    if (!GATED_STATES.includes(event.toState)) continue;
-    if (!event.evidenceRef || !event.revisionIdentity) {
+    if (GATED_STATES.includes(event.toState) && (!event.evidenceRef || !event.revisionIdentity)) {
       add("LIFECYCLE_PROVENANCE_MISSING", path, `Event '${event.eventId}' lacks revision-bound evidence.`, INSPECT, task.taskId);
       continue;
     }
-    // QA entry deliberately uses `qa-review:request:<reviewId>`, not a store
-    // reference. Only completed gates promise lineage@sequence evidence.
-    const passedRole = event.fromState === "QA_REVIEW" ? "QA" : event.fromState === "ARCHITECTURE_REVIEW" ? "Architect"
-      : event.fromState === "UAT_REVIEW" ? "UAT/Product" : undefined;
-    if (event.toState !== "DEV_VALIDATED" && event.toState !== "MERGED" && event.toState !== "DONE"
-      && event.toState !== "MERGE_READY" && passedRole === undefined) continue;
-    for (const reference of event.evidenceRef.split(",")) {
-      const at = reference.lastIndexOf("@");
-      const lineage = reference.slice(0, at);
-      const sequence = Number(reference.slice(at + 1));
-      if (at < 1 || !Number.isSafeInteger(sequence) || sequence < 1 || !lineage.startsWith(`${task.taskId}::`)) {
-        add("LIFECYCLE_EVIDENCE_REF_INVALID", path, `Event '${event.eventId}' has invalid evidence reference '${reference}'.`, INSPECT, task.taskId);
-        continue;
-      }
-      const evidence = histories.get(lineage)?.find(record => record.sequence === sequence);
-      if (evidence === undefined) add("LIFECYCLE_EVIDENCE_MISSING", path,
-        `Event '${event.eventId}' references missing or unreadable '${reference}'.`, INSPECT, task.taskId);
-      else {
-        const expectedSchema = event.toState === "MERGED" || event.toState === "DONE" ? "ipt.merge-evidence"
-          : passedRole !== undefined ? "ipt.review-result" : "ipt.validation-evidence";
-        if (evidence.payload.revisionIdentity !== event.revisionIdentity || evidence.payload.schemaId !== expectedSchema
-          || (passedRole !== undefined && evidence.payload.role !== passedRole)) add("LIFECYCLE_EVIDENCE_MISMATCH", path,
-          `Event '${event.eventId}' and '${reference}' identify different revisions or evidence kinds.`, INSPECT, task.taskId);
-        if (passedRole !== undefined && evidence.payload.outcome !== "PASS") add("LIFECYCLE_EVIDENCE_NOT_PASS", path,
-          `Event '${event.eventId}' claims a passed review backed by non-PASS '${reference}'.`, INSPECT, task.taskId);
-      }
+    for (const reference of inspectEvidenceReferences(task.taskId, event, histories, lifecycle.history[index - 1])) {
+      if (reference.code !== null) add(reference.code, path,
+        `Event '${event.eventId}' has inconsistent evidence reference '${reference.reference}'.`, INSPECT, task.taskId);
     }
   }
 }

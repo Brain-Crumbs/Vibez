@@ -1,10 +1,10 @@
+import { createLocalEvidenceWriter } from "../history/native-writer.js";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import type { ContextPackage } from "../context-compiler/index.js";
 import { LOCAL_AGENT_STATE_RELATIVE_PATH } from "../dev-start/index.js";
 import {
   EVIDENCE_STORE_SUPPORTED_SCHEMAS,
-  FileEvidenceStore,
   reviewResultLineageId,
   type RecordResult,
   type RevisionCheckResult,
@@ -398,7 +398,7 @@ export function createLocalReviewFramework(repositoryRoot = "."): ReviewFramewor
   const stateRoot = join(repositoryRoot, LOCAL_AGENT_STATE_RELATIVE_PATH);
   const evidenceRoot = join(stateRoot, "evidence");
   return new ReviewFramework({
-    evidenceStore: new FileEvidenceStore(evidenceRoot),
+    evidenceStore: createLocalEvidenceWriter(repositoryRoot),
     evidenceLocation: `${evidenceRoot} (lineage <taskId>::role::<role>)`,
   });
 }

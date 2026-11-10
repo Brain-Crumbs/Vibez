@@ -1,3 +1,4 @@
+import { createLocalEvidenceWriter } from "../history/native-writer.js";
 import { execFileSync } from "node:child_process";
 import {
   existsSync,
@@ -20,7 +21,6 @@ import {
 import { LOCAL_AGENT_STATE_RELATIVE_PATH } from "../dev-start/index.js";
 import {
   EVIDENCE_STORE_SUPPORTED_SCHEMAS,
-  FileEvidenceStore,
   reviewResultLineageId,
   type RecordResult,
   type RevisionCheckResult,
@@ -1770,7 +1770,7 @@ export async function createLocalArchitectureReviewGate(repositoryRoot = "."): P
   const lifecycleRoot = join(stateRoot, "lifecycle");
   const evidenceRoot = join(stateRoot, "evidence");
   const evidenceLocation = `${evidenceRoot} (lineage <taskId>::role::<role>)`;
-  const evidenceStore = new FileEvidenceStore(evidenceRoot);
+  const evidenceStore = createLocalEvidenceWriter(repositoryRoot);
   return new ArchitectureReviewGate({
     registry,
     stateStore: new FileArchitectureReviewStateStore(lifecycleRoot),

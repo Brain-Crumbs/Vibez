@@ -153,3 +153,10 @@ Compatibility rule: each required reachable outcome must remain reachable; overl
 ## BOOT-032 recovery routing
 
 The shell adds `read-only-recovery-check-command` and `explicit-offline-recovery-apply-command` via the reviewed `control-plane.recovery-tools` dependency. `check` emits local findings with either consistency value as exit 0; `apply` requires explicit request, exact revision/hash, confirmed quiescence and separate override policy when needed. It returns historical APPLIED plus audit hashes/path, never gate approval. Payload recoveryVersion is 1.0.0; envelope remains unchanged. Invalid requests exit 2, typed repair refusals exit 4, unexpected failures exit 70. Consumers require those success/refusal outcomes and must not treat consistent/APPLIED as workflow readiness. See [RECOVERY.md](../../docs/RECOVERY.md).
+
+MIG-007 adds read-only `audit <task-id>` and
+`upgrade check <package-version> [quiescent]` operations. The v1 envelope
+retains transport semantics. An inspection may return an incompatible report
+under a successful envelope. Audit separates observed provider/journal
+activity from revision-bound evidence and emits no free-form stored messages.
+See the [compatibility guide](../../docs/COMPATIBILITY.md).

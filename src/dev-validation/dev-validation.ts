@@ -1,9 +1,9 @@
+import { createLocalEvidenceWriter } from "../history/native-writer.js";
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { LOCAL_AGENT_STATE_RELATIVE_PATH } from "../dev-start/index.js";
 import {
   EVIDENCE_STORE_SUPPORTED_SCHEMAS,
-  FileEvidenceStore,
   validationEvidenceLineageId,
   type EvidenceStore,
   type RecordResult,
@@ -269,7 +269,7 @@ export class DeveloperValidationGate {
       taskId: task.taskId,
       expectedState: record.currentState,
       toState,
-      eventId: `dev-validation:${task.taskId}:${request.runId}:${record.currentState}->${toState}`,
+      eventId: `dev-validation:${task.taskId}:${request.runId}:${record.currentState}->${toState}:${record.history.length + 1}`,
       occurredAt: request.occurredAt,
       reason: `Developer validation gate transition ${record.currentState} -> ${toState} (${outcome}).`,
       evidenceRef,
@@ -409,7 +409,7 @@ export async function createLocalDeveloperValidationGate(
     registry,
     stateStore: new FileDeveloperValidationStateStore(join(stateRoot, "lifecycle")),
     branchLifecycle: new GitBranchLifecycleAdapter(new LocalGitBranchOperations(repositoryRoot)),
-    evidenceStore: new FileEvidenceStore(evidenceRoot) as EvidenceStore,
+    evidenceStore: createLocalEvidenceWriter(repositoryRoot) as EvidenceStore,
     validatorResolver: options.validatorResolver ?? new RepositoryValidatorResolver(repositoryRoot),
     evidenceLocation: `${evidenceRoot} (lineage <taskId>::validator::<validatorId>)`,
   });

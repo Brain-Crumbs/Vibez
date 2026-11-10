@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "taskId": "MIG-007",
+  "repository": "Brain-Crumbs/Vibez",
+  "issue": "https://github.com/Brain-Crumbs/Vibez/issues/7",
+  "issueBodySha256": "8dcbaf9af534249a1a06168c82025f6c7e819d90e5544e8f2fb7ed7151669a36",
+  "integrationBase": "d1ee95ceee47f1241bc0a5757e9d9bcf8801bbfb",
+  "canonicalBranch": "migration/mig-007-audit-and-upgrade-compatibility",
+  "definition": {
+    "path": "tasks/definitions/mig-007.task.json",
+    "sha256": "c839a6cecc0f9943b26a2cd0c75222aa9759475b22f8710095d469c3e770d5b9"
+  },
+  "requirement": {
+    "path": "requirements/mig-007.requirement.json",
+    "sha256": "da3614d4334fffe611c4890dd434873f908eef9f5a2903b29b03471ea4bfd608"
+  },
+  "verifier": "Brain-Crumbs maintainer delegate",
+  "observedAt": "2026-11-10T13:01:56.1574540-08:00",
+  "grant": "Implement one eligible roadmap issue, publish its reviewed PR and merge after all checks and independent reviews pass.",
+  "prerequisite": {
+    "taskId": "MIG-005",
+    "pr": "https://github.com/Brain-Crumbs/Vibez/pull/17",
+    "reviewedHead": "46dddcb0668b4a92e691eb5a0a6f8d2f19303e38",
+    "merge": "d1ee95ceee47f1241bc0a5757e9d9bcf8801bbfb",
+    "nativeDoneEvidence": "MIG-005::merge@1",
+    "mergeRecordSha256": "e97c39ecc57b83192d0f231619d738d5eaa872de815b99545e3c5d3b777f3dd6",
+    "exactHeadChecks": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T20:06:16Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42891698566/job/130094260066",
+        "name": "Build and test (Node)",
+        "startedAt": "2026-11-10T20:05:07Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T20:05:19Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42891698566/job/130094260785",
+        "name": "Schema and contract validation (Python)",
+        "startedAt": "2026-11-10T20:05:08Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T20:10:18Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42891698566/job/130094260786",
+        "name": "Seed validation (Windows)",
+        "startedAt": "2026-11-10T20:05:07Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      }
+    ],
+    "artifact": "@brain-crumbs/vibez@0.1.0-mig005.1",
+    "artifactSha256": "71b30590b1ab8db1b3046c1aec577af4010cbb2d89a4282b7604a4c077686204",
+    "transitiveReceipt": "migration/admissions/mig-005.json"
+  },
+  "seed": {
+    "pr": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+    "reviewedHead": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+    "merge": "16a73b8071f5b9ef390d08504e325b779af291fe",
+    "seal": "fdebe9111ce7aa004566c4068a2c15a9a95ab00c",
+    "exactHeadChecks": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T17:45:43Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876/job/130011384994",
+        "name": "Build and test (Node)",
+        "startedAt": "2026-11-10T17:44:22Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T17:44:28Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876/job/130011384404",
+        "name": "Schema and contract validation (Python)",
+        "startedAt": "2026-11-10T17:44:21Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-10T17:52:27Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876/job/130011384752",
+        "name": "Seed validation (Windows)",
+        "startedAt": "2026-11-10T17:44:22Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      }
+    ],
+    "receipt": "migration/admissions/mig-003.json"
+  }
+}
