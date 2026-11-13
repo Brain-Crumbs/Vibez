@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { runStandaloneCli } from "./standalone.js";
 import { runCli } from "./core.js";
 import { EXIT_CODES, OUTPUT_SCHEMA_VERSION } from "./contracts.js";
 
@@ -7,13 +8,15 @@ async function main(): Promise<number> {
   const controller = new AbortController();
   const interrupt = () => controller.abort();
   const args = process.argv.slice(2);
-  const manualRun = args.filter((arg) => arg !== "--json").slice(0, 2).join(" ") === "manual run";
+  const manualRun = args.filter((arg) => arg !== "--json").slice(0, 2).join(" ") === "manual run" || args.filter(arg => arg !== "--json")[0] === "orchestrate";
   if (manualRun) {
     process.on("SIGINT", interrupt);
     process.on("SIGTERM", interrupt);
   }
   try {
-    const result = await runCli(args, { signal: controller.signal });
+    const progress = (message: string) => process.stderr.write(`${message}\n`);
+    const result = await runStandaloneCli(args, controller.signal, progress)
+      ?? await runCli(args, { signal: controller.signal, driverRuntime: { progress } });
 
     if (result.stdout.length > 0) {
       process.stdout.write(result.stdout);

@@ -5,7 +5,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import { get, git, githubFixture, markdown, pause, put, response } from "./helpers/driver-fixture.mjs";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
@@ -61,7 +62,7 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
     "docs/specs/project-config.schema.json", "examples/alpha/vibez.config.json", "examples/beta/vibez.config.json",
   ];
   const included = new Set([...assets, "package.json", "NOTICE.md", "README.md", "docs/INSTALL.md", "docs/PUBLIC_API.md",
-    "docs/CLI.md", "docs/COMPATIBILITY.md", "docs/CONFIGURED_RUNTIME.md", "docs/UNATTENDED_HOST.md", "docs/SUPPORT.md"]);
+    "docs/CLI.md", "docs/COMPATIBILITY.md", "docs/CONFIGURED_RUNTIME.md", "docs/UNATTENDED_HOST.md", "docs/SUPPORT.md", "docs/WORKFLOW_DRIVER.md"]);
   for (const path of included) assert.ok(paths.has(path), path);
   for (const path of paths) assert.ok(included.has(path) || /^dist\/.+\.(js|d\.ts)$/.test(path), "Unexpected packaged file " + path);
   assert.deepEqual(Object.keys(manifest.exports), Object.keys(publicApi).map(path => "." + path));
@@ -114,7 +115,7 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
     assert.equal(version.status, 0, version.error?.message || version.stderr);
     assert.deepEqual(JSON.parse(version.stdout), { schemaVersion: "1.0.0", ok: true, command: "version",
       data: { cliVersion: pack.version, outputSchemaVersion: "1.0.0" }, error: null });
-    const reserved = invokeAlias(localBin, alias, ["--json", "orchestrate"], unrelated);
+    const reserved = invokeAlias(localBin, alias, ["--json", "review"], unrelated);
     assert.equal(reserved.status, 3, reserved.error?.message || reserved.stderr);
     assert.equal(JSON.parse(reserved.stdout).error.code, "COMMAND_NOT_IMPLEMENTED");
   }
@@ -125,4 +126,160 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
   assert.equal(global.status, 0, global.error?.message || global.stderr);
   assert.equal(JSON.parse(global.stdout).data.cliVersion, pack.version);
   assert.deepEqual(readdirSync(unrelated), []);
+});
+
+test("installed manual driver uses committed consumer inputs and recovers the bound packet", async t => {
+  assert.ok(npm, "Run via npm test or npm run test:package.");
+  const temp = mkdtempSync(join(tmpdir(), "vibez driver package "));
+  t.after(() => rmSync(temp, { recursive: true, force: true }));
+  const runNpm = (args, cwd) => run(process.execPath, [npm, "--cache", join(temp, "npm-cache"), ...args], cwd);
+  const [pack] = JSON.parse(runNpm(["pack", "--ignore-scripts", "--json", "--pack-destination", temp], root));
+  const tools = join(temp, "tools");
+  const project = join(temp, "consumer with spaces");
+  mkdirSync(tools);
+  mkdirSync(project);
+  put(tools, "package.json", { private: true });
+  runNpm(["install", "--offline", "--no-audit", "--no-fund", join(temp, pack.filename)], tools);
+  const executable = join(tools, "node_modules", manifest.name, "dist", "cli", "cli.js");
+  const call = (args, input) => {
+    const result = spawnSync(process.execPath, [executable, "--json", "orchestrate", ...args,
+      "--project", project, "--config", "workflow.json", "--npm-cli", npm, "--local-ntfs"],
+      { cwd: tools, input, encoding: "utf8" });
+    assert.equal(result.status, 0, result.stdout || result.stderr || result.error?.message);
+    return JSON.parse(result.stdout).data;
+  };
+  const config = get(root, "examples/alpha/vibez.config.json");
+  config.project.repository = "fixture-owner/fixture-repo";
+  config.policy.remote = "upstream";
+  config.policy.integrationTarget = "trunk";
+  config.providers.credentials = [];
+  put(project, "workflow.json", config);
+  put(project, "work/tasks/.gitkeep", "");
+  put(project, "work/contracts/.gitkeep", "");
+  put(project, "work/policy.json", {});
+  put(project, "work/requirements/marker.json", {
+    schemaId: "ipt.requirement", schemaVersion: "1.0.0", requirementId: "DEMO-001-R1", taskId: "DEMO-001",
+    statement: "Deliver the marker.", acceptanceCriteria: ["Marker has the expected text."], sourceRefs: ["fixture"],
+  });
+  put(project, "package.json", { private: true, scripts: { build: "node --check verify.mjs", test: "node verify.mjs" } });
+  put(project, "verify.mjs", "import assert from 'node:assert/strict'; import { readFileSync } from 'node:fs'; assert.equal(readFileSync('marker.txt','utf8'), 'done');");
+  put(project, ".gitignore", ".vibez/\n");
+  git(project, "init", "-b", "trunk");
+  git(project, "config", "user.name", "Installed fixture");
+  git(project, "config", "user.email", "driver@example.invalid");
+  git(project, "remote", "add", "upstream", "https://github.com/fixture-owner/fixture-repo.git");
+  git(project, "add", ".");
+  git(project, "commit", "-m", "Configure isolated consumer");
+
+  const setup = call(["init", "--actor-prefix", "operator", "--developer-tools", "read_file,write_file,git_commit",
+    "--review-tools", "read_file,run_test", "--enforce-policies", "externally"]);
+  assert.equal(setup.profile.integrationTarget, "trunk");
+  assert.equal(setup.profile.paths.outbound, ".vibez/outbox");
+  const intake = call(["prepare", "--stdin"], markdown());
+  assert.ok(intake.sessionId && intake.diagnostics.length === 0, JSON.stringify(intake));
+  const first = call(["run", intake.sessionId]).session;
+  assert.ok(first.pendingPacket, first.diagnosticId ? get(project, `.vibez/outbox/${first.diagnosticId}.diagnostic.json`).message : JSON.stringify(first));
+  const handoff = get(project, `.vibez/outbox/${first.pendingPacket}.handoff.json`);
+  assert.equal(handoff.packet.role, "Developer");
+  assert.ok(handoff.packet.contextPackage.artifacts.some(item => item.kind === "requirement"));
+  assert.ok(handoff.packet.contextPackage.artifacts.some(item => item.kind === "contract" && item.sourcePath.startsWith("vibez-package:")));
+  assert.ok(!existsSync(join(project, "schemas")));
+  assert.ok(!existsSync(join(project, ".agent")));
+  assert.equal(call(["resume", intake.sessionId]).session.pendingPacket, first.pendingPacket);
+
+  put(project, ".vibez/inbox/responses/reply.json", "{");
+  call(["watch", intake.sessionId, "--once"]);
+  await pause();
+  const waiting = call(["watch", intake.sessionId, "--once"]).session;
+  assert.equal(waiting.pendingPacket, first.pendingPacket);
+  assert.ok(waiting.diagnosticId);
+  put(project, "marker.txt", "done");
+  git(project, "add", "marker.txt");
+  git(project, "commit", "-m", "Deliver marker");
+  put(project, ".vibez/inbox/responses/reply.json", response(handoff.packet));
+  call(["watch", intake.sessionId, "--once"]);
+  await pause();
+  let stage = call(["watch", intake.sessionId, "--once"]).session;
+  for (const role of ["QA", "Architect", "UAT/Product"]) {
+    assert.deepEqual(stage.request, first.request);
+    assert.ok(stage.pendingPacket, JSON.stringify(stage));
+    const packet = get(project, `.vibez/outbox/${stage.pendingPacket}.handoff.json`).packet;
+    assert.equal(packet.role, role);
+    put(project, `.vibez/inbox/responses/${packet.packetId}.json`, response(packet));
+    call(["watch", intake.sessionId, "--once"]);
+    await pause();
+    stage = call(["watch", intake.sessionId, "--once"]).session;
+  }
+  assert.equal(get(project, ".vibez/state/lifecycle/DEMO-001.lifecycle.json").currentState, "MERGE_READY");
+  const bare = join(temp, "fixture bare.git");
+  mkdirSync(bare);
+  git(bare, "init", "--bare");
+  const bareUrl = pathToFileURL(bare).href;
+  const repository = config.project.repository;
+  const githubUrl = `https://github.com/${repository}.git`;
+  const { remote, fetchImpl } = githubFixture(project, "trunk");
+  const installedEntrypoint = pathToFileURL(join(tools, "host.mjs")).href;
+  put(tools, "host.mjs", `
+    export { createProjectServices, npmValidatorCommands } from "${manifest.name}";
+    export { GitHubControlledMergePullRequestOperations, GitHubCiStatusOperations,
+      GitHubMergeReadinessPullRequestOperations, GitHubPullRequestOperations } from "${manifest.name}/integration";
+  `);
+  const api = await import(installedEntrypoint);
+  const token = "fixture-token";
+  const options = { owner: "fixture-owner", repo: "fixture-repo", token, fetchImpl };
+  let writeAllowed = false;
+  let mergeAuthorization;
+  const host = {
+    identity: "vibez-standalone-manual-npm@1", executors: api.npmValidatorCommands(npm),
+    integration: {
+      repository,
+      publication: new api.GitHubPullRequestOperations({ ...options, fetchImpl: (url, init) => {
+        const body = init.method === "POST" && url.endsWith("/pulls") ? JSON.stringify({ ...JSON.parse(init.body ?? "{}"), draft: true }) : init.body;
+        return fetchImpl(url, { ...init, ...(body === undefined ? {} : { body }) });
+      } }),
+      pullRequests: new api.GitHubMergeReadinessPullRequestOperations(options),
+      ci: new api.GitHubCiStatusOperations(options),
+      merge: new api.GitHubControlledMergePullRequestOperations(options),
+    },
+    authorizePublication: () => writeAllowed,
+    authorizeMerge: input => mergeAuthorization === `${input.repository}#${input.number}@${input.expectedHeadSha}`,
+  };
+  const runHost = async operation => {
+    const graph = await api.createProjectServices({ projectRoot: project, configPath: "workflow.json", verifyLocalStorage: () => true }, host);
+    const result = await graph.cli(["--json", "orchestrate", operation, intake.sessionId], undefined, {
+      token, fetchImpl, mergeAuthorization,
+      remoteHead: (url, ref) => {
+        assert.equal(url, githubUrl);
+        return git(project, "ls-remote", bareUrl, ref).split(/\s/)[0];
+      },
+      pushBranch: (url, ref, head) => {
+        assert.equal(url, githubUrl);
+        git(project, "push", bareUrl, `${head}:${ref}`);
+      },
+    });
+    return JSON.parse(result.stdout);
+  };
+  assert.equal((await runHost("publish")).ok, false);
+  assert.equal(remote.pr, null);
+  writeAllowed = true;
+  const publication = await runHost("publish");
+  assert.equal(publication.ok, true, JSON.stringify(publication));
+  assert.equal(remote.pr.draft, true);
+  const ready = await runHost("ready");
+  assert.equal(ready.ok, true, JSON.stringify(ready));
+  assert.equal(remote.pr.draft, false);
+  remote.ci = "pending";
+  assert.notEqual((await runHost("resume")).data.session.status, "DONE");
+  assert.equal(remote.merges, 0);
+  remote.ci = "success";
+  assert.notEqual((await runHost("resume")).data.session.status, "DONE");
+  assert.equal(remote.merges, 0);
+  const revision = git(project, "rev-parse", "HEAD");
+  mergeAuthorization = `${repository}#1@${revision}`;
+  const completion = await runHost("resume");
+  assert.equal(completion.data?.session.status, "DONE", JSON.stringify(completion));
+  assert.equal(remote.merges, 1);
+  assert.equal((await runHost("resume")).data?.session.status, "DONE");
+  assert.equal(remote.merges, 1);
+  assert.ok(!existsSync(join(project, ".agent")));
 });

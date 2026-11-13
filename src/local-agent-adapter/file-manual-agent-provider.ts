@@ -144,9 +144,10 @@ export class FileManualAgentProvider implements AgentProvider {
     return Object.freeze({ packet, result: this.#readResult(packet) });
   }
 
-  importResult(packetId: string, payload: unknown): LocalAgentImportResult {
+  importResult(packetId: string, payload: unknown, beforePublish?: (result: LocalAgentResult) => void): LocalAgentImportResult {
     const packet = this.readPacket(packetId);
     const result = this.#validateResult(payload, packet);
+    beforePublish?.(result);
     const path = this.resultPath(packetId);
     const reused = this.#publish(path, result);
     if (reused) {

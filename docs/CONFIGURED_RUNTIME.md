@@ -106,7 +106,7 @@ Configured `manual export` and `manual run` read request files beneath the
 intake root. `manual import` reads beneath responses. The exchange argument
 must identify the configured exchange directory. Other providers are
 resolved by ID from `host.providers` and must cover the required roles and
-timeouts. BOOT-037 remains the owner of the operator driver.
+timeouts. See the [installed manual workflow driver](WORKFLOW_DRIVER.md) for the full guided operator path.
 
 ## State and compatibility
 

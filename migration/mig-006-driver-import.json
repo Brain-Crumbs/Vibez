@@ -1,0 +1,393 @@
+{
+  "taskId": "MIG-006",
+  "sourceIssue": "https://github.com/Brain-Crumbs/IPTFantasyFootball/issues/78",
+  "sourcePr": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/85",
+  "sourceBase": "5cd23ef5415f2d2140654551f9152339417e4b58",
+  "sourceHead": "f02e12ac3cb9f407b257e46f09e29bdb8995b26f",
+  "sourceMerge": "ff9e467a870d26850330563a27359de44f151ea7",
+  "sourceCi": "https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/42947782938",
+  "paths": [
+    {
+      "path": "AGENTS.md",
+      "sourceBlob": "f4a6991aa43e1662c220592c9a5fcc4f08b4210e",
+      "sourceSha256": "4ae301b8f71bcfdb1d697b8e2dd913698531a64ef2897dd8a827f2959553d416",
+      "disposition": "retain-source-policy"
+    },
+    {
+      "path": "BOOTSTRAP.md",
+      "sourceBlob": "b282d2170347f810806a04aaf08c79263a0202d0",
+      "sourceSha256": "2ac5739cdc46da3bd39b20257c244649337cbef0c91c491987494df33dd4fb96",
+      "disposition": "retain-source-policy"
+    },
+    {
+      "path": "README.md",
+      "sourceBlob": "262f7ebe2e006207856980cc3977b6a7a27ab55d",
+      "sourceSha256": "835162db4aff5b3c8b3da1dfeb7584f3ed352704cbde892b3b8497b54ae5c0de",
+      "disposition": "retain-source-policy"
+    },
+    {
+      "path": "contracts/cli-shell/module-contract.json",
+      "sourceBlob": "a4a18bc557543ea85c218f7581bf1ab005ee4eab",
+      "sourceSha256": "cb3f21fd4325eae07d824760491834356805b0f6ea9300b58bd6972d3e8774c1",
+      "disposition": "copy",
+      "destinationPath": "contracts/cli-shell/module-contract.json"
+    },
+    {
+      "path": "contracts/dev-validation/README.md",
+      "sourceBlob": "086df64bc9aa7470709da5ac3651b2acb2e20150",
+      "sourceSha256": "17ecb3f34f95a3e3ac38058b7b777dd662f1412aa5af25d00dc814578771d358",
+      "disposition": "copy",
+      "destinationPath": "contracts/dev-validation/README.md"
+    },
+    {
+      "path": "contracts/dev-validation/module-contract.json",
+      "sourceBlob": "105b3e34300b5d52ca6e421f59a6bc6180f4aba7",
+      "sourceSha256": "73c77ca7933e7c1f3b5cc24cc8c01be477e1ecd322560b08349395923e194683",
+      "disposition": "copy",
+      "destinationPath": "contracts/dev-validation/module-contract.json"
+    },
+    {
+      "path": "contracts/local-agent-adapter/README.md",
+      "sourceBlob": "ea80fbc1a350ea7076989e663b7bb7327f872910",
+      "sourceSha256": "3894fce2519671c3eada88d86aba1da4cb21247c48006b38574558b97c1c2075",
+      "disposition": "adapt",
+      "destinationPath": "contracts/local-agent-adapter/README.md"
+    },
+    {
+      "path": "contracts/orchestration-engine/README.md",
+      "sourceBlob": "7ab514b7e984a7d24268fed377a812187345fcad",
+      "sourceSha256": "9dec0b5e7dc1047941bf8a578b513171bd42c0b7d7611f588cdde89fc5559feb",
+      "disposition": "copy",
+      "destinationPath": "contracts/orchestration-engine/README.md"
+    },
+    {
+      "path": "contracts/orchestration-engine/module-contract.json",
+      "sourceBlob": "122e8b352416cb3515f2993c3a7e25fef8e16076",
+      "sourceSha256": "7eea5913ae2fc0cd06f7bbfd6d2c53d52c752b9485188a0e405e26bc697c3082",
+      "disposition": "copy",
+      "destinationPath": "contracts/orchestration-engine/module-contract.json"
+    },
+    {
+      "path": "contracts/workflow-driver/README.md",
+      "sourceBlob": "1f1c04b9387c7c6a8265dd63ef9cc8a517da27e9",
+      "sourceSha256": "970b01fff47e3b77c66aab648cc8722c212359cc4da5100147b9952b61bb67dc",
+      "disposition": "copy",
+      "destinationPath": "contracts/workflow-driver/README.md"
+    },
+    {
+      "path": "contracts/workflow-driver/module-contract.json",
+      "sourceBlob": "5aba8e522969728747e74cf856a96f10b97a774c",
+      "sourceSha256": "62cefeaeec1d69518ae21c853d284a65ce5ffda6426f7cb411e73156d5e10468",
+      "disposition": "copy",
+      "destinationPath": "contracts/workflow-driver/module-contract.json"
+    },
+    {
+      "path": "docs/CLI.md",
+      "sourceBlob": "3f790c2280c50d680aab8efd97a6152fa32d625c",
+      "sourceSha256": "2c3eaf81357562d2d3145a0f9afe485fed7aa2c496ab9e2c8257dde51a2fb42d",
+      "disposition": "adapt",
+      "destinationPath": "docs/CLI.md"
+    },
+    {
+      "path": "docs/WORKFLOW_DRIVER.md",
+      "sourceBlob": "a312322fc9aeeb37b3986d8adc5057ea11beab51",
+      "sourceSha256": "786b8993ca0354cfed3b24b821043e3f22a256bab3f86d173b292bad034055ae",
+      "disposition": "adapt",
+      "destinationPath": "docs/WORKFLOW_DRIVER.md"
+    },
+    {
+      "path": "package.json",
+      "sourceBlob": "97c84b726b86d5d28928091f570db1d9ce17b72e",
+      "sourceSha256": "8a4a7fd58a7810e6fee536519d713d361f05e03d54797c2244b4465b51d9751a",
+      "disposition": "adapt",
+      "destinationPath": "package.json"
+    },
+    {
+      "path": "schemas/fixtures/v1/driver-diagnostic.invalid.json",
+      "sourceBlob": "efed57cba833a71ce0e7a0d2fcf08632b7a85fa2",
+      "sourceSha256": "54741185f75ce37809d5a2b0d6a6d97cb71a3dd6b165185e49668d7956246c6a",
+      "disposition": "copy",
+      "destinationPath": "schemas/fixtures/v1/driver-diagnostic.invalid.json"
+    },
+    {
+      "path": "schemas/fixtures/v1/driver-diagnostic.valid.json",
+      "sourceBlob": "aabbea82a9d1460143778b407538df515471916e",
+      "sourceSha256": "c0fa5cd784c7cfbfe850c949f323172eea90275057349ddd3371fbbcd5022ef6",
+      "disposition": "copy",
+      "destinationPath": "schemas/fixtures/v1/driver-diagnostic.valid.json"
+    },
+    {
+      "path": "schemas/fixtures/v1/driver-intake.invalid.json",
+      "sourceBlob": "ee54bf13525354610b1e291c4618fdd0f6fbefd3",
+      "sourceSha256": "218d7677994a9c17e60b42b068590ebd5ac87cbd720286be79e68d49dc636bdb",
+      "disposition": "copy",
+      "destinationPath": "schemas/fixtures/v1/driver-intake.invalid.json"
+    },
+    {
+      "path": "schemas/fixtures/v1/driver-intake.valid.json",
+      "sourceBlob": "0d74b8b6f1e104d613e4725d1b5c9645e946e76e",
+      "sourceSha256": "76660c32cab525ec46e519f4c5a926d824d74f5e9a0f92b90f97a0aabf79430a",
+      "disposition": "copy",
+      "destinationPath": "schemas/fixtures/v1/driver-intake.valid.json"
+    },
+    {
+      "path": "schemas/fixtures/v1/driver-profile.invalid.json",
+      "sourceBlob": "06e58f7504cc9ec9f6db59b373f3b41110b9661d",
+      "sourceSha256": "d4167d135d5458f1d38e18c347ba13dfc371605208097cb4392a662005eca6b8",
+      "disposition": "copy",
+      "destinationPath": "schemas/fixtures/v1/driver-profile.invalid.json"
+    },
+    {
+      "path": "schemas/fixtures/v1/driver-profile.valid.json",
+      "sourceBlob": "596645a81421167485f1ee1d12a29832b8523051",
+      "sourceSha256": "f082544c6154ef0d61f41f774fc2a1cabc76b7226d6f7f46acef9c6294148d01",
+      "disposition": "copy",
+      "destinationPath": "schemas/fixtures/v1/driver-profile.valid.json"
+    },
+    {
+      "path": "schemas/fixtures/v1/driver-receipt.invalid.json",
+      "sourceBlob": "f94ac7b15e4b6902b3bbf6f8c202e6ffb521251b",
+      "sourceSha256": "a1a14291d1d002ab736dd656ba0b5956d9623192b14620145cbc84529131fd97",
+      "disposition": "copy",
+      "destinationPath": "schemas/fixtures/v1/driver-receipt.invalid.json"
+    },
+    {
+      "path": "schemas/fixtures/v1/driver-receipt.valid.json",
+      "sourceBlob": "cac3decd7903f6fbee589aa26e87d9c8b5e55739",
+      "sourceSha256": "11a37e5606dbe69d23ffb1e4776947a431e3a0f6c2580568c2d999b6a814dd5c",
+      "disposition": "copy",
+      "destinationPath": "schemas/fixtures/v1/driver-receipt.valid.json"
+    },
+    {
+      "path": "schemas/fixtures/v1/driver-response.invalid.json",
+      "sourceBlob": "333f010d4f0c4359d5daedf7dbb0b66ad666a0ea",
+      "sourceSha256": "5bf38f6a91005ff34a564f5ced15cda88d49597af8dd772f30ef4c4bd67c79ba",
+      "disposition": "copy",
+      "destinationPath": "schemas/fixtures/v1/driver-response.invalid.json"
+    },
+    {
+      "path": "schemas/fixtures/v1/driver-response.valid.json",
+      "sourceBlob": "89273fbaa7016b088c7c9243e2794ac0367ce4f5",
+      "sourceSha256": "707e27073c56717b1f6b9d472bc56fd2d828f7020b954df29f0367550f6e8cd9",
+      "disposition": "copy",
+      "destinationPath": "schemas/fixtures/v1/driver-response.valid.json"
+    },
+    {
+      "path": "schemas/fixtures/v1/driver-session.invalid.json",
+      "sourceBlob": "67e142f2045595ceca9a798a153fdf046ec428d1",
+      "sourceSha256": "d3f8ddbd0705b3626f45d288459ec50becc3b39215ff86cf6bc60ef13dc90ecf",
+      "disposition": "copy",
+      "destinationPath": "schemas/fixtures/v1/driver-session.invalid.json"
+    },
+    {
+      "path": "schemas/fixtures/v1/driver-session.valid.json",
+      "sourceBlob": "4da53334088fb839b9c11d0a4b093fbb6fd5346a",
+      "sourceSha256": "0833f61bbaa35852e1531be1bcdb1b0fd77060eefba4c573331b98d76cfdeea5",
+      "disposition": "copy",
+      "destinationPath": "schemas/fixtures/v1/driver-session.valid.json"
+    },
+    {
+      "path": "schemas/v1/driver-diagnostic.schema.json",
+      "sourceBlob": "6b567a955cce9064f156f97a618029e933bd38dc",
+      "sourceSha256": "e012b85d491ebb4190cbc87305019f127809a2a82631d45ab9dda88f09a13e91",
+      "disposition": "copy",
+      "destinationPath": "schemas/v1/driver-diagnostic.schema.json"
+    },
+    {
+      "path": "schemas/v1/driver-intake.schema.json",
+      "sourceBlob": "d665c3ab210c8663732701c6dbdb96998b512722",
+      "sourceSha256": "59db6bec94e7980cc60ed257e67164d2acfe46ce6f54a54e8039faf7d44c6def",
+      "disposition": "copy",
+      "destinationPath": "schemas/v1/driver-intake.schema.json"
+    },
+    {
+      "path": "schemas/v1/driver-profile.schema.json",
+      "sourceBlob": "f078c85b84776f8ef88e1dea68fc544d6f0e7f22",
+      "sourceSha256": "92d34e9486c81d2ed7f85ae8093c543a3c45828525753b555743c54833ae27b2",
+      "disposition": "adapt",
+      "destinationPath": "schemas/v1/driver-profile.schema.json"
+    },
+    {
+      "path": "schemas/v1/driver-receipt.schema.json",
+      "sourceBlob": "e362a61c2dd9a53e057b8eaca3a1d7e1c3bf84da",
+      "sourceSha256": "478cabfe2b7795d545b456ea4a7502c60612e41860e0c0c4210b355a6064ce3d",
+      "disposition": "copy",
+      "destinationPath": "schemas/v1/driver-receipt.schema.json"
+    },
+    {
+      "path": "schemas/v1/driver-response.schema.json",
+      "sourceBlob": "18e240eef75561308e86235dc5b179f0061c3445",
+      "sourceSha256": "afc2077b71cccbe19f06cc5ef5a99a9d1ff1d1f7748ef0c5ea1ca662adfc669e",
+      "disposition": "copy",
+      "destinationPath": "schemas/v1/driver-response.schema.json"
+    },
+    {
+      "path": "schemas/v1/driver-session.schema.json",
+      "sourceBlob": "5dbd21d11ad736ea9b99f57d123e007f645901f7",
+      "sourceSha256": "c268a06f3b019d5e093a26bc4c0495e1844023489d33af05f87eeb2528463ee7",
+      "disposition": "copy",
+      "destinationPath": "schemas/v1/driver-session.schema.json"
+    },
+    {
+      "path": "schemas/validate_fixtures.py",
+      "sourceBlob": "759e9a1a1237f1814fe416a37f05bca9c2e9398e",
+      "sourceSha256": "e7c1d99e827cb8b4538f2ad12346631f2c04c4cdd1b3ff2e88bcee4b972236db",
+      "disposition": "copy",
+      "destinationPath": "schemas/validate_fixtures.py"
+    },
+    {
+      "path": "src/cli/cli.ts",
+      "sourceBlob": "a87cfbee1b68d72343a53eed003d86f7d5bca401",
+      "sourceSha256": "05ac0b23119e2769688c7f6a9382af6497df2888f0b4b03a66f2f9755037da47",
+      "disposition": "adapt",
+      "destinationPath": "src/cli/cli.ts"
+    },
+    {
+      "path": "src/cli/commands.ts",
+      "sourceBlob": "8b30725a456745718c849f3d08d1355db50e7776",
+      "sourceSha256": "e37ee7c61c9af005cf1a349a5036186445fe1870af718349f704323a1f981196",
+      "disposition": "adapt",
+      "destinationPath": "src/cli/commands.ts"
+    },
+    {
+      "path": "src/cli/contracts.ts",
+      "sourceBlob": "74a4206a6a60d36d24bddc165d817273ec7992e9",
+      "sourceSha256": "b4d29e830c8bf548ee9acd64f230eb34910d25b2af6ae8f5beb5bc0739c3cab1",
+      "disposition": "adapt",
+      "destinationPath": "src/cli/contracts.ts"
+    },
+    {
+      "path": "src/cli/core.ts",
+      "sourceBlob": "744923f1d62208b73535f424b2288bd657628442",
+      "sourceSha256": "fa4fe217d883b7fdd828adf238b7f662bcce5e8c56ab924388c1783adc75816d",
+      "disposition": "adapt",
+      "destinationPath": "src/cli/core.ts"
+    },
+    {
+      "path": "src/cli/orchestrate.ts",
+      "sourceBlob": "dc36dfa7a70443f1f3441f140271f0166c7655a7",
+      "sourceSha256": "a017af317d80825c47e55443750fd0facadc72bee54bf988ca4d78b301754b3f",
+      "disposition": "adapt",
+      "destinationPath": "src/cli/orchestrate.ts"
+    },
+    {
+      "path": "src/dev-start/dev-start.ts",
+      "sourceBlob": "41794aa5459ba1488a0a40b2e543e4c912a1cb6a",
+      "sourceSha256": "17cac45016b9fac29ff415214c86a3ab2f654ff76698bc0b9a35531593361013",
+      "disposition": "adapt",
+      "destinationPath": "src/dev-start/dev-start.ts"
+    },
+    {
+      "path": "src/dev-validation/dev-validation.ts",
+      "sourceBlob": "6f1493fe35aa1295d998c06b2078b4c86a4c6535",
+      "sourceSha256": "bb7a1f1007b06de38c8542f06c664577f11330fe931015c060c2e1da2169010f",
+      "disposition": "adapt",
+      "destinationPath": "src/dev-validation/dev-validation.ts"
+    },
+    {
+      "path": "src/git-branch-lifecycle/node-runtime.d.ts",
+      "sourceBlob": "d1fc0a144e14cfb36e5444126812da0fbb2d7619",
+      "sourceSha256": "29881e8b15dc3f8bdb5ef8528ebf34533f632186dc0760c13561fd2178420887",
+      "disposition": "copy",
+      "destinationPath": "src/git-branch-lifecycle/node-runtime.d.ts"
+    },
+    {
+      "path": "src/local-agent-adapter/file-manual-agent-provider.ts",
+      "sourceBlob": "00fae909d1a8006418df8d6cd5d97671b6b8fe98",
+      "sourceSha256": "2ba2a975faf9365c58467b73ba67adb19ce91ccdc996324b69899c687054e1ae",
+      "disposition": "adapt",
+      "destinationPath": "src/local-agent-adapter/file-manual-agent-provider.ts"
+    },
+    {
+      "path": "src/orchestration-engine/orchestration-engine.ts",
+      "sourceBlob": "8a5efca5fa61a606db1ed72e8d658509d118b7dc",
+      "sourceSha256": "af130718d1cbadff5172e4b485b059182062eba7af033203955f4b850fef7bef",
+      "disposition": "adapt",
+      "destinationPath": "src/orchestration-engine/orchestration-engine.ts"
+    },
+    {
+      "path": "src/orchestration-engine/run-store.ts",
+      "sourceBlob": "6734b3ba6979301ce4372b00b8c0068ac2de18b8",
+      "sourceSha256": "35ca3a9950ebc4d6fcfdd8bff5bfc60970911269f0250da4a2005f0a5573c192",
+      "disposition": "adapt",
+      "destinationPath": "src/orchestration-engine/run-store.ts"
+    },
+    {
+      "path": "src/validation-framework/node-runtime.d.ts",
+      "sourceBlob": "9c64bcdec1b4d0bf65bd7e7d70e21139076dc13a",
+      "sourceSha256": "57b3c214e377bcd617527dc09e2c72dbb8a231bc4c2b58c71accce68634e18f1",
+      "disposition": "copy",
+      "destinationPath": "src/validation-framework/node-runtime.d.ts"
+    },
+    {
+      "path": "src/validation-framework/validation-framework.ts",
+      "sourceBlob": "3b1259e7e8b9780b801cf00089ec61f3d8c90949",
+      "sourceSha256": "9df51059eea5cc286f372503edbd88be80b8162b22399d23fc057fe0c96a6985",
+      "disposition": "adapt",
+      "destinationPath": "src/validation-framework/validation-framework.ts"
+    },
+    {
+      "path": "src/workflow-driver/driver.ts",
+      "sourceBlob": "8bf65c1f5a3a5c5bc2e0771598409b8494eed0d5",
+      "sourceSha256": "fe606314f61135b7501f35ec76636cf40e5e66860233b02825ae8a1437784706",
+      "disposition": "adapt",
+      "destinationPath": "src/workflow-driver/driver.ts"
+    },
+    {
+      "path": "src/workflow-driver/inbox.ts",
+      "sourceBlob": "fd198fe7c074522cf12acceea3ca3b1c4940a992",
+      "sourceSha256": "f272614aea704884045c75c179c8ed34ebc4fe4fb4e146010ccf697fd0267580",
+      "disposition": "adapt",
+      "destinationPath": "src/workflow-driver/inbox.ts"
+    },
+    {
+      "path": "src/workflow-driver/index.ts",
+      "sourceBlob": "591e547e5d429fb30f1916f54787816d5cfe7434",
+      "sourceSha256": "758d51adb77f759397b751e3fc0ee9651fab297d9f2d5cfc0e86bc3cdce107c3",
+      "disposition": "copy",
+      "destinationPath": "src/workflow-driver/index.ts"
+    },
+    {
+      "path": "src/workflow-driver/intake.ts",
+      "sourceBlob": "8f97c1f36eb39cc1249df7a4b9cb4a250487f165",
+      "sourceSha256": "609f768647a009a5bca5f7306262ff6225c19d84a75a79d9f9f7596784bb75f2",
+      "disposition": "adapt",
+      "destinationPath": "src/workflow-driver/intake.ts"
+    },
+    {
+      "path": "src/workflow-driver/io.ts",
+      "sourceBlob": "b7691676c100c69e03c551f9a8f0f977f96252fe",
+      "sourceSha256": "adabae960fa71619b958476c6c5516b2326f4674a453cff61788f187d0419fcb",
+      "disposition": "adapt",
+      "destinationPath": "src/workflow-driver/io.ts"
+    },
+    {
+      "path": "src/workflow-driver/model.ts",
+      "sourceBlob": "7ff1dfed04e66830e627e9a16e544664d87c8ee4",
+      "sourceSha256": "9c76d9c54a598f962e2481d555e1384b8bfd4649049c0750a50b34feaa863c26",
+      "disposition": "adapt",
+      "destinationPath": "src/workflow-driver/model.ts"
+    },
+    {
+      "path": "src/workflow-driver/node-runtime.d.ts",
+      "sourceBlob": "c07fb56cfefafa35c535d58c75fb025e415f3a62",
+      "sourceSha256": "f06aa8f8c9892678976661e37c064644406fd854ea0ecdc331bffdd1ae4e450e",
+      "disposition": "copy",
+      "destinationPath": "src/workflow-driver/node-runtime.d.ts"
+    },
+    {
+      "path": "tests/helpers/driver-fixture.mjs",
+      "sourceBlob": "375b06f943bd04506b906bd287571661f304b1f7",
+      "sourceSha256": "283c4013487cfb691196d038d1401e731c24e0514ae07b0d422e44ffdc70c774",
+      "disposition": "copy",
+      "destinationPath": "tests/helpers/driver-fixture.mjs"
+    },
+    {
+      "path": "tests/workflow-driver.test.mjs",
+      "sourceBlob": "1fbd8fdffa401689e2c4c1a91c6a5b60b8908eec",
+      "sourceSha256": "1fbc94fcbc72811048b4e80dc753b367aa9d658176256470d34fa7efbe5a0dd7",
+      "disposition": "copy",
+      "destinationPath": "tests/workflow-driver.test.mjs"
+    }
+  ]
+}

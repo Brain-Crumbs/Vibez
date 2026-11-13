@@ -57,7 +57,7 @@ Preserve `agent` as the executable alias for compatibility; `vibez` is the equiv
 `validate <task> <actor> <run>`, `explain task|validation|reviews|merge <task>` or
 `explain transition <request>`, `manual export|run <request> <exchange>`,
 `manual import <packet> <result> <exchange>`, and `recovery check|apply <request>`
-(`check` takes no request). `review`, `rework`, `orchestrate` remain reserved at
+(`check` takes no request). `review` and `rework` remain reserved at
 the source baseline. #78 alone implements the general driver; MIG-006 integrates
 it. No reserved command is advertised as working until its acceptance is proven.
 `--json` retains the v1 envelope, one stdout object, progress separately, and exit
@@ -90,3 +90,5 @@ scopedAgentProvider, scopedValidator, scopedMergeEffect and
 verifyGitHubProtection. The configured ProjectHost accepts mergeEffect
 alongside its existing exact-head authorization callback. Their host trust
 and persistence requirements are in [the unattended host guide](UNATTENDED_HOST.md).
+
+Use the [installed manual workflow driver](WORKFLOW_DRIVER.md) for guided setup and manual role handoffs.

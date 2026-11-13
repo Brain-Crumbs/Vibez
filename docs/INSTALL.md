@@ -71,3 +71,5 @@ verified artifact, then inspect with doctor and read-only status before
 reenabling writers. Preserve state, evidence, exchange and binding files.
 If the prior reader rejects the newer history, keep the store stopped for
 a reviewed compatibility decision. See [compatibility and rollback](COMPATIBILITY.md).
+
+Use the [installed manual workflow driver](WORKFLOW_DRIVER.md) for guided setup and manual role handoffs.

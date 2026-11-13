@@ -14,8 +14,7 @@ and block an imported claim. Corrections append a superseding entry with reason;
 never silently change an accepted row. See the [seed verifier](SEED_EXPORT.md)
 for the reproducible source and destination comparison.
 
-FF #78 remains the sole general manual driver owner. MIG-006 imports that accepted
-implementation once, translating the reusable profile to the shared config.
+FF #78 delivered the general manual driver. [MIG-006](https://github.com/Brain-Crumbs/Vibez/issues/6) integrates its accepted changes once, translating the profile to shared project configuration. The [BOOT-037 path receipt](mig-006-driver-import.json) accounts for the exact source delta. Reusable driver fixes belong in Vibez after this integration.
 MIG-003 imports #76 from the accepted [Fantasy Football PR #84](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/84).
 The ledger records its six source and destination paths with the exact hashes.
 #75 retains planning/publication/application service and supervisor semantics;
