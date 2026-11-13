@@ -5,7 +5,7 @@ import { getAssetCatalog, packageSchemaPath } from "../project-assets/index.js";
 import { loadTaskRegistry, loadTaskRegistryFromPaths, validateDependencyDag, type TaskRecord } from "../task-registry/index.js";
 import { DEFAULT_REQUIRED_CI_CHECKS } from "../merge-readiness/index.js";
 import type { DriverProfile, DriverSession, IntakeRecord } from "./model.js";
-import { driverDirectory, clean, files, git, gitInEnvironment, hash, id, now, object, read, redact, requireValue, safePath, schema, stableId, validate, write, writeText } from "./io.js";
+import { driverDirectory, clean, exclusive, files, git, gitInEnvironment, hash, id, now, object, read, redact, requireValue, safePath, schema, stableId, validate, write, writeText } from "./io.js";
 
 const boundConfig = new WeakMap<DriverProfile, ResolvedProjectConfig>();
 export function bindProfile(profile: DriverProfile, config: ResolvedProjectConfig): void {
@@ -204,9 +204,41 @@ export async function register(root: string, p: DriverProfile, intake: IntakeRec
   return finishRegistration(root, p, intake, session);
 }
 
+/** Repair the exact CAS window before the graph checks tracked registry bytes. */
+export async function reconcileRegistration(config: ResolvedProjectConfig): Promise<void> {
+  const root = config.projectRoot;
+  const dirty = git(root, "status", "--porcelain").split(/\r?\n/).filter(Boolean);
+  if (!dirty.length) return;
+  const profilePath = safePath(root, `${config.document.paths.operations}/driver/profile.json`);
+  if (!existsSync(profilePath)) return;
+  const profile = loadProfile(root, config);
+  bindProfile(profile, config);
+  const sessions = safePath(root, `${driverDirectory(profile)}/sessions`);
+  const head = git(root, "rev-parse", "HEAD");
+  for (const file of files(sessions, ".json")) {
+    const session = loadSession(root, profile, file.slice(0, -5));
+    if (session.status !== "PREPARED" || !dirty.every(line => line.slice(3) === session.definitionPath)) continue;
+    const planPath = safePath(root, `${driverDirectory(profile)}/staged/${session.intakeId}/registration.json`);
+    if (!existsSync(planPath)) continue;
+    const plan = read(planPath);
+    if (!object(plan) || plan.commit !== head || plan.base !== session.registrationRevision) continue;
+    const intakePath = safePath(root, `${driverDirectory(profile)}/intakes/${session.intakeId}.json`);
+    const raw = read(intakePath);
+    validate(root, "driver-intake", raw);
+    const intake = raw as IntakeRecord;
+    requireValue(intake.sessionId === session.sessionId && intake.profileHash === session.profileHash &&
+      intake.projectRoot === root && intake.intakeId === session.intakeId && intake.issueNumber === session.issueNumber,
+      "Interrupted registration has a different intake binding.");
+    await exclusive(root, profile, async () => finishRegistration(root, profile, intake, session));
+    return;
+  }
+}
+
 function finishRegistration(root: string, p: DriverProfile, intake: IntakeRecord, session: DriverSession): IntakeRecord {
   requireValue(intake.task && hash(intake.task) === session.definitionHash, "Registration intent no longer matches the staged definition.");
   requireValue(git(root, "branch", "--show-current") === p.integrationTarget, "Return to the integration branch to resume the interrupted registration.");
+  requireValue(session.definitionPath === `${p.storage?.tasks ?? "tasks/definitions"}/${session.taskId.toLowerCase()}.task.json`,
+    "Registration intent cannot change another tracked path.");
   const target = safePath(root, session.definitionPath);
   const planPath=safePath(root,`${driverDirectory(p)}/staged/${intake.intakeId}/registration.json`);
   let plan: {base:string;commit:string};

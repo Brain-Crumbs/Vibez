@@ -313,21 +313,56 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
     pullRequests: host.integration.pullRequests, ciStatus: host.integration.ci,
   });
   const integration = host.integration.merge;
-  const merge = new ControlledMergeController({ ...common, lockStore, integrationTarget, mergeReadiness: readiness,
+  const mergeFor = (guard?: {
+    number: number;
+    head: string;
+    check: (number: number, fresh: boolean) => Promise<void>;
+  }) => new ControlledMergeController({ ...common, lockStore, integrationTarget, mergeReadiness: readiness,
     taskLock: new FileControlledMergeTaskLock(lifecycleRoot, {}, true),
     ...(host.mergeEffect === undefined ? {} : { mergeEffect: host.mergeEffect }),
     pullRequests: {
-      findPullRequestsByHead: integration.findPullRequestsByHead.bind(integration),
-      getPullRequest: integration.getPullRequest.bind(integration),
+      findPullRequestsByHead: async head => {
+        if (!guard) return integration.findPullRequestsByHead(head);
+        await guard.check(guard.number, false);
+        const pr = await integration.getPullRequest(guard.number);
+        return pr === null ? [] : [pr];
+      },
+      getPullRequest: async number => {
+        if (guard) await guard.check(number, false);
+        return integration.getPullRequest(number);
+      },
       mergePullRequest: guarded(async request => {
         if (host.authorizeMerge?.({ ...request, repository }) !== true) {
           throw new ConfigError("IDENTITY_CONFLICT", "Host authorization for the exact repository, PR, and head is required.");
+        }
+        if (guard) {
+          if (request.expectedHeadSha !== guard.head) throw new ConfigError("IDENTITY_CONFLICT", "Merge head differs from the original intent.");
+          await guard.check(request.number, true);
+          assertCurrent();
+          if (host.authorizeMerge?.({ ...request, repository }) !== true) {
+            throw new ConfigError("IDENTITY_CONFLICT", "Merge authority changed before publication.");
+          }
         }
         return integration.mergePullRequest(request);
       }),
     },
   });
-  const pr = new PullRequestLifecycleAdapter({ registry, branchLifecycle, integrationTarget, approvals: rework, pullRequests: host.integration.publication });
+  const publication = host.integration.publication;
+  const publicationFor = (beforeWrite?: (number?: number) => Promise<void>) => new PullRequestLifecycleAdapter({
+    registry, branchLifecycle, integrationTarget, approvals: rework, pullRequests: {
+      findOpenPullRequests: publication.findOpenPullRequests.bind(publication),
+      createPullRequest: async params => {
+        await beforeWrite?.();
+        return publication.createPullRequest(params);
+      },
+      updatePullRequest: async params => {
+        await beforeWrite?.(params.number);
+        return publication.updatePullRequest(params);
+      },
+    },
+  });
+  const pr = publicationFor();
+  const merge = mergeFor();
   const status = new ProjectStatusReporter(source);
   const diagnostics = new WorkflowDiagnostics({ source, validatorResolver, mergeReadiness: readiness });
   const recovery = await LocalRecoveryTools.create(projectRoot, {
@@ -486,6 +521,14 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
     config, registry, taskStates, manual, developerStart, developerValidation, qaReview, architectureReview,
     uatReview, reviewRework, mergeReadiness: services.mergeReadiness, controlledMerge, diagnostics: services.diagnostics,
     pullRequests: services.pullRequests, recovery: services.recovery,
+    mergeWithIntent: (request: Parameters<typeof merge.merge>[0], guard: NonNullable<Parameters<typeof mergeFor>[0]>) => {
+      const controller = mergeFor(guard);
+      return taskGuarded(controller.merge.bind(controller))(request);
+    },
+    publishWithGuard: (request: Parameters<typeof pr.ensurePullRequest>[0], beforeWrite: (number?: number) => Promise<void>) => {
+      const guardedPublication = publicationFor(beforeWrite);
+      return taskGuarded(guardedPublication.ensurePullRequest.bind(guardedPublication))(request);
+    },
     prepareWrite: () => prepareWrite(paths.operations),
     authorizePublication: (taskId: string, revision: string) => {
       assertCurrent(taskId);

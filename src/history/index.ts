@@ -13,6 +13,7 @@ import { parseStoredAssignment, readEvidenceHistories } from "../status-reportin
 import { loadTaskRegistry } from "../task-registry/index.js";
 import { localHistoryIdentity } from "./native-writer.js";
 import { evidenceReceiptIdentity, hashText, identityDigest, isSha, object, parseProvenance } from "./provenance.js";
+import { validate as validateDriverRecord } from "../workflow-driver/io.js";
 import { inventory, optionalStat, type HistoryFile } from "./snapshot.js";
 
 const priorPackage = "0.1.0-mig005.1";
@@ -21,7 +22,7 @@ const currentPackage = "0.1.0-mig006.0";
 const taskPattern = /^[A-Z]+-[0-9]{3,}$/;
 const commitPattern = /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/;
 const settled = new Set(["PLANNED", "READY", "DONE"]);
-const legacyLayout = { state: ".agent/state" };
+const legacyLayout = { state: ".agent/state", driver: ".agent/driver" };
 const observedOnly = "OBSERVATION_ONLY";
 
 export const historyCompatibility = Object.freeze({
@@ -180,7 +181,20 @@ function scanObservations(history: History, files: readonly HistoryFile[]) {
         }
       }
     }
-    if (file.area === "operations" && !/^(?:audit-provenance|orchestration|retry-grants)\//.test(file.name)) {
+    const driverPath = file.area === "driver" ? file.name :
+      file.area === "operations" && file.name.startsWith("driver/") ? file.name.slice("driver/".length) : null;
+    if (driverPath !== null) {
+      if (driverPath === "profile.json") validateDriverRecord(history.root, "driver-profile", JSON.parse(text()));
+      else if (/^sessions\/[a-f0-9-]{36}\.json$/.test(driverPath)) {
+        const session: unknown = JSON.parse(text());
+        validateDriverRecord(history.root, "driver-session", session);
+        if (!object(session) || !["DONE", "STOPPED"].includes(String(session.status))) findings.add("UNSETTLED_DRIVER_SESSION");
+      } else if (/^(?:writer|writer-recovery)\.lock$/.test(driverPath)) findings.add("ACTIVE_DRIVER_WRITER");
+      else if (!/^(?:accepted|archive|inbox|outbound|exchange|intakes|merge-intents|observations|repair-attempts|reports|selections|staged|writer-recovery)\//.test(driverPath)) {
+        findings.add("UNSUPPORTED_OPERATION_RECORD");
+      }
+    }
+    if (file.area === "operations" && !/^(?:audit-provenance|orchestration|retry-grants|driver)\//.test(file.name)) {
       findings.add("UNSUPPORTED_OPERATION_RECORD");
     }
     if (file.area === "operations" && file.name.startsWith("retry-grants/") && !file.name.endsWith(".tmp")) {
@@ -352,7 +366,7 @@ export async function checkProjectUpgrade(request: UpgradeCheckRequest) {
     const snapshot = inventory(history.root, history.layout);
     const observations = scanObservations(history, snapshot.files);
     for (const code of observations.findings) findings.add(code);
-    if (target !== currentPackage && snapshot.files.some(file => file.area === "operations" && file.name.startsWith("driver/"))) {
+    if (target !== currentPackage && snapshot.files.some(file => file.area === "driver" || file.area === "operations" && file.name.startsWith("driver/"))) {
       findings.add("PRIOR_READER_DOES_NOT_SUPPORT_DRIVER_HISTORY");
     }
     for (const id of history.registry.keys()) {

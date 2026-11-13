@@ -41,7 +41,7 @@ export function githubFixture(root, base = 'main') {
   assert.ok(u.pathname.startsWith('/repos/fixture-owner/fixture-repo/'));
   const branch=git(root,'branch','--show-current');
   const pr=()=>remote.pr?{...remote.pr,head:{ref:branch,sha:remote.pr.originalHead??git(root,'rev-parse','HEAD'),repo:{full_name:'fixture-owner/fixture-repo'}},base:{ref:base,repo:{full_name:'fixture-owner/fixture-repo'}}}:null;
-  if(u.pathname.endsWith('/check-runs'))return ok({check_runs:[{name:u.searchParams.get('check_name'),status:remote.ci==='pending'?'in_progress':'completed',conclusion:remote.ci==='pending'?null:remote.ci,started_at:new Date().toISOString()}]});
+  if(u.pathname.endsWith('/check-runs'))return ok({check_runs:remote.ci==='missing'?[]:[{name:u.searchParams.get('check_name'),status:remote.ci==='pending'?'in_progress':'completed',conclusion:remote.ci==='pending'?null:remote.ci,started_at:new Date().toISOString()}]});
   if(u.pathname.endsWith('/pulls')&&method==='POST'){assert.equal(body.draft,true);remote.pr={number:1,node_id:'fixture-pr',html_url:'https://github.com/fixture-owner/fixture-repo/pull/1',title:body.title,body:body.body,state:'open',draft:true,merged:false,merged_at:null,merge_commit_sha:null};return ok(pr());}
   if(u.pathname.endsWith('/pulls')&&method==='GET'){remote.onLookup?.();return ok(remote.pr&&(u.searchParams.get('state')!=='open'||remote.pr.state==='open')?[pr()]:[]);}
   if(u.pathname.endsWith('/pulls/1')&&method==='PATCH'){Object.assign(remote.pr,body);return ok(pr());}

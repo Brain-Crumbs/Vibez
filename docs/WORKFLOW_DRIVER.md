@@ -3,13 +3,19 @@
 Install the exact verified private tarball using [Install](INSTALL.md). This
 guide applies to both `vibez` and the compatibility alias `agent`.
 
+Bracketed names such as `<intake>` and `<operations>` below refer to
+the corresponding configured paths, relative to the selected checkout.
+
 ## Configure the selected checkout
 
 Commit one [project configuration](CONFIGURED_RUNTIME.md) and its task,
 requirements, contracts and context-policy directories in a dedicated local
 Git checkout. The installed `examples/alpha/vibez.config.json` is a starting
 point for an npm project. Set its project repository, branch and remote,
-required check names and roots to match the consumer. Track an empty marker in
+required check names and roots to match the consumer. For offline setup
+and intake, set `providers.credentials` to an empty list. Use
+`github-main` with a host-supplied token when credential availability
+is required on every invocation. Track an empty marker in
 an empty task or contract directory. Ignore the configured writable roots in Git.
 
 Use `--project` to select the checkout and `--config` to name its tracked
@@ -36,57 +42,17 @@ receipts and recovery records below `<operations>/driver`. The configured
 state/evidence and orchestration stores remain authoritative. Leave existing
 profiles and bindings intact when resuming.
 
-## Legacy source-checkout setup
-
-The historical unconfigured commands below apply to an unbound checkout. With a Vibez config, use the setup above and substitute the configured paths in the rest of this guide.
-
-## Set up once
-
-Use Node 20+, npm and Git in a dedicated, clean project checkout on a local
-filesystem that supports exclusive file creation, hard links, and same-directory
-rename. Use a separate checkout from other writers. Verify your Git author and
-`origin`; keep `.agent/` ignored. Run `npm ci` and `npm run build`. Run commands
-from the checkout root, including when its path contains spaces.
-
-```sh
-npm run agent -- orchestrate init --base main \
-  --checks 'Build and test (Node),Schema and contract validation (Python)' \
-  --actor-prefix project-operator --developer-tools read_file,write_file,git_commit \
-  --review-tools read_file,run_test --enforce-policies externally
-```
-
-PowerShell accepts the same command on one line. Setup prints the discovered
-GitHub repository and every path, plus the five distinct actor labels and their
-policies. If discovery cannot resolve the remote, specify `--repository owner/repo`.
-Keep the repository's required CI checks; extra checks can be included. The
-profile defaults to no agent network access. Enforce the displayed permission
-scope in each fresh chat; actor labels do not enforce independence or tool access.
-The driver uses the existing repository npm build/test validator resolver. It
-does not execute validation plan prose from an issue.
-
-Choose optional `--issues-dir`, `--responses-dir`, `--outbound-dir`,
-`--archive-dir` or `--exchange-dir` under `.agent/driver/` during setup (use
-forward slashes and quote spaces). Keep directories separate. Set
-`--max-attempts` (1–10, default 3), `--retry-delay-ms` (default 100) and
-`--role-timeout-ms` (default 5000). These bound adapter reads and infrastructure
-retries. Time spent in a fresh chat does not consume attempts. Setup stores the
-strict v1 profile at `.agent/driver/profile.json`; it never overwrites a
-different profile. Restore the original profile to resume an existing session.
-No credential goes in profile, issue Markdown, packet, or response. Export
-`IPT_GITHUB_TOKEN` (or `GITHUB_TOKEN`) only in the trusted host process when GitHub
-access is needed; Git push uses the operator's existing Git credentials.
-
 ## Prepare or select a task
 
 Paste issue Markdown via stdin or save it and use `--issue-file`:
 
 ```sh
-npm run agent -- orchestrate prepare --stdin < 'selected issue.md'
-npm run agent -- orchestrate prepare --issue-file 'selected issue.md'
+vibez orchestrate prepare --stdin < 'selected issue.md'
+vibez orchestrate prepare --issue-file 'selected issue.md'
 ```
 
 ```powershell
-Get-Content -Raw -LiteralPath 'selected issue.md' | npm run agent -- orchestrate prepare --stdin
+Get-Content -Raw -LiteralPath 'selected issue.md' | vibez orchestrate prepare --stdin
 ```
 
 You can also drop a `.md` file in the printed issues inbox and run
@@ -188,7 +154,7 @@ the original request, pending packet, last diagnostic and stage evidence.
    `orchestrate recover SESSION --quiescent --reason '...' --authorization-ref REF`
    with trusted `IPT_RECOVERY_ADMIN_ACTORS` configuration. Then use
    `orchestrate rework SESSION`. The proposal does not authorize the reset.
-   See [RECOVERY.md](RECOVERY.md). If a diagnosis is an external prerequisite,
+   See [the recovery guide](https://github.com/Brain-Crumbs/Vibez/blob/85fdce8cbe0ac0d46b46a1e0b4772df485a6b76b/docs/RECOVERY.md). If a diagnosis is an external prerequisite,
    fix that prerequisite and return `recheck`, or explicitly resume the same
    session. The driver does not loop on unchanged CI, credentials or approval.
 
@@ -230,9 +196,9 @@ prepared session. The previous request is never reused for another task.
 
 ## Data, compatibility, and rollback
 
-All new driver metadata lives under `.agent/driver`: separate intake/session,
+All new driver metadata lives under `<operations>/driver`: separate intake/session,
 handoff, observation, archive and canonical exchange records. The gate stores
-remain under `.agent/state`. Keep both in backups while writers are stopped.
+remain under `<state>`. Keep both in backups while writers are stopped.
 Receipt and session records coordinate retries; they are not review evidence
 or merge grants. Legacy `manual export/import/run`, canary rehearsal and CLI
 envelopes remain supported. New role handoffs are companions to unchanged
@@ -257,6 +223,5 @@ exchange, and inbox archives together. The previous installed binary does
 not resume these driver sessions or read successor metadata. An attempt
 started on the driver stays with its exact compatible artifact and profile.
 Keep that checkout and history available for read-only inspection when
-restoring a previously compatible artifact and its matching quiescent
-snapshot. Never delete an accepted result, journal or binding to force a
+restoring a previously compatible artifact in a separate checkout. Keep the newest history archived and accessible even if the old reader cannot resume it. Never delete an accepted result, journal or binding to force a
 downgrade. See [Compatibility](COMPATIBILITY.md).

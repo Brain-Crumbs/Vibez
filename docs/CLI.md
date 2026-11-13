@@ -3,7 +3,7 @@
 **Task:** BOOT-005 / issue #7, extended by BOOT-008 / issue #10, BOOT-013 / issue #15, BOOT-016 / issue #18, BOOT-029 / issue #31, BOOT-030 / issue #32, BOOT-031 / issue #33, and BOOT-032 / issue #34
 **Parent architecture:** issue #1
 
-The CLI is the stable, provider-neutral human/agent command surface for the bootstrap control plane. BOOT-005 defines the shell and output conventions. BOOT-008 adds deterministic read-only next-task selection. BOOT-013 adds the canonical start-only Developer workflow. BOOT-016 adds the canonical developer validation gate. BOOT-029 adds local/manual provider packet export, import, and waiting. BOOT-030 adds read-only local project status and persisted lifecycle input for default next selection. BOOT-031 adds scoped read-only task/transition/validation/review/merge explanations. BOOT-032 adds read-only consistency checks and bounded explicit offline recovery. Independent review, sequential orchestration, and controlled completion exist as library gates; The installed [manual driver](WORKFLOW_DRIVER.md) composes those gates through `orchestrate`.
+The CLI is the stable, provider-neutral human/agent command surface for the bootstrap control plane. BOOT-005 defines the shell and output conventions. BOOT-008 adds deterministic read-only next-task selection. BOOT-013 adds the canonical start-only Developer workflow. BOOT-016 adds the canonical developer validation gate. BOOT-029 adds local/manual provider packet export, import, and waiting. BOOT-030 adds read-only local project status and persisted lifecycle input for default next selection. BOOT-031 adds scoped read-only task/transition/validation/review/merge explanations. BOOT-032 adds read-only consistency checks and bounded explicit offline recovery. Independent review, sequential orchestration, and controlled completion exist as library gates. The installed [manual driver](WORKFLOW_DRIVER.md) composes those gates through `orchestrate`.
 
 ## Clean-checkout setup
 
@@ -63,7 +63,6 @@ Reserved commands deliberately fail until their owning task supplies behavior:
 
 - `review` — BOOT-017+
 - `rework` — BOOT-021 (behavior implemented as `ReviewReworkGate`; CLI wiring owned by BOOT-026+)
-- `orchestrate` — BOOT-027/028 (implemented as `SequentialOrchestrationEngine`; generic CLI wiring remains deferred. BOOT-029 supplies manual transport commands and a provider injectable into this library.)
 
 ## Manual-bootstrap authority
 

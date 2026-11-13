@@ -5,6 +5,7 @@ import { GitHubControlledMergePullRequestOperations } from "../controlled-merge/
 import { GitHubCiStatusOperations, GitHubMergeReadinessPullRequestOperations } from "../merge-readiness/index.js";
 import { GitHubPullRequestOperations } from "../pr-lifecycle/index.js";
 import { resolveProjectConfig } from "../project-config/index.js";
+import { reconcileRegistration } from "../workflow-driver/intake.js";
 import { DriverError, redact, requireValue } from "../workflow-driver/io.js";
 
 /** Standalone npm host. Custom executor/provider policies continue to use ProjectHost. */
@@ -50,7 +51,9 @@ async function runConfiguredDriver(argv: readonly string[], signal: AbortSignal,
     projectRoot, configPath,
     ...(ntfs ? { verifyLocalStorage: () => true } : {}),
   };
-  const { document } = resolveProjectConfig(location);
+  const config = resolveProjectConfig(location);
+  const { document } = config;
+  if (scoped[1] === "prepare" || scoped[1] === "watch") await reconcileRegistration(config);
   const repository = document.project.repository;
   const [owner, repo] = repository.split("/") as [string, string];
   const token = process.env.IPT_GITHUB_TOKEN ?? process.env.GITHUB_TOKEN;

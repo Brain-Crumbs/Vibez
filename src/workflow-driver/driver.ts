@@ -219,12 +219,31 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
           intent={sessionId:s.sessionId,repository:p.repository,issueNumber:s.issueNumber,branch:task.canonicalBranch,number:pr.number,head};
           write(intentPath,intent,true);
         }
-        if (configured && clean(root) === intent.head) {
-          const remote = assertRemote(root, p, runtime);
-          requireValue(remoteHead(root, runtime, remote.readUrl, `refs/heads/${intent.branch}`) === intent.head,
-            "Remote branch changed before merge.", "REMOTE_HEAD_MISMATCH");
-        }
-        return merge.merge(input);
+        if (!configured) return merge.merge(input);
+        const boundIntent = intent;
+        return configured.mergeWithIntent(input, {
+          number: boundIntent.number, head: boundIntent.head,
+          check: async (number, fresh) => {
+            requireValue(number === boundIntent.number, "PR differs from the original merge intent.", "PR_CONFLICT");
+            const token = runtime.token ?? process.env.IPT_GITHUB_TOKEN ?? process.env.GITHUB_TOKEN;
+            requireValue(token, "Host GitHub credentials are required.");
+            const response = await g.fetchImpl(`https://api.github.com/repos/${p.repository}/pulls/${number}`,
+              { method: "GET", headers: { Authorization: `Bearer ${token}` } });
+            const pr = await response.json() as GithubPull;
+            requireValue(response.ok && pr.number === number && pr.draft === false,
+              "The original ready PR could not be verified.", "PR_CONFLICT");
+            assertPull(pr, p, s, boundIntent.branch, boundIntent.head, !fresh);
+            if (fresh) {
+              clean(root, boundIntent.head);
+              requireValue(git(root, "branch", "--show-current") === boundIntent.branch, "The canonical branch changed before merge.");
+              const remote = assertRemote(root, p, runtime);
+              requireValue(remoteHead(root, runtime, remote.readUrl, `refs/heads/${boundIntent.branch}`) === boundIntent.head,
+                "Remote branch changed before merge.", "REMOTE_HEAD_MISMATCH");
+              clean(root, boundIntent.head);
+              assertRemote(root, p, runtime, remote);
+            }
+          },
+        });
       } }, prepareAgentInput,
       retryPolicy:{maxAttempts:p.manual.maxAttempts,delayMs:p.manual.retryDelayMs},timeoutMsFor:()=>p.manual.roleTimeoutMs,
       actorIdFor: (role: AgentRunRequest["role"]) => p.roleActors[role],
@@ -276,9 +295,13 @@ export async function publish(root: string, p: DriverProfile, s: DriverSession, 
     assertRemote(root,p,runtime,remote);
     requireValue(remoteHead(root,runtime,remote.readUrl,`refs/heads/${task.canonicalBranch}`)===head,"Remote branch has not published this exact source SHA.","REMOTE_HEAD_MISMATCH");
   };
-  const existing=await candidate();assertEvidence();
-  if (configured) requireValue(configured.authorizePublication(s.taskId, head),
-    "Host authorization for the exact task and source is required for publication or ready conversion.", "PUBLICATION_AUTHORIZATION_REQUIRED");
+  const authorizeWrite = () => {
+    assertEvidence();
+    assertRemote(root, p, runtime, remote);
+    if (configured) requireValue(configured.authorizePublication(s.taskId, head),
+      "Host authorization for the exact task and source is required for publication or ready conversion.", "PUBLICATION_AUTHORIZATION_REQUIRED");
+  };
+  const existing=await candidate();authorizeWrite();
   if (ready) {
     requireValue(existing,"Publish the canonical draft first; ready never creates a pull request.");
     assertPublished();
@@ -287,6 +310,7 @@ export async function publish(root: string, p: DriverProfile, s: DriverSession, 
     requireValue(checked.ok&&pr.number===existing.number&&pr.node_id,"Unable to verify the exact PR node for ready conversion.");
     assertPull(pr,p,s,task.canonicalBranch,head);assertPublished();
     if(pr.draft===false)return {number:pr.number,revision:head,ready:true,reused:true};
+    authorizeWrite();
     const f = githubTransport(runtime);
     const response = await f("https://api.github.com/graphql", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ query: "mutation($id:ID!){markPullRequestReadyForReview(input:{pullRequestId:$id}){pullRequest{id}}}", variables: { id: pr.node_id } }) });
     const body = await response.json() as {errors?:unknown}; requireValue(response.ok && !body.errors, "Ready conversion failed; inspect GitHub and retry. No merge was attempted.");
@@ -306,7 +330,14 @@ export async function publish(root: string, p: DriverProfile, s: DriverSession, 
     }
     return g.fetchImpl(url,init);
   }});
-  const result=await adapter.ensurePullRequest({taskId:s.taskId,childIssueNumber:s.issueNumber,parentIssueNumber:s.issueNumber,expectedHead:task.canonicalBranch,base:p.integrationTarget});
+  const request = { taskId: s.taskId, childIssueNumber: s.issueNumber, parentIssueNumber: s.issueNumber,
+    expectedHead: task.canonicalBranch, base: p.integrationTarget };
+  const result = configured ? await configured.publishWithGuard(request, async number => {
+    const pr = await candidate(head);
+    requireValue(number === undefined ? !pr : pr?.number === number, "Canonical PR changed while preparing publication.", "PR_CONFLICT");
+    assertPublished();
+    authorizeWrite();
+  }) : await adapter.ensurePullRequest(request);
   const after=await candidate(head);assertPublished();requireValue(after?.number===result.number,"Canonical PR changed during publication.");
   return result;
 }
