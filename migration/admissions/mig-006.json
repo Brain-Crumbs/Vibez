@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "taskId": "MIG-006",
+  "repository": "Brain-Crumbs/Vibez",
+  "issue": "https://github.com/Brain-Crumbs/Vibez/issues/6",
+  "issueBodySha256": "bf1a5fd7d3bae5733e2d59c6f37648592c929aa631f4cc877983ec5b958724c8",
+  "integrationBase": "85fdce8cbe0ac0d46b46a1e0b4772df485a6b76b",
+  "canonicalBranch": "migration/mig-006-standalone-driver-integration",
+  "definition": {
+    "path": "tasks/definitions/mig-006.task.json",
+    "sha256": "2270a875805cea9c99f0410203074f170c16313b715e526398ed23233c6e08b9"
+  },
+  "requirement": {
+    "path": "requirements/mig-006.requirement.json",
+    "sha256": "aad82e34950cc02ef74dcb7085e57f54e943d7e4b0e49f3d340c6a6510de79ff"
+  },
+  "observedAt": "2026-11-13T19:18:06.455995+00:00",
+  "verifier": "Brain-Crumbs maintainer delegate",
+  "grant": "Implement the installed driver and publish and merge the reviewed PR after all gates pass. Source scope covers the accepted BOOT-037 changes needed for the driver. Package distribution and access-control changes are outside this grant.",
+  "prerequisites": [
+    {
+      "taskId": "MIG-005",
+      "issue": "https://github.com/Brain-Crumbs/Vibez/issues/5",
+      "pr": "https://github.com/Brain-Crumbs/Vibez/pull/17",
+      "reviewedHead": "46dddcb0668b4a92e691eb5a0a6f8d2f19303e38",
+      "merge": "d1ee95ceee47f1241bc0a5757e9d9bcf8801bbfb",
+      "exactHeadCi": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42891698566",
+      "nativeDoneEvidence": "MIG-005::merge@1",
+      "transitiveReceipt": "migration/admissions/mig-005.json",
+      "nativeMergeResultSha256": "e2ac8a625623faa8a1b4df9795ffa2887af402b011631784746f64527efaaa75",
+      "nativeMergeRecordSha256": "e97c39ecc57b83192d0f231619d738d5eaa872de815b99545e3c5d3b777f3dd6",
+      "acceptanceSnapshot": {
+        "path": "migration/admissions/evidence/mig-006-vibez-pr-17.md",
+        "sha256": "7c9339a16928638d1a1a5d8b5ca0acce2447aa28cc653cbcaf85676513600e1d"
+      },
+      "independentReviewRoles": [
+        "QA",
+        "Architecture",
+        "UAT/Product"
+      ]
+    },
+    {
+      "taskId": "BOOT-037",
+      "issue": "https://github.com/Brain-Crumbs/IPTFantasyFootball/issues/78",
+      "pr": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/85",
+      "reviewedHead": "f02e12ac3cb9f407b257e46f09e29bdb8995b26f",
+      "merge": "ff9e467a870d26850330563a27359de44f151ea7",
+      "exactHeadCi": "https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/42947782938",
+      "acceptance": "PR records fresh QA, Architecture and UAT approval of the exact source, focused/full test evidence, and the source acceptance map. The consumer integration must independently repeat acceptance against the installed artifact.",
+      "nativeDependency": false,
+      "acceptanceSnapshot": {
+        "path": "migration/admissions/evidence/mig-006-iptfantasyfootball-pr-85.md",
+        "sha256": "79d607eb5b66e8e3b4b8c3d6af97044867120bf42e8a05aa9e27c9a816514ac4"
+      },
+      "independentReviewRoles": [
+        "QA",
+        "Architecture",
+        "UAT/Product"
+      ]
+    },
+    {
+      "taskId": "MIG-003",
+      "receipt": "migration/admissions/mig-003.json",
+      "pr": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+      "seal": "fdebe9111ce7aa004566c4068a2c15a9a95ab00c",
+      "merge": "16a73b8071f5b9ef390d08504e325b779af291fe",
+      "exactHeadCi": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876",
+      "reviewedHead": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+      "independentReports": {
+        "QA": "29fb6acfe2e11a15b6426bb419b56cb3725caa0818c56bd0d2028d1b7c56e0db",
+        "Architecture": "304a16ba1d0f7d210ec176a3f84e10a0ca8d55bafd2730aca430e09e004411ee",
+        "UAT/Product": "1e214dfdc930206d864248d68e2e233a795b84576a664960147b1f21365fcec9"
+      },
+      "acceptanceSnapshot": {
+        "path": "migration/admissions/evidence/mig-006-vibez-pr-15.md",
+        "sha256": "1dd9a584f310bd7782e59518362390ff74ed3cd5dc2278e938ab2c6a28126539"
+      },
+      "independentReviewRoles": [
+        "QA",
+        "Architecture",
+        "UAT/Product"
+      ]
+    }
+  ],
+  "dependencyProjection": {
+    "native": [
+      "MIG-005"
+    ],
+    "external": [
+      "BOOT-037"
+    ],
+    "historical": [
+      "MIG-003"
+    ]
+  }
+}

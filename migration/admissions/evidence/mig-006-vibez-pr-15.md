@@ -1,0 +1,112 @@
+Closes #3. Refs #1 and Brain-Crumbs/IPTFantasyFootball#74.
+
+MIG-003 seeds Vibez from the [authorized Fantasy Football snapshot](https://github.com/Brain-Crumbs/IPTFantasyFootball/tree/5cd23ef5415f2d2140654551f9152339417e4b58). The exact source includes the independently reviewed [#76 repair](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/84). The [owner decision](https://github.com/Brain-Crumbs/Vibez/issues/3#issuecomment-6747942125) identifies the source, allowlist and retained rights. Package distribution has a separate gate.
+
+## Candidate scope
+
+- Source and runtime schemas preserve their Git bytes and existing identities. The private build and source-checkout CLI remain compatible.
+- The reviewed inventory accounts for all 289 source paths, with 244 mapped candidates, 45 retained paths and 21 explicit adaptations. The seed verifier reproduces the payload and checks the tree, worktree and #76 ledger hashes.
+- The empty task registry keeps the default CLI usable. The canary marker, newly authored fixture task and injected role/PR transport run in disposable repositories. Fantasy Football's live task, runtime history and stopped exchange stay in their source repository.
+- Vibez CI builds and validates from Vibez alone. Destination operating instructions define the last pre-native seed acceptance and the next task's admission boundary.
+
+## Acceptance and rollback
+
+See [the seed record](https://github.com/Brain-Crumbs/Vibez/blob/dd0c6a9f4396d0e9a89756d177c7477eea71b369/migration/SEED_EXPORT.md) for the acceptance map, replay, historical MIG-002 receipt, compatibility and rollback. The reviewed base is `4c838c1598fce5348c3a8052146b42e4eb05e1a4` and the sealed seed is `fdebe9111ce7aa004566c4068a2c15a9a95ab00c`. Integrate the exact reviewed head with a merge commit so provenance can verify the sealed commit in main history.
+
+The PR records pre-native seed acceptance. Fixture results are behavioral tests. Revert the scoped seed integration through a reviewed PR if rollback is needed. Keep source history, runtime data and audit evidence.
+
+## Validation
+
+- The independent Windows checkout installed its own development tools, built the CLI, and passed 863 Node tests and both adversarial mutations on the initial seed. Both schema validators passed, covering 32 authored records, and nine Python design/provenance tests passed.
+- All four focused #76 scenarios passed on Fantasy Football's approved tree and in Vibez. The copied UAT implementation and contract manifest match the source Git blobs. The seeded fixture keeps all four affected contracts.
+- The corrected revision replays all 275 sealed payload files from the authorized source and explicit Vibez overlays. The exact candidate tree and clean worktree, imported delta hashes, evidence receipt and notices boundary passed verification. Default status and next report an empty registry in a clean checkout.
+- Initial hosted Windows CI found 20 canary/adversarial failures in the inherited root-path spelling check. Asking Git for the worktree prefix resolved all 20 while preserving rejection of nested roots and remotes. The next hosted attempt passed 862/863 and exposed an inherited short-timer race in the heartbeat test. The final test holds the callback open, observes a real heartbeat refresh an aged lock, and still requires rejection until release. All 81 focused controlled-merge tests passed locally. Engine and runtime schema bytes stayed identical across these fixes.
+
+## Independent reviews of the exact integration head
+
+Separate QA, Architecture, and UAT/Product agents returned **PASS** for `dd0c6a9f4396d0e9a89756d177c7477eea71b369`. The final reviews verified the resealed export and resolved the earlier Windows and documentation findings. Full CI remains a separate integration gate. Local-only links were omitted from the published reports.
+
+<details>
+<summary>QA report</summary>
+
+Role session `/root/seed_qa`. Original report SHA-256 `29fb6acfe2e11a15b6426bb419b56cb3725caa0818c56bd0d2028d1b7c56e0db`.
+
+# Independent QA for MIG-003
+
+**Verdict** PASS at `dd0c6a9f4396d0e9a89756d177c7477eea71b369`.
+
+Local and GitHub PR head matched. PR #15 targets `main` from `migration/mig-003-provenance-extraction` at base `4c838c1598fce5348c3a8052146b42e4eb05e1a4`. The reviewed source pin is `5cd23ef5415f2d2140654551f9152339417e4b58`. The receipt and delta ledger point to sealed commit `fdebe9111ce7aa004566c4068a2c15a9a95ab00c`, tree `17b69685026f63cec552f7965e5d713f6da0b4`. [MIG-003 issue](https://github.com/Brain-Crumbs/Vibez/issues/3) [Candidate PR](https://github.com/Brain-Crumbs/Vibez/pull/15)
+
+## Findings and resolution
+
+- The initial QA FAIL at `91c023632546c5f75970dce20576538a2c640f94` identified a Windows path-spelling false rejection in fixture preflight. The Git worktree and prefix fix cleared all 20 affected hosted tests on `fab8f9c2fefbbcab1656a76579a2a2a1870c1a0c`. Focused local checks at that revision exercised the nested-directory, remote and transport rejection cases and the contract-bearing UAT flow. The report remains in `qa.md`. [Initial Windows result](https://github.com/Brain-Crumbs/Vibez/actions/runs/42865047894/job/130001082811)
+- The second QA FAIL at `fab8f9c2fefbbcab1656a76579a2a2a1870c1a0c` recorded a single remaining Windows failure in the controlled-merge lock heartbeat test. The revised test keeps the holder active via an explicit release promise, backdates the lock beyond the stale threshold and observes a real heartbeat refresh within ten seconds. It checks `STATE_CONFLICT` while the first holder remains active and confirms a new acquire after release. The generous stale window removes the dependence on sub-150 ms relative timer ordering while keeping the heartbeat and contender assertions. The prior report remains in `qa-final.md`. [Prior Windows result](https://github.com/Brain-Crumbs/Vibez/actions/runs/42866277616/job/130005345457)
+- The exact re-review diff contains the heartbeat test, its authorized adaptation entry and the two integration records that reference the revised seal. The focused lock tests and entire controlled-merge file passed locally. No blocking QA findings remain.
+- The PR description observed during review still quoted 19 adaptations. The final plan and independent raw comparison agree on 21. I flagged the editorial correction to the coordinator.
+
+## Acceptance evidence
+
+| Criterion | Independent QA evidence |
+| --- | --- |
+| AC-01 | The revised controlled-merge file passed 81/81 local tests, including four focused lock tests. Both Python schema validations and nine Python unit tests passed. Exact-head full hosted CI was running separately when checked. |
+| AC-02 | Verified all 289 source dispositions, all 277 tracked candidate paths and all 275 replay files by raw bytes. Source scope and inventory digests match the scoped owner decision. |
+| AC-03 | All candidate paths are regular non-executable blobs. A separate common-credential-signature scan returned zero matches. The only active definitions path is the empty-registry marker. Candidate root has no active state or exchange and visible untracked paths were absent. |
+| AC-04 | Compared the UAT engine, UAT contract files, runtime schema bytes and exact-revision regressions to the approved #76 source. Prior focused regression evidence includes all four affected canary contracts, existing Developer PASS reuse, missing and stale handoff bridging and rejection of missing dependency contracts before writes. The final test change specifically revalidates the held-lock and stale-lock fence. |
+| AC-05 | The receipt resolves the accepted MIG-002 PR, both historical CI jobs and three archived review reports. The append-only #76 ledger resolves all six source and destination identities and the new seal. The rights decision and retained source #78 ownership remain documented. |
+
+## Direct verification
+
+- Compared the exact approved source and baseline trees, the accepted MIG-002 inventory, the Vibez base, the sealed commit and the final candidate. The source path set has 289 paths and six changed blobs, all from #76. Git blob `f13ca138085f96a0c0f15147109e985262a20e9f` and inventory SHA-256 `4fd27bff41e2cf8f63e366d13e6c6f1bf3c07e557ec223e39b5c73947dd5326e` match the reviewed inventory. Hashing the 244 sorted UTF-8 path, Git blob and raw SHA-256 rows reproduced the owner scope digest `c0c8927f73972a999108a5e82acd3f8bc32c0cc640a86a93374e870ce2d87f2a`. [Owner decision](https://github.com/Brain-Crumbs/Vibez/issues/3#issuecomment-6747942125) [Source repair](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/84) [Source CI](https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/42538984027)
+- Verified 223 byte-identical imports, 21 authorized adaptations, 45 retains, 22 untouched base-only paths, nine authored paths and two integration records. The approved inventory marks `tests/controlled-merge.test.mjs` for adaptation. Its new SHA-256 `598259961ac878c4df20ab1a75720f4deea0a826b0598a55f383264fd06d6b6b` matches the plan. The two retained source paths with corresponding Vibez names have distinct Vibez bytes, and the identical MIG-002 requirement already existed on the base under a different path.
+- Ran `python -B scripts/seed_export.py --source <approved-object-clone> --output .agent/qa-accepted-reproduced-b4b1503b54b2431abd4f409eb2095c86 --check-head` and `python -B scripts/seed_export.py`. Both verified 289 source dispositions, 244 mapped candidates and 275 sealed files. Separately compared every replay file and all 277 worktree files to their Git bytes. Checked base, seal and head ancestry and confirmed the receipt and ledger are the integration records outside the replay.
+- Ran `python -B -m unittest discover -s tests -p 'test_*.py'`, `python -B schemas/validate_fixtures.py` and `python -B schemas/validate_repository_contracts.py` with Python 3.14.6 and jsonschema 4.26.0. Nine tests and 32 schema-checked repository records passed. Twenty additional in-memory negative cases rejected invalid receipt identity, failed or missing prerequisite evidence, sealed and candidate path drift, invalid ledger status or identity and changed source or destination hashes.
+- Ran `node --test --test-reporter=spec --test-name-pattern='^FileControlledMergeTaskLock' tests/controlled-merge.test.mjs` and `node --test --test-reporter=spec tests/controlled-merge.test.mjs` with Node 24.18.0. Results were 4/4 and 81/81. The focused checks used the coordinator's compiled runtime.
+- In the earlier exact review I recomputed the two compact sorted JSON CI receipt hashes and the three archived independent report and GitHub comment-body hashes. The final receipt diff updates the sealed commit and tree. [Accepted MIG-002 PR](https://github.com/Brain-Crumbs/Vibez/pull/13) [MIG-002 checks](https://github.com/Brain-Crumbs/Vibez/actions/runs/42530811897)
+
+This role verdict covers the named candidate. Hosted CI is a separate deterministic integration gate. Run `42867995876` was in progress when checked. I wrote ignored QA reports and replay material and ran the test workload in disposable fixtures. [Exact-head CI](https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876) </details>
+
+<details>
+<summary>Architecture report</summary>
+
+Role session `/root/seed_architecture`. Original report SHA-256 `304a16ba1d0f7d210ec176a3f84e10a0ca8d55bafd2730aca430e09e004411ee`.
+
+# MIG-003 independent Architecture review
+
+**PASS** for Vibez PR #15 at `dd0c6a9f4396d0e9a89756d177c7477eea71b369`. No remaining Architecture findings.
+
+Reviewed the canonical branch `migration/mig-003-provenance-extraction` against Vibez main `4c838c1598fce5348c3a8052146b42e4eb05e1a4`, source `5cd23ef5415f2d2140654551f9152339417e4b58`, and the previously reviewed head `fab8f9c2fefbbcab1656a76579a2a2a1870c1a0c`. The exact corrected seal is `fdebe9111ce7aa004566c4068a2c15a9a95ab00c`, tree `17b69685026f63cec552f7965e5e5d713f6da0b4`. [Vibez issue #3](https://github.com/Brain-Crumbs/Vibez/issues/3), [Vibez PR #15](https://github.com/Brain-Crumbs/Vibez/pull/15), [owner scope decision](https://github.com/Brain-Crumbs/Vibez/issues/3#issuecomment-6747942125).
+
+## Heartbeat regression
+
+- Independently inspected the hosted Windows logs at `fab8f9c2`. The nested-path guard and contract-bearing UAT canary passed. Of the 863 tests, the sole failure was `Missing expected rejection` in the heartbeat test. The test depended on the contender running while the holder was active and its mtime was fresh, with both conditions inferred from short timer delays. [Previous Windows job](https://github.com/Brain-Crumbs/Vibez/actions/runs/42866277616/job/130005345457).
+- The revised test holds the callback open, backdates the lock mtime, confirms it is beyond the reclaim threshold and waits up to ten seconds for the real heartbeat to make it fresh. The contender then has to reject with `STATE_CONFLICT` while the holder is still active. A `finally` block releases the holder, after which the test confirms the contender can acquire. The test exercises the unchanged mtime-based refresh and reclaim path and the same exclusivity and release guarantees. It uses a disposable directory. [Revised test](https://github.com/Brain-Crumbs/Vibez/blob/dd0c6a9f4396d0e9a89756d177c7477eea71b369/tests/controlled-merge.test.mjs#L949-L985), [controlled merge contract](https://github.com/Brain-Crumbs/Vibez/blob/dd0c6a9f4396d0e9a89756d177c7477eea71b369/contracts/controlled-merge/README.md).
+- In a fresh Windows checkout of `dd0c6a9`, I built with the locked preinstalled TypeScript compiler. `node --test tests/controlled-merge.test.mjs` passed all 81 tests. Six fresh Node 24.18 runs filtered to the revised heartbeat test each passed. The production lock, controlled merge contracts, and their downstream orchestration and lifecycle behavior retain their source bytes.
+
+## Scope and integration evidence
+
+- The only executable change after `fab8f9c2` is the heartbeat test. Its MIG-002 inventory entry permits adaptation, and its SHA-256 and rationale are recorded in the resealed plan. I ran `python scripts/seed_export.py --check-head --source <separate source clone> --output <new temp directory>` from the detached exact-head checkout. PASS for all 289 dispositions, 244 export candidates and 275 sealed files. The exact-head tree differs from the seal only in the designated integration records, the receipt and ledger. [Provenance plan](https://github.com/Brain-Crumbs/Vibez/blob/dd0c6a9f4396d0e9a89756d177c7477eea71b369/migration/seed-provenance.json), [receipt](https://github.com/Brain-Crumbs/Vibez/blob/dd0c6a9f4396d0e9a89756d177c7477eea71b369/migration/admissions/mig-003.json), [delta ledger](https://github.com/Brain-Crumbs/Vibez/blob/dd0c6a9f4396d0e9a89756d177c7477eea71b369/migration/source-deltas.json).
+- Compared 97 Git tree entries covering the full engine, runtime schemas, npm lockfile and controlled merge contracts with the accepted source. Paths, modes and blob IDs all match. The private package identity, #76's exact-revision UAT bridge and role isolation, empty active registry, synthetic fixture boundary, and seed-to-native admission rules carry forward from the previous Architecture review. No source or destination live state was read or changed. [Accepted source](https://github.com/Brain-Crumbs/IPTFantasyFootball/tree/5cd23ef5415f2d2140654551f9152339417e4b58), [admission procedure](https://github.com/Brain-Crumbs/Vibez/blob/dd0c6a9f4396d0e9a89756d177c7477eea71b369/migration/SEED_EXPORT.md#next-task-admission).
+- The run for `dd0c6a9` had started at review close. Integration separately requires the final three exact-head checks and independent roles. Use the documented merge-commit method, then verify the seal remains in main's ancestry and check main CI. [Exact-head CI](https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876). </details>
+
+<details>
+<summary>UAT/Product report</summary>
+
+Role session `/root/seed_uat`. Original report SHA-256 `1e214dfdc930206d864248d68e2e233a795b84576a664960147b1f21365fcec9`.
+
+# MIG-003 UAT/Product review
+
+**PASS** at `dd0c6a9f4396d0e9a89756d177c7477eea71b369` on `migration/mig-003-provenance-extraction` against main `4c838c1598fce5348c3a8052146b42e4eb05e1a4`. GitHub confirmed these exact refs. The reviewed seal is `fdebe9111ce7aa004566c4068a2c15a9a95ab00c`, tree `17b69685026f63cec552f7965e5e5d713f6da0b4`. [Issue #3](https://github.com/Brain-Crumbs/Vibez/issues/3) · [PR #15](https://github.com/Brain-Crumbs/Vibez/pull/15)
+
+- **Standalone operator path.** A fresh detached, remote-free Windows checkout completed offline `npm.cmd ci` from a separate cache copy and `npm.cmd run build` on Node 24.18.0 and npm 11.16.0. Compiled help, JSON status and JSON next succeeded with Python absent from the command search path. The JSON envelope remained version `1.0.0`, status showed zero registered tasks, and next returned `empty` with `NO_TASKS`. The runtime directory remained absent and the checkout stayed clean.
+- **Workflow behavior.** Eight focused canary, UAT and context tests passed at the reviewed SHA. The fixture rejects a nested path and external transport before state writes. The contract-bearing #76 case reached `MERGE_READY` with UAT evidence bound to the fixture implementation revision and one Developer handoff for that revision. Cases also covered stale required artifacts, current Developer PASS reuse, exact supplied-context binding and a missing dependency contract rejected without writes. The fixture validators used a schema-enabled Python 3.14.6 interpreter. [Source repair](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/84)
+- **Heartbeat regression.** All 81 controlled-merge tests passed. The revised case deliberately ages the fixture lock while the callback is held open, waits for an observed real heartbeat to refresh the filesystem timestamp, checks that the contender is rejected, and verifies acquisition after release. The raw test SHA-256 `598259961ac878c4df20ab1a75720f4deea0a826b0598a55f383264fd06d6b6b` matches the adapted inventory path, sealed blob and replay bytes. The production lock and CLI engine bytes match the previous reviewed revision. [Prior Windows result](https://github.com/Brain-Crumbs/Vibez/actions/runs/42866277616/job/130005345457)
+- **Replay and retained review evidence.** Both standalone `python scripts/seed_export.py --check-head` and a fresh replay with `--source`, `--output` and `--check-head` passed at this revision. Replay verified 289 source dispositions, 244 candidates and 275 sealed payload files. Compared with `fab8f9c2fefbbcab1656a76579a2a2a1870c1a0c`, Git lists only the heartbeat fixture and three provenance or receipt records as changed. The earlier operator rehearsal and rollback observations therefore cover identical guide, engine and rehearsal files. In that review the named rehearsal completed one simulated PR and one simulated merge with byte-identical same-key reconciliation. A separate disposable merge preserved the sealed ancestry and passed normal verification, and reverting it restored the exact base tree while retaining history.
+- **Authority and handoff.** The approved source revision and 244-path scope match the Brain-Crumbs decision. The CLI guide documents Python development setup. The seed guide preserves reviewed pre-native prerequisites and directs the next task through authorization, a quiescent local state root, reviewed registration and read-only selection. At sign-off the exact-revision Node and Python jobs had passed, and the hosted Windows job was still running as a separate integration gate. [Owner decision](https://github.com/Brain-Crumbs/Vibez/issues/3#issuecomment-6747942125) · [Seed record](https://github.com/Brain-Crumbs/Vibez/blob/dd0c6a9f4396d0e9a89756d177c7477eea71b369/migration/SEED_EXPORT.md) · [Exact-revision CI](https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876) </details>
+
+## Final exact-head CI
+
+All three jobs passed on the independently reviewed head dd0c6a9f4396d0e9a89756d177c7477eea71b369. The standalone Windows checkout also passed all 863 Node tests at that revision. [Pull request CI](https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876)
+
+- Linux build, 863 Node tests and both adversarial mutation checks passed. [Node job](https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876/job/130011384994)
+- Both schema validators, nine Python design and provenance tests, and the sealed seed and exact candidate tree checks passed. [Python job](https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876/job/130011384404)
+- Windows build, 863 Node tests, both schema validations and sealed seed verification passed. [Windows job](https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876/job/130011384752)

@@ -13,7 +13,7 @@ import { checkProjectUpgrade, historyCompatibility, readProjectAudit, verifyHist
 const timestamp = "2026-11-10T20:00:00Z";
 const taskId = "BOOT-003";
 const oldPackage = "0.1.0-mig005.1";
-const newPackage = "0.1.0-mig007.0";
+const newPackage = "0.1.0-mig006.0";
 const drain = { localWritersDrained: true, externalSessionsDrained: true };
 const layout = { state: ".agent/state" };
 const secret = "fixture-secret-never-in-export";

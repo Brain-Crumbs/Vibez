@@ -5,6 +5,7 @@ function freezeCommands(commands: CommandDescriptor[]): readonly CommandDescript
 }
 
 export const IMPLEMENTED_COMMANDS = freezeCommands([
+  { name: "orchestrate", summary: "Prepare issues and drive manual role handoffs and workflow continuation.", status: "implemented" },
   { name: "audit", summary: "Inspect recorded task history and revision-bound evidence without exporting payload text.", status: "implemented" },
   { name: "upgrade", summary: "Check read-only package compatibility and writer quiescence.", status: "implemented" },
   { name: "recovery", summary: "Check consistency or apply explicitly confirmed, audited offline recovery (BOOT-032).", status: "implemented" },
@@ -55,11 +56,6 @@ export const RESERVED_COMMANDS = freezeCommands([
   {
     name: "rework",
     summary: "Drive the review rework and approval invalidation loop (owned by BOOT-021; behavior implemented, CLI wiring owned by BOOT-026+).",
-    status: "reserved",
-  },
-  {
-    name: "orchestrate",
-    summary: "Run the sequential orchestration engine end to end (library and BOOT-029 manual provider implemented; general workflow CLI composition remains reserved).",
     status: "reserved",
   },
 ]);

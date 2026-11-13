@@ -14,7 +14,7 @@ import { checkProjectUpgrade, readProjectAudit, type UpgradeCheckRequest } from 
 import { evidenceReceiptIdentity, provenanceFor, recordProvenance } from "../history/provenance.js";
 import { readEvidenceHistories } from "../status-reporting/local-source.js";
 import { MergeReadinessPolicyEngine, type MergeReadinessPrPort, type MergeReadinessCiPort } from "../merge-readiness/index.js";
-import { FileOrchestrationRunStore, SequentialOrchestrationEngine, type OrchestrationRunRequest } from "../orchestration-engine/index.js";
+import { FileOrchestrationRunStore, SequentialOrchestrationEngine, type OrchestrationRunRequest, type OrchestrationDependencies } from "../orchestration-engine/index.js";
 import { PullRequestLifecycleAdapter, type PullRequestOperations } from "../pr-lifecycle/index.js";
 import { getAssetCatalog, readPackageJson } from "../project-assets/index.js";
 import { checkedProjectPath, ConfigError, digest, projectGit, resolveProjectConfig, writablePaths, type ProjectLocation } from "../project-config/index.js";
@@ -26,6 +26,7 @@ import { createLocalStatusDependencies, ProjectStatusReporter } from "../status-
 import { loadTaskRegistry, validateDependencyDag, type TaskRegistry, type TaskLifecycleState } from "../task-registry/index.js";
 import { UatReviewGate } from "../uat-review/index.js";
 import { WorkflowDiagnostics } from "../workflow-diagnostics/index.js";
+import type { DriverRuntime } from "../workflow-driver/driver.js";
 import { createProjectContext, trackedFiles } from "./context.js";
 import { createRetryBudget, type RetryBudgetGrant } from "./retry-budget.js";
 import { configuredValidators, type ProjectValidatorCommand } from "./validators.js";
@@ -79,7 +80,15 @@ function verifyTree(root: string): void {
   visit(root, 0);
 }
 
+export type DriverHooks = Pick<OrchestrationDependencies,
+  "prepareAgentInput" | "developerStart" | "developerValidation" | "qaReview" | "architectureReview" |
+  "uatReview" | "reviewRework" | "mergeReadiness" | "controlledMerge" | "actorIdFor" | "toolPermissionPolicyFor">;
+
 export async function createProjectServices(location: ProjectLocation, host: ProjectHost) {
+  return (await composeProjectServices(location, host)).services;
+}
+
+async function composeProjectServices(location: ProjectLocation, host: ProjectHost) {
   const config = resolveProjectConfig(location);
   const { document, projectRoot, paths } = config;
   const repository = document.project.repository;
@@ -304,21 +313,61 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     pullRequests: host.integration.pullRequests, ciStatus: host.integration.ci,
   });
   const integration = host.integration.merge;
-  const merge = new ControlledMergeController({ ...common, lockStore, integrationTarget, mergeReadiness: readiness,
+  type MergeIntentGuard = {
+    number: number;
+    head: string;
+    check: (number: number, fresh: boolean) => Promise<void>;
+  };
+  async function getIntentPullRequest(guard: MergeIntentGuard, number: number) {
+    await guard.check(number, false);
+    const pr = await integration.getPullRequest(number);
+    if (pr && (pr.number !== guard.number || pr.headSha !== guard.head || pr.baseRef !== integrationTarget)) {
+      throw new ConfigError("IDENTITY_CONFLICT", "Merge provider returned a different PR, head, or base than the original intent.");
+    }
+    return pr;
+  }
+  const mergeFor = (guard?: MergeIntentGuard) => new ControlledMergeController({ ...common, lockStore, integrationTarget, mergeReadiness: readiness,
     taskLock: new FileControlledMergeTaskLock(lifecycleRoot, {}, true),
     ...(host.mergeEffect === undefined ? {} : { mergeEffect: host.mergeEffect }),
     pullRequests: {
-      findPullRequestsByHead: integration.findPullRequestsByHead.bind(integration),
-      getPullRequest: integration.getPullRequest.bind(integration),
+      findPullRequestsByHead: async head => {
+        if (!guard) return integration.findPullRequestsByHead(head);
+        const pr = await getIntentPullRequest(guard, guard.number);
+        return pr === null ? [] : [pr];
+      },
+      getPullRequest: number => guard ? getIntentPullRequest(guard, number) : integration.getPullRequest(number),
       mergePullRequest: guarded(async request => {
         if (host.authorizeMerge?.({ ...request, repository }) !== true) {
           throw new ConfigError("IDENTITY_CONFLICT", "Host authorization for the exact repository, PR, and head is required.");
+        }
+        if (guard) {
+          if (request.expectedHeadSha !== guard.head) throw new ConfigError("IDENTITY_CONFLICT", "Merge head differs from the original intent.");
+          await guard.check(request.number, true);
+          assertCurrent();
+          if (host.authorizeMerge?.({ ...request, repository }) !== true) {
+            throw new ConfigError("IDENTITY_CONFLICT", "Merge authority changed before publication.");
+          }
         }
         return integration.mergePullRequest(request);
       }),
     },
   });
-  const pr = new PullRequestLifecycleAdapter({ registry, branchLifecycle, integrationTarget, approvals: rework, pullRequests: host.integration.publication });
+  const publication = host.integration.publication;
+  const publicationFor = (beforeWrite?: (number?: number) => Promise<void>) => new PullRequestLifecycleAdapter({
+    registry, branchLifecycle, integrationTarget, approvals: rework, pullRequests: {
+      findOpenPullRequests: publication.findOpenPullRequests.bind(publication),
+      createPullRequest: async params => {
+        await beforeWrite?.();
+        return publication.createPullRequest(params);
+      },
+      updatePullRequest: async params => {
+        await beforeWrite?.(params.number);
+        return publication.updatePullRequest(params);
+      },
+    },
+  });
+  const pr = publicationFor();
+  const merge = mergeFor();
   const status = new ProjectStatusReporter(source);
   const diagnostics = new WorkflowDiagnostics({ source, validatorResolver, mergeReadiness: readiness });
   const recovery = await LocalRecoveryTools.create(projectRoot, {
@@ -350,7 +399,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
   const grantsRoot = join(paths.operations, "retry-grants");
   const budget = createRetryBudget(grantsRoot, runStore, executionBinding, document.budgets.maxAttempts,
     () => prepareWrite(grantsRoot), host.authorizeRetryBudget);
-  const engine = new SequentialOrchestrationEngine({
+  const engineDependencies: OrchestrationDependencies = {
     developerStart, developerValidation, qaReview, architectureReview, uatReview, reviewRework,
     mergeReadiness: readiness, controlledMerge, taskRegistry: registry, lifecycleState: stateStore,
     runStore: {
@@ -369,7 +418,26 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     retryPolicy: { maxAttempts: document.budgets.maxAttempts, delayMs: document.budgets.retryDelayMs },
     timeoutMsFor: () => document.budgets.providerTimeoutMs,
     maxAttemptsFor: budget.effective,
-  });
+  };
+  const engine = new SequentialOrchestrationEngine(engineDependencies);
+  function taskStates() {
+    assertCurrent();
+    const result = new Map<string, TaskLifecycleState>();
+    for (const taskId of registry.keys()) {
+      const record = stateStore.get(taskId);
+      if (record !== null) result.set(taskId, record.currentState);
+    }
+    return result;
+  }
+  function runEngine(request: OrchestrationRunRequest, selected: SequentialOrchestrationEngine) {
+    assertCurrent();
+    assertRegistryHistory();
+    const key = request.idempotencyKey ?? request.runId;
+    const start = runStore.get(key)?.values.start as { taskId?: string } | undefined;
+    if (start?.taskId !== undefined) assertTaskBinding(start.taskId, gitOperations.currentRevision());
+    return selected.run({ ...request,
+      timeoutMs: Math.min(request.timeoutMs ?? document.budgets.operationTimeoutMs, document.budgets.operationTimeoutMs) });
+  }
   const configuredManual: NonNullable<CliRunContext["configuredManual"]> = {
     exchange: paths.exchange,
     ...(manual === undefined ? {} : { provider: manual }),
@@ -423,14 +491,7 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
     controlledMerge,
     orchestration: {
       increaseRetryBudget: taskGuarded(budget.increase),
-      run: guarded((request: OrchestrationRunRequest) => {
-        assertRegistryHistory();
-        const key = request.idempotencyKey ?? request.runId;
-        const start = runStore.get(key)?.values.start as { taskId?: string } | undefined;
-        if (start?.taskId !== undefined) assertTaskBinding(start.taskId, gitOperations.currentRevision());
-        return engine.run({ ...request,
-          timeoutMs: Math.min(request.timeoutMs ?? document.budgets.operationTimeoutMs, document.budgets.operationTimeoutMs) });
-      }),
+      run: (request: OrchestrationRunRequest) => runEngine(request, engine),
     },
     status: { read: readStatus },
     diagnostics: {
@@ -443,21 +504,43 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
       explainMerge: guarded(diagnostics.explainMerge.bind(diagnostics)),
     },
     recovery: { check: recoveryCheck, apply: recoveryApply },
-    async cli(args: readonly string[], signal?: AbortSignal) {
+    async cli(args: readonly string[], signal?: AbortSignal, runtime: DriverRuntime = {}) {
       assertCurrent();
-      const taskStates = new Map<string, TaskLifecycleState>();
-      for (const taskId of registry.keys()) {
-        const record = stateStore.get(taskId);
-        if (record !== null) taskStates.set(taskId, record.currentState);
-      }
+      const driverRuntime: DriverRuntime = {
+        ...runtime, config,
+        services: async () => {
+          const current = projectGit(projectRoot, ["rev-parse", "HEAD"]).trim();
+          return current === config.revision ? driverServices : (await composeProjectServices(location, host)).driver;
+        },
+      };
       const cliContext: CliRunContext = {
-        configuredProject: true, historyConfig, repositoryRoot: projectRoot, taskRegistry: registry, taskStates, developerStartWorkflow: developerStart,
+        configuredProject: true, historyConfig, repositoryRoot: projectRoot, taskRegistry: registry, taskStates: taskStates(), driverRuntime, developerStartWorkflow: developerStart,
         developerValidationGate: developerValidation, projectStatusReporter: { read: readStatus }, workflowDiagnostics: diagnostics,
         recoveryCheck, recoveryApply, configuredManual,
         ...(signal === undefined ? {} : { signal }),
       };
       return runCli(args, cliContext);
     },
+  };
+  const driverServices = {
+    config, registry, taskStates, manual, developerStart, developerValidation, qaReview, architectureReview,
+    uatReview, reviewRework, mergeReadiness: services.mergeReadiness, controlledMerge, diagnostics: services.diagnostics,
+    pullRequests: services.pullRequests, recovery: services.recovery,
+    mergeWithIntent: (request: Parameters<typeof merge.merge>[0], guard: NonNullable<Parameters<typeof mergeFor>[0]>) => {
+      const controller = mergeFor(guard);
+      return taskGuarded(controller.merge.bind(controller))(request);
+    },
+    publishWithGuard: (request: Parameters<typeof pr.ensurePullRequest>[0], beforeWrite: (number?: number) => Promise<void>) => {
+      const guardedPublication = publicationFor(beforeWrite);
+      return taskGuarded(guardedPublication.ensurePullRequest.bind(guardedPublication))(request);
+    },
+    prepareWrite: () => prepareWrite(paths.operations),
+    authorizePublication: (taskId: string, revision: string) => {
+      assertCurrent(taskId);
+      return host.authorizePublication?.({ repository, taskId, revision }) === true;
+    },
+    run: (request: OrchestrationRunRequest, hooks: DriverHooks) =>
+      runEngine(request, new SequentialOrchestrationEngine({ ...engineDependencies, ...hooks })),
   };
   assertCurrent();
   const currentBranch = gitOperations.currentBranch();
@@ -466,8 +549,10 @@ export async function createProjectServices(location: ProjectLocation, host: Pro
       assertTaskBinding(task.taskId, config.revision);
     }
   }
-  return Object.freeze(services);
+  return { services: Object.freeze(services), driver: driverServices };
 }
+
+export type ConfiguredDriverServices = Awaited<ReturnType<typeof composeProjectServices>>["driver"];
 
 export async function doctorProject(location: ProjectLocation, host: ProjectHost) {
   try {
