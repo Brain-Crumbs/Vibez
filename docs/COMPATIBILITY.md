@@ -130,7 +130,7 @@ legacy exchange paths, sort those paths and name their layout entries
 The compatibility manifest is exported as `historyCompatibility`. It lists exact
 package readers and the separate API, CLI, evidence, lifecycle, assignment,
 configuration, manual exchange, recovery and orchestration versions. MIG-006
-still owns the general driver and its future session formats. An unrecognized
+adds the general driver and versioned session records. An unrecognized
 reader or record blocks the upgrade. A known older reader refuses any history
 containing the historical duplicate validation label that this version can
 read. For supported historical collisions, the original label is retained and

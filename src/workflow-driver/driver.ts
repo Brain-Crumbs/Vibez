@@ -140,7 +140,7 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
     const state = new FileDeveloperStartStateStore(safePath(root, `${stateDirectory(p)}/lifecycle`));
     if(s.predecessor) requireValue(state.get(s.taskId)?.history.some(e=>e.toState==="IN_DEVELOPMENT"&&e.runId===`${s.request.runId}::resume-rework`),"Successor has no authoritative rework transition. Reconcile the predecessor's rework intent.");
     if(existsSync(sessionPath(root,p,successorId(s.sessionId))))throw new DriverError("SUPERSEDED_ATTEMPT",`Use linked successor ${successorId(s.sessionId)}. The predecessor remains audit history.`);
-    const exchange = configured?.manual ?? new FileManualAgentProvider(safePath(root, p.paths.exchange), { repositoryRoot: root });
+    const exchange = configured?.manual ?? new FileManualAgentProvider(safePath(root, p.paths.exchange));
     const accepted = (packetId:string) => {
       const v=read(safePath(root,`${driverDirectory(p)}/accepted/${packetId}.json`));
       requireValue(object(v)&&v.sessionId===s.sessionId&&v.packetId===packetId&&typeof v.head==="string"&&v.resultHash===hash(read(exchange.resultPath(packetId))),"Result lacks a valid current driver intake fence.");

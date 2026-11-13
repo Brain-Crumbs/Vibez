@@ -315,4 +315,14 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   assert.equal((await runHost("resume")).data?.session.status, "DONE");
   assert.equal(remote.merges, 1);
   assert.ok(!existsSync(join(project, ".agent")));
+  if (process.env.VIBEZ_TEST_INHERITED_PACKED === "1") {
+    const publicCli = join(tools, "public-cli.mjs");
+    put(tools, "public-cli.mjs", `export { runCli } from "${manifest.name}/cli";`);
+    const inherited = spawnSync(process.execPath, ["--test", join(root, "tests", "workflow-driver.test.mjs")], {
+      cwd: tools, encoding: "utf8", env: {
+        ...process.env, VIBEZ_DRIVER_TEST_BIN: executable, VIBEZ_DRIVER_TEST_CLI_EXPORT: pathToFileURL(publicCli).href,
+      },
+    });
+    assert.equal(inherited.status, 0, inherited.stdout + inherited.stderr);
+  }
 });

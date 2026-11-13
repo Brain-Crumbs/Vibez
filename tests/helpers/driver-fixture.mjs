@@ -4,7 +4,7 @@ import {cpSync,mkdirSync,mkdtempSync,readFileSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
-import {runCli} from '../../dist/cli/core.js';
+const {runCli} = await import(process.env.VIBEZ_DRIVER_TEST_CLI_EXPORT ?? '../../dist/public/cli.js');
 export const sourceRoot=fileURLToPath(new URL('../..',import.meta.url));
 export const git=(root,...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 export const put=(root,path,bytes)=>{mkdirSync(join(root,path,'..'),{recursive:true});writeFileSync(join(root,path),typeof bytes==='string'?bytes:JSON.stringify(bytes,null,2));};
@@ -15,7 +15,6 @@ export function markdown(task='DEMO-001',dependencies=[],contracts=task==='DEMO-
 }
 export function fixture(){
  const root=mkdtempSync(join(tmpdir(),'driver space '));
- cpSync(join(sourceRoot,'schemas'),join(root,'schemas'),{recursive:true});
  cpSync(join(sourceRoot,'contracts/cli-shell'),join(root,'contracts/cli-shell'),{recursive:true});
  for(const task of ['DEMO-001','DEMO-002'])put(root,`requirements/${task}.json`,{schemaId:'ipt.requirement',schemaVersion:'1.0.0',requirementId:`${task}-R1`,taskId:task,statement:'Marker matches requested value.',acceptanceCriteria:['Marker is delivered.'],sourceRefs:['fixture']});
  put(root,'.gitignore','.agent/\n');put(root,'.gitattributes','* text=auto eol=lf\n');

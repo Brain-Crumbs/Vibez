@@ -103,7 +103,7 @@ export async function scan(root: string, p: DriverProfile, session: DriverSessio
         if(!session)continue;
         if(session.pendingPacket!==packetId && files(safePath(root,`${driverDirectory(p)}/sessions`),".json").some(name=>{const record=read(safePath(root,`${driverDirectory(p)}/sessions/${name}`));return object(record)&&record.pendingPacket===packetId&&record.profileHash===hash(p)&&record.status==="WAITING";}))continue;
         requireValue(session && session.pendingPacket === packetId && session.status === "WAITING", "Result does not belong to this session's current pending packet.");
-        const exchange = (await host?.services?.())?.manual ?? new FileManualAgentProvider(safePath(root, p.paths.exchange), { repositoryRoot: root });
+        const exchange = (await host?.services?.())?.manual ?? new FileManualAgentProvider(safePath(root, p.paths.exchange));
         const packet = exchange.readPacket(packetId);
         const head=clean(root,packet.role==="Developer"?undefined:packet.revisionIdentity);
         const definition=JSON.parse(git(root,"show",`${head}:${session.definitionPath}`)) as {canonicalBranch?:string};

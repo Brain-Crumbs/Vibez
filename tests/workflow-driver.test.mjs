@@ -13,7 +13,7 @@ const packet=(f,s)=>get(f.root,`.agent/driver/exchange/${s.pendingPacket}.packet
 
 test('CLI setup, stdin/folder intake, clarification, identities and explicit dependency selection',async()=>{
  const f=fixture();assert.equal((await f.init()).envelope.ok,true);
- const cli=join(sourceRoot,'dist/cli/cli.js');
+ const cli=process.env.VIBEZ_DRIVER_TEST_BIN ?? join(sourceRoot,'dist/cli/cli.js');
  const stdin=spawnSync(process.execPath,[cli,'--json','orchestrate','prepare','--stdin'],{cwd:f.root,input:markdown(),encoding:'utf8'});
  assert.equal(stdin.status,0,stdin.stdout);const intake=JSON.parse(stdin.stdout).data;assert.ok(intake.sessionId);
  const original=get(f.root,`.agent/driver/sessions/${intake.sessionId}.json`);
