@@ -419,7 +419,7 @@
       "reason": "Import the accepted BOOT-037 driver once under the approved expanded source scope. Repository-specific source policy remains upstream.",
       "destinationOwner": "MIG-006",
       "destinationPr": "https://github.com/Brain-Crumbs/Vibez/pull/21",
-      "destinationCommit": "4224cb9d7770ef45c4d185dc27a86bc6513811ca",
+      "destinationCommit": "6a9349d4f1ed7597ac8c6777fd8a2bb04bbf79e3",
       "destinationPaths": [
         {
           "path": "contracts/cli-shell/module-contract.json",
@@ -468,8 +468,8 @@
         },
         {
           "path": "docs/WORKFLOW_DRIVER.md",
-          "blob": "28bdedbc8ec478f8a2e29a1eec1320d8ead581f0",
-          "sha256": "48a9bff11d3268982c754a4b6cf7ef8e3ddf2ef27052f90bc19ece96e1a68d48"
+          "blob": "c509801c7571492f51ed3e7e0ab883ffa52f428e",
+          "sha256": "f9c92953be99e40bf2c933537a64d5f0519bff23d7eb163e415f40f371732436"
         },
         {
           "path": "package.json",
@@ -638,13 +638,13 @@
         },
         {
           "path": "src/workflow-driver/driver.ts",
-          "blob": "64aede61b5d75f7f924fa7a93b2c6e869beee49a",
-          "sha256": "95c38464817860709709a91f2b672be9240e763858006d4041ed7ceee61aa4a9"
+          "blob": "788d98fd73dfe37c2f488c2e66d3044239cb401e",
+          "sha256": "fddb33c08ef87b36c4b51e4e91bd980dfe8c6d2ed9a8e3f767a06a8cac43f183"
         },
         {
           "path": "src/workflow-driver/inbox.ts",
-          "blob": "75e1e6915feab37de30efbf39a2b7082b5e2d3cb",
-          "sha256": "3b96e54fbe87df215035a76907ca5c9d2efc7d5474a6050a99e73a14ff783405"
+          "blob": "7ccd8c26b3950a54554156a122d9d959f01020d9",
+          "sha256": "0361ce4986900fec0696bbfe2ae2f9eb12f33ff728eb950c0a5a305938e1933b"
         },
         {
           "path": "src/workflow-driver/index.ts",
@@ -673,13 +673,13 @@
         },
         {
           "path": "tests/helpers/driver-fixture.mjs",
-          "blob": "13186eb77284ef1836f0ef2b5f7ff970ef2c5dee",
-          "sha256": "de17b7b9beda759d910d08469523d11cdc90e394c282f6c8dc2b25f97de961f4"
+          "blob": "3fcd1d8770f4cd07fe808b2bc3e92013060c08d7",
+          "sha256": "508f5b03ced2b47c3d55a84de329690786fb95f75f80ac6c144fb12812ac21e0"
         },
         {
           "path": "tests/workflow-driver.test.mjs",
-          "blob": "1fbd8fdffa401689e2c4c1a91c6a5b60b8908eec",
-          "sha256": "1fbc94fcbc72811048b4e80dc753b367aa9d658176256470d34fa7efbe5a0dd7"
+          "blob": "2a6ebd41b77d0c78ee23e658f05843ac2e118342",
+          "sha256": "9b4513786b59f05607096508eff9bc56869c3370c5370d470495d581dfcd1eab"
         }
       ],
       "compatibility": "Preserve existing packet and result schemas. The installed driver binds its profile to project configuration and keeps session, intent, inbox and rework metadata with the original project history. Rollback requires quiescence and a compatible reader.",

@@ -112,8 +112,8 @@
       "sourceSha256": "786b8993ca0354cfed3b24b821043e3f22a256bab3f86d173b292bad034055ae",
       "disposition": "adapt",
       "destinationPath": "docs/WORKFLOW_DRIVER.md",
-      "destinationSha256": "48a9bff11d3268982c754a4b6cf7ef8e3ddf2ef27052f90bc19ece96e1a68d48",
-      "destinationBlob": "28bdedbc8ec478f8a2e29a1eec1320d8ead581f0"
+      "destinationSha256": "f9c92953be99e40bf2c933537a64d5f0519bff23d7eb163e415f40f371732436",
+      "destinationBlob": "c509801c7571492f51ed3e7e0ab883ffa52f428e"
     },
     {
       "path": "package.json",
@@ -418,8 +418,8 @@
       "sourceSha256": "fe606314f61135b7501f35ec76636cf40e5e66860233b02825ae8a1437784706",
       "disposition": "adapt",
       "destinationPath": "src/workflow-driver/driver.ts",
-      "destinationSha256": "95c38464817860709709a91f2b672be9240e763858006d4041ed7ceee61aa4a9",
-      "destinationBlob": "64aede61b5d75f7f924fa7a93b2c6e869beee49a"
+      "destinationSha256": "fddb33c08ef87b36c4b51e4e91bd980dfe8c6d2ed9a8e3f767a06a8cac43f183",
+      "destinationBlob": "788d98fd73dfe37c2f488c2e66d3044239cb401e"
     },
     {
       "path": "src/workflow-driver/inbox.ts",
@@ -427,8 +427,8 @@
       "sourceSha256": "f272614aea704884045c75c179c8ed34ebc4fe4fb4e146010ccf697fd0267580",
       "disposition": "adapt",
       "destinationPath": "src/workflow-driver/inbox.ts",
-      "destinationSha256": "3b96e54fbe87df215035a76907ca5c9d2efc7d5474a6050a99e73a14ff783405",
-      "destinationBlob": "75e1e6915feab37de30efbf39a2b7082b5e2d3cb"
+      "destinationSha256": "0361ce4986900fec0696bbfe2ae2f9eb12f33ff728eb950c0a5a305938e1933b",
+      "destinationBlob": "7ccd8c26b3950a54554156a122d9d959f01020d9"
     },
     {
       "path": "src/workflow-driver/index.ts",
@@ -481,19 +481,19 @@
       "sourceSha256": "283c4013487cfb691196d038d1401e731c24e0514ae07b0d422e44ffdc70c774",
       "disposition": "adapt",
       "destinationPath": "tests/helpers/driver-fixture.mjs",
-      "destinationSha256": "de17b7b9beda759d910d08469523d11cdc90e394c282f6c8dc2b25f97de961f4",
-      "destinationBlob": "13186eb77284ef1836f0ef2b5f7ff970ef2c5dee"
+      "destinationSha256": "508f5b03ced2b47c3d55a84de329690786fb95f75f80ac6c144fb12812ac21e0",
+      "destinationBlob": "3fcd1d8770f4cd07fe808b2bc3e92013060c08d7"
     },
     {
       "path": "tests/workflow-driver.test.mjs",
       "sourceBlob": "1fbd8fdffa401689e2c4c1a91c6a5b60b8908eec",
       "sourceSha256": "1fbc94fcbc72811048b4e80dc753b367aa9d658176256470d34fa7efbe5a0dd7",
-      "disposition": "copy",
+      "disposition": "adapt",
       "destinationPath": "tests/workflow-driver.test.mjs",
-      "destinationSha256": "1fbc94fcbc72811048b4e80dc753b367aa9d658176256470d34fa7efbe5a0dd7",
-      "destinationBlob": "1fbd8fdffa401689e2c4c1a91c6a5b60b8908eec"
+      "destinationSha256": "9b4513786b59f05607096508eff9bc56869c3370c5370d470495d581dfcd1eab",
+      "destinationBlob": "2a6ebd41b77d0c78ee23e658f05843ac2e118342"
     }
   ],
-  "destinationCommit": "4224cb9d7770ef45c4d185dc27a86bc6513811ca",
+  "destinationCommit": "6a9349d4f1ed7597ac8c6777fd8a2bb04bbf79e3",
   "destinationPr": "https://github.com/Brain-Crumbs/Vibez/pull/21"
 }
