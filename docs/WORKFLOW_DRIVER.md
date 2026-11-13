@@ -111,9 +111,9 @@ not guess missing dependencies, issue metadata or requirements. Review the
 proposal before saving it. It cannot make itself eligible or authorize a run.
 
 The driver retains original Markdown and source hash, checks the proposed task
-through the registry, DAG and context compiler, and stages it under `.agent`
+through the registry, DAG and context compiler, and stages it under `<operations>/driver`
 before exposing the complete definition. Registration writes a Git commit
-using an isolated index, then advances the exact clean local `main` ref and
+using an isolated index, then advances the exact clean local integration ref and
 restores only the committed definition into the checkout. It does not push or
 assign. Interrupted registration is
 reconciled by presenting the identical input again. Do not commit unrelated
@@ -171,9 +171,11 @@ If the native orchestration token also remains, use `recover-run SESSION
 
 ## Publish and complete
 
+Supply `IPT_GITHUB_TOKEN` or `GITHUB_TOKEN` to the trusted host for publication and CI checks. Keep it out of role sessions and validator environments.
+
 When `MERGE_READY`, `orchestrate publish SESSION` authorizes a non-force push
 of the reviewed SHA and creation/update of the one canonical draft PR. Check
-the remote, issue, branch, base and exact head. Origin must have one read and
+the remote, issue, branch, base and exact head. The configured remote must have one read and
 one push destination, with no Git rule that rewrites either checked URL.
 `orchestrate ready SESSION`
 separately authorizes ready conversion of that existing PR. After the exact
@@ -191,14 +193,15 @@ recorded before the first attempt; an earlier merged PR on the same branch or
 SHA cannot complete this session.
 
 The completion handoff reports the next eligible candidate. Switch back to
-clean `main`, refresh it as appropriate, and explicitly select the next
+the clean configured integration branch, refresh it as appropriate, and explicitly select the next
 prepared session. The previous request is never reused for another task.
 
 ## Data, compatibility, and rollback
 
-All new driver metadata lives under `<operations>/driver`: separate intake/session,
-handoff, observation, archive and canonical exchange records. The gate stores
-remain under `<state>`. Keep both in backups while writers are stopped.
+Sessions, intake receipts, observations, archives, merge intents and repair records
+live under `<operations>/driver`. Preserve the separately configured intake,
+response, outbox and canonical exchange roots as well as state and evidence.
+Back up all of these with writers stopped.
 Receipt and session records coordinate retries; they are not review evidence
 or merge grants. Legacy `manual export/import/run`, canary rehearsal and CLI
 envelopes remain supported. New role handoffs are companions to unchanged

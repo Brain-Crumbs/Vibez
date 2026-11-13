@@ -123,7 +123,7 @@ Keep protected copies if an independent integrity reference is required.
 
 For backup comparison, use the configured runtime path keys as the layout map
 (`state`, `evidence`, `exchange`, `operations`, `intake`, `responses`, `outbox`).
-For an unconfigured checkout use `{ state: ".agent/state" }`. If using explicit
+For an unconfigured checkout use `{ state: ".agent/state", driver: ".agent/driver" }`. If using explicit
 legacy exchange paths, sort those paths and name their layout entries
 `exchange-0`, `exchange-1`, and so on.
 
@@ -158,7 +158,7 @@ sequence.
    Keep the read-only report and its runtime snapshot digest. Copy the
    configured state/evidence/operations/exchange/intake/responses/outbox roots
    to an access-controlled backup with the same relative layout, or copy
-   `.agent/state` for unconfigured state. Retain any separately selected
+   both `.agent/state` and `.agent/driver` for an unconfigured project. Retain any separately selected
    unconfigured exchange directories as additional protected backups. Preserve
    all original evidence, receipts, lifecycle and ownership history. Compare
    the backup and a restore into an empty staging directory with
@@ -212,3 +212,9 @@ repository never transfers its operating state or approvals.
 | AC-04 | Nonempty snapshot, backup and staged restore compare all runtime hashes. Prior-reader compatibility rejects the historical collision. |
 | AC-05 | Presence of writer tokens or unfinished exchanges blocks, in addition to the independent drain confirmation. |
 | AC-06 | Exports omit free-form content and distinguish immutable evidence from observations. |
+
+
+The previous reader cannot resume MIG-006 driver sessions. For a configured
+checkout, call `services.diagnostics.checkUpgrade(request)` with its original
+committed config and trusted host. Retain the reported snapshot, bindings and
+the latest state even when a prior package cannot open that snapshot.
