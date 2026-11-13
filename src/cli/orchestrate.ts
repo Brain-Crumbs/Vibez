@@ -52,7 +52,7 @@ export async function runOrchestrateCommand(args: readonly string[], repositoryR
         "Set repository, paths, CI checks and budgets in the committed Vibez project configuration.");
       const get = (key:string) => { const value=flags.get(key); requireValue(value, `Setup requires explicit ${key}. ${ORCHESTRATE_HELP}`); return value; };
       requireValue(get("--enforce-policies") === "externally", "Externally enforce the printed role policies in fresh sessions.");
-      requireValue(git(root,"rev-parse","--show-toplevel").replaceAll("\\","/").toLowerCase() === root.replaceAll("\\","/").toLowerCase(), "Choose the repository root.");
+      requireValue(git(root, "rev-parse", "--show-prefix") === "", "Choose the repository root.");
       const remote = git(root,"remote","get-url",config?.document.policy.remote ?? "origin");
       const discovered = /github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?$/.exec(remote)?.[1];
       const repository = config?.document.project.repository ?? flags.get("--repository") ?? discovered; requireValue(repository && (!discovered || repository === discovered), "Supply --repository owner/repo matching origin.");
