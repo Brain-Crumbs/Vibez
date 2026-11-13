@@ -240,6 +240,8 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   const options = { owner: "fixture-owner", repo: "fixture-repo", token, fetchImpl };
   let writeAllowed = false;
   let mergeAuthorization;
+  let returnWrongMergeRecord = false;
+  const githubMerge = new api.GitHubControlledMergePullRequestOperations(options);
   const host = {
     identity: "vibez-standalone-manual-npm@1", executors: api.npmValidatorCommands(npm),
     integration: {
@@ -250,7 +252,14 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
       } }),
       pullRequests: new api.GitHubMergeReadinessPullRequestOperations(options),
       ci: new api.GitHubCiStatusOperations(options),
-      merge: new api.GitHubControlledMergePullRequestOperations(options),
+      merge: {
+        findPullRequestsByHead: githubMerge.findPullRequestsByHead.bind(githubMerge),
+        mergePullRequest: githubMerge.mergePullRequest.bind(githubMerge),
+        getPullRequest: async number => {
+          const record = await githubMerge.getPullRequest(number);
+          return returnWrongMergeRecord && record ? { ...record, number: number + 1 } : record;
+        },
+      },
     },
     authorizePublication: () => writeAllowed,
     authorizeMerge: input => mergeAuthorization === `${input.repository}#${input.number}@${input.expectedHeadSha}`,
@@ -295,6 +304,11 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   assert.ok(firstMerge.ok, JSON.stringify(firstMerge));
   assert.equal(remote.merges, 1);
   remote.loseMergeResponse = false;
+  returnWrongMergeRecord = true;
+  const rejectedReconciliation = await runHost("resume");
+  assert.notEqual(rejectedReconciliation.data?.session.status, "DONE");
+  assert.equal(remote.merges, 1);
+  returnWrongMergeRecord = false;
   const completion = await runHost("resume");
   assert.equal(completion.data?.session.status, "DONE", JSON.stringify(completion));
   assert.equal(remote.merges, 1);

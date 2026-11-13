@@ -313,24 +313,29 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
     pullRequests: host.integration.pullRequests, ciStatus: host.integration.ci,
   });
   const integration = host.integration.merge;
-  const mergeFor = (guard?: {
+  type MergeIntentGuard = {
     number: number;
     head: string;
     check: (number: number, fresh: boolean) => Promise<void>;
-  }) => new ControlledMergeController({ ...common, lockStore, integrationTarget, mergeReadiness: readiness,
+  };
+  async function getIntentPullRequest(guard: MergeIntentGuard, number: number) {
+    await guard.check(number, false);
+    const pr = await integration.getPullRequest(number);
+    if (pr && (pr.number !== guard.number || pr.headSha !== guard.head || pr.baseRef !== integrationTarget)) {
+      throw new ConfigError("IDENTITY_CONFLICT", "Merge provider returned a different PR, head, or base than the original intent.");
+    }
+    return pr;
+  }
+  const mergeFor = (guard?: MergeIntentGuard) => new ControlledMergeController({ ...common, lockStore, integrationTarget, mergeReadiness: readiness,
     taskLock: new FileControlledMergeTaskLock(lifecycleRoot, {}, true),
     ...(host.mergeEffect === undefined ? {} : { mergeEffect: host.mergeEffect }),
     pullRequests: {
       findPullRequestsByHead: async head => {
         if (!guard) return integration.findPullRequestsByHead(head);
-        await guard.check(guard.number, false);
-        const pr = await integration.getPullRequest(guard.number);
+        const pr = await getIntentPullRequest(guard, guard.number);
         return pr === null ? [] : [pr];
       },
-      getPullRequest: async number => {
-        if (guard) await guard.check(number, false);
-        return integration.getPullRequest(number);
-      },
+      getPullRequest: number => guard ? getIntentPullRequest(guard, number) : integration.getPullRequest(number),
       mergePullRequest: guarded(async request => {
         if (host.authorizeMerge?.({ ...request, repository }) !== true) {
           throw new ConfigError("IDENTITY_CONFLICT", "Host authorization for the exact repository, PR, and head is required.");
