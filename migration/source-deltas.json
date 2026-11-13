@@ -419,7 +419,7 @@
       "reason": "Import the accepted BOOT-037 driver once under the approved expanded source scope. Repository-specific source policy remains upstream.",
       "destinationOwner": "MIG-006",
       "destinationPr": "https://github.com/Brain-Crumbs/Vibez/pull/21",
-      "destinationCommit": "6a9349d4f1ed7597ac8c6777fd8a2bb04bbf79e3",
+      "destinationCommit": "9d1d6b522f670bc89465dd0c03bf00accaa5e4e0",
       "destinationPaths": [
         {
           "path": "contracts/cli-shell/module-contract.json",
@@ -593,8 +593,8 @@
         },
         {
           "path": "src/cli/orchestrate.ts",
-          "blob": "938c1dde0649504bb9d66963a30947f17cd40c5d",
-          "sha256": "1d694ba52b1b7c245d6120a46ef118c4b9c16137466bab7ecd08b2aef38e8f4f"
+          "blob": "f07cf425b642bb0330853a5c105559f8630d93de",
+          "sha256": "d7b6b55c7d3ff1ccb9b0d1663975b54595d0aeb160e153ff630e1714c2685488"
         },
         {
           "path": "src/dev-start/dev-start.ts",
