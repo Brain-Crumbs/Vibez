@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "taskId": "MIG-008",
+  "repository": "Brain-Crumbs/Vibez",
+  "issue": "https://github.com/Brain-Crumbs/Vibez/issues/8",
+  "integrationBase": "b746895fafc8c7354c91ca8bf38f4031e0ec53f8",
+  "canonicalBranch": "migration/mig-008-consumer-conformance-release",
+  "grant": "Implement MIG-008 and push and merge a reviewed PR when all gates are satisfied. Distribution requires the recorded release decision.",
+  "prerequisites": [
+    {
+      "taskId": "MIG-006",
+      "pr": 21,
+      "reviewedHead": "27c5a8b18ecc47755bce9fe199281ec7bb07709d",
+      "merge": "b746895fafc8c7354c91ca8bf38f4031e0ec53f8",
+      "ci": "https://github.com/Brain-Crumbs/Vibez/actions/runs/43498050753",
+      "nativeDoneEvidence": "MIG-006::merge@1",
+      "nativeLifecycleSha256": "bd50b4bb73c40fb08855365c0e2679c3de922462d895bc622d4d9ca3e1d43b45"
+    },
+    {
+      "taskId": "MIG-007",
+      "pr": 18,
+      "reviewedHead": "0ef0f17bd5cea9073113077683b73402f9925966",
+      "merge": "e3f1ff25ad6d1d0750445983731c4b26f736e694",
+      "ci": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42906511614",
+      "nativeDoneEvidence": "MIG-007::merge@1",
+      "nativeLifecycleSha256": "f084abced340418e72887347d30d3acadecad5c7240d809aba0b56f018bd4dd7"
+    },
+    {
+      "taskId": "MIG-003",
+      "pr": 15,
+      "reviewedHead": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+      "merge": "16a73b8071f5b9ef390d08504e325b779af291fe",
+      "ci": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876",
+      "receipt": "migration/admissions/mig-003.json"
+    }
+  ],
+  "dependencyProjection": {
+    "native": [
+      "MIG-006",
+      "MIG-007"
+    ],
+    "external": [],
+    "historical": [
+      "MIG-003"
+    ]
+  },
+  "issueBodySha256": "a0cd98b2c80d1d139747ec651a32f7c95851bc919017a3068f432957cba35eac",
+  "definition": {
+    "path": "tasks/definitions/mig-008.task.json",
+    "sha256": "633b059e2b1a312ec5b450b359842b0953af7375c9f354e4daf9e67f3dae2b56"
+  },
+  "requirement": {
+    "path": "requirements/mig-008.requirement.json",
+    "sha256": "8a3a02717ae953f52b2a0f15e0c362a9657cb2a9f745d34af9c98416a1d650c9"
+  }
+}
