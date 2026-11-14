@@ -531,8 +531,8 @@ test("non-npm consumer uses only its configured validator; same task ID stays is
   assert.ok(!rollback.findings.includes("PRIOR_READER_DOES_NOT_SUPPORT_DRIVER_HISTORY"));
   assert.ok((await preflight("99.0.0")).findings.includes("UNSUPPORTED_READER"));
   const validation = await a("explain", "validation", task);
-  assert.match(JSON.stringify(validation), /python-test/);
-  assert.doesNotMatch(JSON.stringify(validation), /repository:build|repository:test/);
+  assert.deepEqual(validation.evidence.map(record => [record.subject, record.currency, record.outcome]),
+    [["python-test", "CURRENT", "PASS"]]);
   assert.equal(audit.evidence.filter(record => record.schemaId === "ipt.validation-evidence").length, 1);
   assert.equal((await b("next")).state, "PLANNED");
   assert.ok(!existsSync(join(beta.project, ".vibez")));
