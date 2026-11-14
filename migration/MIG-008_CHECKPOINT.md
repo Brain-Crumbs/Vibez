@@ -34,7 +34,7 @@ and MIG-010.
 | AC-02 | Independent Git roots sharing a task ID. The non-npm consumer uses its Python validator and configured review roles. |
 | AC-03 | Exact binding, invalid input, review rework, missing/pending CI, withheld effects, uncertain response and idempotent reconciliation. |
 | AC-04 | Source checkpoint command above, exact CI head, candidate receipt and checksum. |
-| AC-05 | Maintainer guide, install and rollback rehearsal. Actual download requires the approved immutable release and a fresh check from that channel. |
+| AC-05 | Maintainer guide, automated rejection of an unsettled upgrade and byte-verified backup/restore. The PR records independent UAT of the supported stopped-writer upgrade and rollback with the prior installed artifact. Actual download requires the approved immutable release and a fresh check from that channel. |
 | AC-06 | The matrix runs isolated consumer fixtures with simulated GitHub. The linked delivery PR records the real review, CI and controlled completion evidence separately. |
 
 The support register and release receipt govern distribution and supported

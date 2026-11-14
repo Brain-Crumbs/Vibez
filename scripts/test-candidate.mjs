@@ -54,7 +54,7 @@ try {
   writeFileSync(npmGlobalConfig, "");
   const env = { ...process.env };
   for (const key of Object.keys(env)) {
-    if (/^(GIT_|NPM_CONFIG_|NODE_PATH$|NODE_OPTIONS$|GH_TOKEN$|GITHUB_TOKEN$|NODE_AUTH_TOKEN$|VIBEZ_DRIVER_TEST_)/i.test(key)) delete env[key];
+    if (/^(GIT_|NPM_CONFIG_|NODE_PATH$|NODE_OPTIONS$|GH_TOKEN$|GITHUB_TOKEN$|IPT_GITHUB_TOKEN$|IPT_RECOVERY_ADMIN_ACTORS$|NODE_AUTH_TOKEN$|VIBEZ_DRIVER_TEST_)/i.test(key)) delete env[key];
   }
   Object.assign(env, { VIBEZ_CONFORMANCE_INPUTS: "inputs.json", npm_execpath: npm, GIT_CONFIG_NOSYSTEM: "1",
     GIT_CONFIG_GLOBAL: gitConfig, GIT_TERMINAL_PROMPT: "0", NPM_CONFIG_USERCONFIG: npmConfig,
