@@ -18,7 +18,7 @@ import { inventory, optionalStat, type HistoryFile } from "./snapshot.js";
 
 const priorPackage = "0.1.0-mig005.1";
 const previousPackage = "0.1.0-mig007.0";
-const currentPackage = "0.1.0-mig006.0";
+const driverReaderPackages = ["0.1.0-mig006.0", "0.1.0-rc.1"];
 const taskPattern = /^[A-Z]+-[0-9]{3,}$/;
 const commitPattern = /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/;
 const settled = new Set(["PLANNED", "READY", "DONE"]);
@@ -29,7 +29,7 @@ export const historyCompatibility = Object.freeze({
   version: 1,
   apiVersion: "1.0.0",
   cliEnvelopeVersion: "1.0.0",
-  readerPackages: Object.freeze([priorPackage, previousPackage, currentPackage]),
+  readerPackages: Object.freeze([priorPackage, previousPackage, ...driverReaderPackages]),
   evidenceVersions: EVIDENCE_STORE_SUPPORTED_SCHEMAS,
   lifecycleVersions: Object.freeze(["1.0.0", "1.1.0"]),
   assignmentVersions: Object.freeze(["1.0.0", "1.1.0"]),
@@ -366,7 +366,7 @@ export async function checkProjectUpgrade(request: UpgradeCheckRequest) {
     const snapshot = inventory(history.root, history.layout);
     const observations = scanObservations(history, snapshot.files);
     for (const code of observations.findings) findings.add(code);
-    if (target !== currentPackage && snapshot.files.some(file => file.area === "driver" || file.area === "operations" && file.name.startsWith("driver/"))) {
+    if ((target === null || !driverReaderPackages.includes(target)) && snapshot.files.some(file => file.area === "driver" || file.area === "operations" && file.name.startsWith("driver/"))) {
       findings.add("PRIOR_READER_DOES_NOT_SUPPORT_DRIVER_HISTORY");
     }
     for (const id of history.registry.keys()) {
