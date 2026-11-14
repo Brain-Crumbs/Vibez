@@ -4,7 +4,6 @@ import {cpSync,mkdirSync,mkdtempSync,readFileSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
-const {runCli} = await import(process.env.VIBEZ_DRIVER_TEST_CLI_EXPORT ?? '../../dist/public/cli.js');
 export const sourceRoot=fileURLToPath(new URL('../..',import.meta.url));
 export const git=(root,...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 export const put=(root,path,bytes)=>{mkdirSync(join(root,path,'..'),{recursive:true});writeFileSync(join(root,path),typeof bytes==='string'?bytes:JSON.stringify(bytes,null,2));};
@@ -26,7 +25,7 @@ export function fixture(){
  git(root,'config',`url.${pathToFileURL(bare).href}.insteadOf`,'https://github.com/fixture-owner/fixture-repo.git');
  const { remote, fetchImpl } = githubFixture(root);
  const runtime={fetchImpl,token:'fixture-not-secret'};
- const cli=async(...args)=>{const result=await runCli(['--json','orchestrate',...args],{repositoryRoot:root,driverRuntime:runtime});return {result,envelope:JSON.parse(result.stdout)};};
+ const cli=async(...args)=>{const {runCli}=await import(process.env.VIBEZ_DRIVER_TEST_CLI_EXPORT ?? '../../dist/public/cli.js');const result=await runCli(['--json','orchestrate',...args],{repositoryRoot:root,driverRuntime:runtime});return {result,envelope:JSON.parse(result.stdout)};};
  const init=()=>cli('init','--repository','fixture-owner/fixture-repo','--base','main','--checks','Build and test (Node),Schema and contract validation (Python)','--actor-prefix','operator','--developer-tools','read_file,write_file,git_commit','--review-tools','read_file,run_test','--enforce-policies','externally');
  return {root,remote,runtime,cli,init};
 }

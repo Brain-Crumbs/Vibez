@@ -9,10 +9,21 @@ import { get, git, githubFixture, markdown, pause, put, response } from "./helpe
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-const tsc = join(root, "node_modules/typescript/bin/tsc");
+const conformance = process.env.VIBEZ_CONFORMANCE_INPUTS
+  ? get(root, process.env.VIBEZ_CONFORMANCE_INPUTS) : undefined;
+const manifest = conformance?.manifest ?? get(root, "package.json");
+const tsc = conformance?.tsc ?? join(root, "node_modules/typescript/bin/tsc");
 const npm = process.env.npm_execpath;
 const run = (file, args, cwd) => execFileSync(file, args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+const pack = (runNpm, temp) => conformance
+  ? { receipt: conformance.receipt, archive: conformance.archive, paths: conformance.packagePaths }
+  : (() => {
+      const [receipt] = JSON.parse(runNpm(["pack", "--ignore-scripts", "--json", "--pack-destination", temp], root));
+      return { receipt, archive: join(temp, receipt.filename), paths: receipt.files.map(file => file.path) };
+    })();
+const installedDocs = ["docs/INSTALL.md", "docs/PUBLIC_API.md", "docs/CLI.md", "docs/COMPATIBILITY.md",
+  "docs/CONFIGURED_RUNTIME.md", "docs/UNATTENDED_HOST.md", "docs/SUPPORT.md", "docs/WORKFLOW_DRIVER.md",
+  "docs/MIGRATION_CANDIDATE.md", "CHANGELOG.md"];
 
 const publicApi = {
   "": "createProjectServices",
@@ -47,22 +58,20 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
   const temp = mkdtempSync(join(tmpdir(), "vibez pack "));
   t.after(() => rmSync(temp, { recursive: true, force: true }));
   const runNpm = (args, cwd) => run(process.execPath, [npm, "--cache", join(temp, "npm-cache"), ...args], cwd);
-  const [pack] = JSON.parse(runNpm(["pack", "--ignore-scripts", "--json", "--pack-destination", temp], root));
-  assert.equal(pack.name, manifest.name);
-  assert.equal(pack.version, manifest.version);
-  const archive = join(temp, pack.filename);
-  assert.equal(pack.integrity, "sha512-" + createHash("sha512").update(readFileSync(archive)).digest("base64"));
+  const { receipt: packReceipt, archive, paths: packedPaths } = pack(runNpm, temp);
+  assert.equal(packReceipt.name ?? packReceipt.package, manifest.name);
+  assert.equal(packReceipt.version, manifest.version);
+  assert.equal(packReceipt.integrity, "sha512-" + createHash("sha512").update(readFileSync(archive)).digest("base64"));
 
-  const paths = new Set(pack.files.map(file => file.path));
-  const assets = [
+  const paths = new Set(packedPaths);
+  const assets = conformance?.assets ?? [
     ...readdirSync(join(root, "schemas/v1")).map(name => "schemas/v1/" + name),
     ...readdirSync(join(root, "contracts"), { withFileTypes: true })
       .filter(entry => entry.isDirectory() && entry.name !== "examples")
       .map(entry => "contracts/" + entry.name + "/module-contract.json"),
     "docs/specs/project-config.schema.json", "examples/alpha/vibez.config.json", "examples/beta/vibez.config.json",
   ];
-  const included = new Set([...assets, "package.json", "NOTICE.md", "README.md", "docs/INSTALL.md", "docs/PUBLIC_API.md",
-    "docs/CLI.md", "docs/COMPATIBILITY.md", "docs/CONFIGURED_RUNTIME.md", "docs/UNATTENDED_HOST.md", "docs/SUPPORT.md", "docs/WORKFLOW_DRIVER.md"]);
+  const included = new Set([...assets, "package.json", "NOTICE.md", "README.md", ...installedDocs]);
   for (const path of included) assert.ok(paths.has(path), path);
   for (const path of paths) assert.ok(included.has(path) || /^dist\/.+\.(js|d\.ts)$/.test(path), "Unexpected packaged file " + path);
   assert.deepEqual(Object.keys(manifest.exports), Object.keys(publicApi).map(path => "." + path));
@@ -86,7 +95,7 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
   assert.ok(!existsSync(join(project, "node_modules/typescript")));
   for (const event of ["preinstall", "install", "postinstall"]) assert.equal(installedManifest.scripts?.[event], undefined);
   assert.equal(JSON.parse(readFileSync(join(project, "package-lock.json"), "utf8"))
-    .packages["node_modules/" + manifest.name].integrity, pack.integrity);
+    .packages["node_modules/" + manifest.name].integrity, packReceipt.integrity);
 
   const imports = Object.entries(publicApi).map(([path, name]) =>
     'import { ' + name + ' } from "' + manifest.name + path + '";').join("\n");
@@ -104,7 +113,7 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
   const module = join(project, "consumer.mjs");
   run(process.execPath, [join(project, "consumer.js")], unrelated);
   writeFileSync(module, readFileSync(join(root, "tests/helpers/packed-consumer.mjs"), "utf8"));
-  run(process.execPath, [module, pack.version], unrelated);
+  run(process.execPath, [module, packReceipt.version], unrelated);
 
   const localBin = join(project, "node_modules", ".bin");
   for (const alias of ["agent", "vibez"]) {
@@ -114,7 +123,7 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
     const version = invokeAlias(localBin, alias, ["--json", "--version"], unrelated);
     assert.equal(version.status, 0, version.error?.message || version.stderr);
     assert.deepEqual(JSON.parse(version.stdout), { schemaVersion: "1.0.0", ok: true, command: "version",
-      data: { cliVersion: pack.version, outputSchemaVersion: "1.0.0" }, error: null });
+      data: { cliVersion: packReceipt.version, outputSchemaVersion: "1.0.0" }, error: null });
     const reserved = invokeAlias(localBin, alias, ["--json", "review"], unrelated);
     assert.equal(reserved.status, 3, reserved.error?.message || reserved.stderr);
     assert.equal(JSON.parse(reserved.stdout).error.code, "COMMAND_NOT_IMPLEMENTED");
@@ -124,7 +133,7 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
   runNpm(["install", "--global", "--prefix", prefix, "--offline", "--no-audit", "--no-fund", archive], unrelated);
   const global = invokeAlias(process.platform === "win32" ? prefix : join(prefix, "bin"), "vibez", ["--json", "--version"], unrelated);
   assert.equal(global.status, 0, global.error?.message || global.stderr);
-  assert.equal(JSON.parse(global.stdout).data.cliVersion, pack.version);
+  assert.equal(JSON.parse(global.stdout).data.cliVersion, packReceipt.version);
   assert.deepEqual(readdirSync(unrelated), []);
 });
 
@@ -133,13 +142,13 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   const temp = mkdtempSync(join(tmpdir(), "vibez driver package "));
   t.after(() => rmSync(temp, { recursive: true, force: true }));
   const runNpm = (args, cwd) => run(process.execPath, [npm, "--cache", join(temp, "npm-cache"), ...args], cwd);
-  const [pack] = JSON.parse(runNpm(["pack", "--ignore-scripts", "--json", "--pack-destination", temp], root));
+  const { archive } = pack(runNpm, temp);
   const tools = join(temp, "tools");
   const project = join(temp, "consumer with spaces");
   mkdirSync(tools);
   mkdirSync(project);
   put(tools, "package.json", { private: true });
-  runNpm(["install", "--offline", "--no-audit", "--no-fund", join(temp, pack.filename)], tools);
+  runNpm(["install", "--offline", "--no-audit", "--no-fund", archive], tools);
   const executable = join(tools, "node_modules", manifest.name, "dist", "cli", "cli.js");
   const call = (args, input) => {
     const result = spawnSync(process.execPath, [executable, "--json", "orchestrate", ...args,
@@ -148,7 +157,7 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
     assert.equal(result.status, 0, result.stdout || result.stderr || result.error?.message);
     return JSON.parse(result.stdout).data;
   };
-  const config = get(root, "examples/alpha/vibez.config.json");
+  const config = get(tools, `node_modules/${manifest.name}/examples/alpha/vibez.config.json`);
   config.project.repository = "fixture-owner/fixture-repo";
   config.policy.remote = "upstream";
   config.policy.integrationTarget = "trunk";
@@ -211,15 +220,38 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   call(["watch", intake.sessionId, "--once"]);
   await pause();
   let stage = call(["watch", intake.sessionId, "--once"]).session;
+  assert.equal(get(project, `.vibez/outbox/${stage.pendingPacket}.handoff.json`).packet.role, "QA");
+  const rejected = get(project, `.vibez/outbox/${stage.pendingPacket}.handoff.json`).packet;
+  const rejectedPath = `.vibez/inbox/responses/${rejected.packetId}.json`;
+  put(project, rejectedPath, response(rejected, "FAIL"));
+  call(["watch", intake.sessionId, "--once"]);
+  await pause();
+  call(["watch", intake.sessionId, "--once"]);
+  assert.equal(get(project, ".vibez/state/lifecycle/DEMO-001.lifecycle.json").currentState, "REWORK_REQUIRED");
+  const rejectedResult = readFileSync(join(project, config.paths.exchange, rejected.packetId + ".result.json"));
+  const successor = call(["rework", intake.sessionId]);
+  assert.equal(successor.predecessor, intake.sessionId);
+  const sessionId = successor.sessionId;
+  const rework = call(["run", sessionId]).session;
+  const newDeveloper = get(project, `.vibez/outbox/${rework.pendingPacket}.handoff.json`).packet;
+  assert.equal(newDeveloper.role, "Developer");
+  assert.notEqual(newDeveloper.runId, handoff.packet.runId);
+  put(project, "marker.txt", "done");
+  git(project, "commit", "--allow-empty", "-m", "Address the review on a fresh revision");
+  put(project, `.vibez/inbox/responses/${newDeveloper.packetId}.json`, response(newDeveloper));
+  call(["watch", sessionId, "--once"]);
+  await pause();
+  stage = call(["watch", sessionId, "--once"]).session;
+  assert.deepEqual(readFileSync(join(project, config.paths.exchange, rejected.packetId + ".result.json")), rejectedResult);
   for (const role of ["QA", "Architect", "UAT/Product"]) {
-    assert.deepEqual(stage.request, first.request);
+    assert.deepEqual(stage.request, rework.request);
     assert.ok(stage.pendingPacket, JSON.stringify(stage));
     const packet = get(project, `.vibez/outbox/${stage.pendingPacket}.handoff.json`).packet;
     assert.equal(packet.role, role);
     put(project, `.vibez/inbox/responses/${packet.packetId}.json`, response(packet));
-    call(["watch", intake.sessionId, "--once"]);
+    call(["watch", sessionId, "--once"]);
     await pause();
-    stage = call(["watch", intake.sessionId, "--once"]).session;
+    stage = call(["watch", sessionId, "--once"]).session;
   }
   assert.equal(get(project, ".vibez/state/lifecycle/DEMO-001.lifecycle.json").currentState, "MERGE_READY");
   const bare = join(temp, "fixture bare.git");
@@ -266,7 +298,7 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   };
   const runHost = async operation => {
     const graph = await api.createProjectServices({ projectRoot: project, configPath: "workflow.json", verifyLocalStorage: () => true }, host);
-    const result = await graph.cli(["--json", "orchestrate", operation, intake.sessionId], undefined, {
+    const result = await graph.cli(["--json", "orchestrate", operation, sessionId], undefined, {
       token, fetchImpl, mergeAuthorization,
       remoteHead: (url, ref) => {
         assert.equal(url, githubUrl);
@@ -288,6 +320,11 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   const ready = await runHost("ready");
   assert.equal(ready.ok, true, JSON.stringify(ready));
   assert.equal(remote.pr.draft, false);
+  const actualHead = git(project, "rev-parse", "HEAD");
+  remote.pr.originalHead = "a".repeat(40);
+  assert.notEqual((await runHost("resume")).data?.session.status, "DONE");
+  assert.equal(remote.merges, 0);
+  delete remote.pr.originalHead;
   remote.ci = "pending";
   assert.notEqual((await runHost("resume")).data.session.status, "DONE");
   assert.equal(remote.merges, 0);
@@ -297,8 +334,7 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   remote.ci = "success";
   assert.notEqual((await runHost("resume")).data.session.status, "DONE");
   assert.equal(remote.merges, 0);
-  const revision = git(project, "rev-parse", "HEAD");
-  mergeAuthorization = `${repository}#1@${revision}`;
+  mergeAuthorization = `${repository}#1@${actualHead}`;
   remote.loseMergeResponse = true;
   const firstMerge = await runHost("resume");
   assert.ok(firstMerge.ok, JSON.stringify(firstMerge));
@@ -315,7 +351,7 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   assert.equal((await runHost("resume")).data?.session.status, "DONE");
   assert.equal(remote.merges, 1);
   assert.ok(!existsSync(join(project, ".agent")));
-  if (process.env.VIBEZ_TEST_INHERITED_PACKED === "1") {
+  if (!conformance && process.env.VIBEZ_TEST_INHERITED_PACKED === "1") {
     const publicCli = join(tools, "public-cli.mjs");
     put(tools, "public-cli.mjs", `export { runCli } from "${manifest.name}/cli";`);
     const inherited = spawnSync(process.execPath, ["--test", join(root, "tests", "workflow-driver.test.mjs")], {
@@ -325,4 +361,124 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
     });
     assert.equal(inherited.status, 0, inherited.stdout + inherited.stderr);
   }
+});
+test("non-npm consumer uses only its configured validator; same task ID stays isolated", async t => {
+  const temp = mkdtempSync(join(tmpdir(), "vibez non-npm "));
+  t.after(() => rmSync(temp, { recursive: true, force: true }));
+  const runNpm = (args, cwd) => run(process.execPath, [npm, "--cache", join(temp, "npm-cache"), ...args], cwd);
+  const { archive } = pack(runNpm, temp);
+  const tools = join(temp, "independent host");
+  const projects = ["alpha", "beta"].map(name => join(temp, name + " checkout"));
+  mkdirSync(tools);
+  put(tools, "package.json", { private: true });
+  runNpm(["install", "--offline", "--no-audit", "--no-fund", "--engine-strict", archive], tools);
+  put(tools, "api.mjs", `
+    export { createProjectServices, doctorProject } from "@brain-crumbs/vibez";
+    export { checkProjectUpgrade, readProjectAudit } from "@brain-crumbs/vibez/diagnostics";
+  `);
+  const api = await import(pathToFileURL(join(tools, "api.mjs")).href);
+  const task = "DEMO-001";
+  const contract = "control-plane.cli-shell";
+  const [alpha, beta] = projects.map((project, index) => {
+    const config = get(tools, `node_modules/${manifest.name}/examples/beta/vibez.config.json`);
+    const name = index === 0 ? "alpha" : "beta";
+    const repository = `example/${name}`;
+    config.project = { id: name, repository };
+    config.providers.credentials = [];
+    config.policy.reviewRoles = index === 0 ? ["UAT/Product"] : ["QA", "Architect"];
+    put(project, "workflow.json", config);
+    put(project, "planning/contracts/.gitkeep", "");
+    put(project, "planning/policy.json", {});
+    put(project, "planning/tasks/demo.task.json", {
+      schemaId: "ipt.task", schemaVersion: "1.0.0", taskId: task, title: "Write a marker",
+      objective: "Produce the checkout-specific marker.", inScope: ["marker.txt"], outOfScope: ["Other files"],
+      dependencies: [], canonicalBranch: "feature/demo-001", allowedPaths: ["marker.txt"],
+      requirements: [task + "-R1"], acceptanceCriteria: [`Marker says ${name}.`],
+      validationPlan: ["Run the configured Python validator"], affectedContracts: [contract],
+      requiredReviewRoles: ["Developer", "MergeController"],
+    });
+    put(project, "planning/requirements/demo.json", {
+      schemaId: "ipt.requirement", schemaVersion: "1.0.0", requirementId: task + "-R1", taskId: task,
+      statement: `Marker belongs only to ${name}.`, acceptanceCriteria: [`Marker says ${name}.`], sourceRefs: ["fixture"],
+    });
+    put(project, "verify.py", `from pathlib import Path\nassert Path("marker.txt").read_text() == "${name}"\nprint("validator-${name}")\n`);
+    put(project, ".gitignore", ".vibez/\n");
+    git(project, "init", "-b", "main");
+    git(project, "config", "user.name", "Conformance fixture");
+    git(project, "config", "user.email", "fixture@example.invalid");
+    git(project, "remote", "add", "origin", `https://github.com/${repository}.git`);
+    git(project, "add", ".");
+    git(project, "commit", "-m", "Configure project inputs");
+    const unavailable = () => { throw new Error("Diagnostic or local operation reached GitHub"); };
+    const location = { projectRoot: project, configPath: "workflow.json", verifyLocalStorage: () => true };
+    const host = {
+      identity: "offline-conformance@1",
+      executors: new Map([["python-test", {
+        command: process.env.VIBEZ_TEST_PYTHON ?? "python", args: ["verify.py"], category: "test",
+      }]]),
+      integration: {
+        repository,
+        publication: { findOpenPullRequests: unavailable, createPullRequest: unavailable, updatePullRequest: unavailable },
+        pullRequests: { findPullRequestsByHead: unavailable },
+        ci: { listCheckRuns: unavailable },
+        merge: { findPullRequestsByHead: unavailable, getPullRequest: unavailable, mergePullRequest: unavailable },
+      },
+    };
+    return { project, name, location, host };
+  });
+  const connect = async fixture => {
+    const graph = await api.createProjectServices(fixture.location, fixture.host);
+    return async (...args) => {
+      const result = await graph.cli(["--json", ...args]);
+      assert.equal(result.exitCode, 0, result.stdout || result.stderr);
+      return JSON.parse(result.stdout).data;
+    };
+  };
+
+  assert.equal((await api.doctorProject(alpha.location, alpha.host)).ok, true);
+  assert.equal((await api.doctorProject(beta.location, beta.host)).ok, true);
+  const a = await connect(alpha);
+  const b = await connect(beta);
+  assert.equal((await a("next")).taskId, task);
+  assert.equal((await b("next")).taskId, task);
+  assert.ok(!existsSync(join(beta.project, ".vibez")));
+  await a("orchestrate", "init", "--actor-prefix", "alpha", "--developer-tools", "read_file,write_file,git_commit",
+    "--review-tools", "read_file,run_test", "--enforce-policies", "externally");
+  const selected = await a("orchestrate", "select", task, "--issue-number", "101");
+  const started = (await a("orchestrate", "run", selected.sessionId)).session;
+  const outbound = (project, session) => get(project, `.vibez/outbox/${session.pendingPacket}.handoff.json`).packet;
+  const developer = outbound(alpha.project, started);
+  assert.equal(developer.role, "Developer");
+  assert.match(JSON.stringify(developer.contextPackage), /Marker belongs only to alpha/);
+  assert.doesNotMatch(JSON.stringify(developer.contextPackage), /Marker belongs only to beta/);
+  assert.equal((await (await connect(alpha))("orchestrate", "resume", selected.sessionId)).session.pendingPacket, started.pendingPacket);
+  put(alpha.project, "marker.txt", "alpha");
+  git(alpha.project, "add", "marker.txt");
+  git(alpha.project, "commit", "-m", "Deliver the configured marker");
+  const inbox = ".vibez/inbox/responses/response.json";
+  const scan = async () => {
+    const cli = await connect(alpha);
+    await cli("orchestrate", "watch", selected.sessionId, "--once");
+    await pause();
+    return (await cli("orchestrate", "watch", selected.sessionId, "--once")).session;
+  };
+  const answer = response(developer);
+  put(alpha.project, inbox, { ...answer, revisionIdentity: "wrong-revision" });
+  assert.equal((await scan()).pendingPacket, developer.packetId);
+  put(alpha.project, inbox, answer);
+  const review = outbound(alpha.project, await scan());
+  assert.equal(review.role, "UAT/Product");
+  put(alpha.project, inbox, response(review));
+  await scan();
+  const state = get(alpha.project, ".vibez/state/lifecycle/DEMO-001.lifecycle.json");
+  assert.equal(state.currentState, "MERGE_READY");
+  assert.equal((await a("recovery", "check")).consistent, true);
+  const audit = await api.readProjectAudit({ repositoryRoot: alpha.project,
+    config: { configPath: "workflow.json", verifyLocalStorage: () => true } }, task);
+  assert.match(JSON.stringify(audit), /python-test/);
+  assert.doesNotMatch(JSON.stringify(audit), /repository:build|repository:test/);
+  assert.equal((await b("next")).state, "PLANNED");
+  assert.ok(!existsSync(join(beta.project, ".vibez")));
+  assert.ok(!existsSync(join(beta.project, "marker.txt")));
+  assert.ok(!existsSync(join(alpha.project, "package.json")));
 });
