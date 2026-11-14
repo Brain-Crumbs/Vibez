@@ -29,9 +29,26 @@ tools directory. Commit the consumer's exact dependency and integrity lock
 once adoption is authorized. Check `vibez --json --version` against the receipt.
 
 Use [configured runtime](CONFIGURED_RUNTIME.md) to commit the project profile
-and provide the required validator executors. Use the [manual driver guide](WORKFLOW_DRIVER.md)
-for setup and handoffs. Run doctor, status, explain and recovery check before
-attempting recovery. Audit records identify the original revision and references.
+and construct the host with the selected checkout and required validators.
+Call `doctorProject(location, host)` before creating services. For a configured
+project, run the following through `(await createProjectServices(location, host)).cli(args)`,
+printing the returned output and checking the exit code:
+
+```js
+for (const args of [
+  ["--json", "status"],
+  ["--json", "explain", "task", taskId],
+  ["--json", "recovery", "check"],
+  ["--json", "audit", taskId],
+]) {
+  const result = await services.cli(args);
+  process.stdout.write(result.stdout);
+  if (result.exitCode !== 0) throw new Error(result.stderr || "Vibez command failed");
+}
+```
+
+Use the [manual driver guide](WORKFLOW_DRIVER.md) for setup and handoffs.
+Audit records identify the original revision and references.
 
 To roll back, follow the [stopped-writer procedure](COMPATIBILITY.md) and
 restore the prior verified tarball, matching lockfile and configuration.

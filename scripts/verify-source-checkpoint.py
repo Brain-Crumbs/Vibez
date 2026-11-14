@@ -6,6 +6,20 @@ from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent
+DESTINATION_ADAPTATIONS = {
+    "src/uat-review/uat-review.ts": (
+        "45937a05ee6485b412d448969fbeec2e2dc4e665",
+        "Portable project composition and the later native evidence writer preserve the UAT bridge.",
+    ),
+    "package.json": (
+        "5ed64a046cecbae67357349c4154dee53c263082",
+        "MIG-008 candidate identity, package docs and isolated conformance entry point.",
+    ),
+    "tests/helpers/driver-fixture.mjs": (
+        "eb57ce2b50153b8e4f73c6f662fa3927ef462e7c",
+        "Defer the source runtime import so isolated consumers load the tarball.",
+    ),
+}
 
 
 def git(root, *args):
@@ -54,7 +68,10 @@ def main():
         git(ROOT, "merge-base", "--is-ancestor", destination, "HEAD")
         verify_paths(ROOT, destination, delta["destinationPaths"])
         for row in delta["destinationPaths"]:
-            git(ROOT, "cat-file", "-e", f"HEAD:{row['path']}")
+            path = row["path"]
+            expected = DESTINATION_ADAPTATIONS.get(path, (row["blob"], ""))[0]
+            observed = git(ROOT, "ls-tree", "HEAD", "--", path).decode().strip()
+            require(observed == f"100644 blob {expected}\t{path}", f"Unreviewed destination drift: {path}")
     entries = driver["paths"]
     require({row["path"] for row in entries} == {row["path"] for row in boot["sourcePaths"]},
             "BOOT-037 import receipt and source ledger disagree")
@@ -68,6 +85,7 @@ def main():
         "destination": git(ROOT, "rev-parse", "HEAD").decode().strip(),
         "verifiedUatPaths": len(uat["sourcePaths"]), "verifiedDriverPaths": len(entries),
         "mappedDriverPaths": len(mapped), "excludedSourcePolicy": sorted(exclusions),
+        "reviewedAdaptations": {path: details[1] for path, details in DESTINATION_ADAPTATIONS.items()},
     }, indent=2))
 
 

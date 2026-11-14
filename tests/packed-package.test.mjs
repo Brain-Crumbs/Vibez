@@ -158,6 +158,7 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
     return JSON.parse(result.stdout).data;
   };
   const config = get(tools, `node_modules/${manifest.name}/examples/alpha/vibez.config.json`);
+  config.policy.reviewRoles = ["UAT/Product"];
   config.project.repository = "fixture-owner/fixture-repo";
   config.policy.remote = "upstream";
   config.policy.integrationTarget = "trunk";
@@ -169,6 +170,10 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   put(project, "work/requirements/marker.json", {
     schemaId: "ipt.requirement", schemaVersion: "1.0.0", requirementId: "DEMO-001-R1", taskId: "DEMO-001",
     statement: "Deliver the marker.", acceptanceCriteria: ["Marker has the expected text."], sourceRefs: ["fixture"],
+  });
+  put(project, "work/requirements/dependent.json", {
+    schemaId: "ipt.requirement", schemaVersion: "1.0.0", requirementId: "DEMO-002-R1", taskId: "DEMO-002",
+    statement: "Verify the predecessor marker.", acceptanceCriteria: ["Predecessor marker remains."], sourceRefs: ["fixture"],
   });
   put(project, "package.json", { private: true, scripts: { build: "node --check verify.mjs", test: "node verify.mjs" } });
   put(project, "verify.mjs", "import assert from 'node:assert/strict'; import { readFileSync } from 'node:fs'; assert.equal(readFileSync('marker.txt','utf8'), 'done');");
@@ -197,6 +202,10 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   assert.equal(replayed.sessionId, intake.sessionId);
   assert.deepEqual(get(project, sessionFile).request, interrupted.request);
   assert.equal(git(project, "rev-parse", "HEAD"), registration.commit);
+  const dependent = call(["prepare", "--stdin"], markdown("DEMO-002", ["DEMO-001"], []));
+  assert.ok(dependent.sessionId && dependent.diagnostics.length === 0, JSON.stringify(dependent));
+  assert.equal(call(["prepare", "--stdin"], markdown("DEMO-002", ["DEMO-001"], [])).sessionId, dependent.sessionId);
+  assert.equal(call(["next"]).taskId, "DEMO-001");
   const first = call(["run", intake.sessionId]).session;
   assert.ok(first.pendingPacket, first.diagnosticId ? get(project, `.vibez/outbox/${first.diagnosticId}.diagnostic.json`).message : JSON.stringify(first));
   const handoff = get(project, `.vibez/outbox/${first.pendingPacket}.handoff.json`);
@@ -321,6 +330,9 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   assert.equal(ready.ok, true, JSON.stringify(ready));
   assert.equal(remote.pr.draft, false);
   const actualHead = git(project, "rev-parse", "HEAD");
+  assert.notEqual((await runHost("resume")).data.session.status, "DONE");
+  assert.equal(remote.merges, 0, "Withheld merge authority must block the effect");
+  mergeAuthorization = `${repository}#1@${actualHead}`;
   remote.pr.originalHead = "a".repeat(40);
   assert.notEqual((await runHost("resume")).data?.session.status, "DONE");
   assert.equal(remote.merges, 0);
@@ -331,10 +343,10 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   remote.ci = "missing";
   assert.notEqual((await runHost("resume")).data.session.status, "DONE");
   assert.equal(remote.merges, 0);
-  remote.ci = "success";
+  remote.ci = "failure";
   assert.notEqual((await runHost("resume")).data.session.status, "DONE");
   assert.equal(remote.merges, 0);
-  mergeAuthorization = `${repository}#1@${actualHead}`;
+  remote.ci = "success";
   remote.loseMergeResponse = true;
   const firstMerge = await runHost("resume");
   assert.ok(firstMerge.ok, JSON.stringify(firstMerge));
@@ -350,6 +362,14 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   assert.equal(remote.merges, 1);
   assert.equal((await runHost("resume")).data?.session.status, "DONE");
   assert.equal(remote.merges, 1);
+  assert.equal(call(["next"]).taskId, "DEMO-002");
+  git(project, "switch", "trunk");
+  const dependentRun = call(["run", dependent.sessionId]).session;
+  assert.ok(dependentRun.pendingPacket, JSON.stringify(dependentRun));
+  const dependentPacket = get(project, `.vibez/outbox/${dependentRun.pendingPacket}.handoff.json`).packet;
+  assert.equal(dependentPacket.taskId, "DEMO-002");
+  assert.ok(dependentPacket.contextPackage.artifacts.some(item =>
+    item.kind === "contract" && item.sourcePath.startsWith("vibez-package:")));
   assert.ok(!existsSync(join(project, ".agent")));
   if (!conformance && process.env.VIBEZ_TEST_INHERITED_PACKED === "1") {
     const publicCli = join(tools, "public-cli.mjs");
@@ -379,6 +399,8 @@ test("non-npm consumer uses only its configured validator; same task ID stays is
   const api = await import(pathToFileURL(join(tools, "api.mjs")).href);
   const task = "DEMO-001";
   const contract = "control-plane.cli-shell";
+  const python = process.env.VIBEZ_TEST_PYTHON ||
+    run("python", ["-c", "import sys; print(sys.executable)"], tools).trim();
   const [alpha, beta] = projects.map((project, index) => {
     const config = get(tools, `node_modules/${manifest.name}/examples/beta/vibez.config.json`);
     const name = index === 0 ? "alpha" : "beta";
@@ -414,7 +436,7 @@ test("non-npm consumer uses only its configured validator; same task ID stays is
     const host = {
       identity: "offline-conformance@1",
       executors: new Map([["python-test", {
-        command: process.env.VIBEZ_TEST_PYTHON ?? "python", args: ["verify.py"], category: "test",
+        command: python, args: ["verify.py"], category: "test",
       }]]),
       integration: {
         repository,
@@ -435,12 +457,16 @@ test("non-npm consumer uses only its configured validator; same task ID stays is
     };
   };
 
-  assert.equal((await api.doctorProject(alpha.location, alpha.host)).ok, true);
-  assert.equal((await api.doctorProject(beta.location, beta.host)).ok, true);
-  const a = await connect(alpha);
+  for (const fixture of [alpha, beta]) {
+    const doctor = await api.doctorProject(fixture.location, fixture.host);
+    assert.ok(doctor.ok, doctor.message);
+  }
+  const a = async (...args) => (await connect(alpha))(...args);
   const b = await connect(beta);
   assert.equal((await a("next")).taskId, task);
   assert.equal((await b("next")).taskId, task);
+  assert.equal((await b("status")).progress.total, 1);
+  assert.equal((await b("explain", "task", task)).taskId, task);
   assert.ok(!existsSync(join(beta.project, ".vibez")));
   await a("orchestrate", "init", "--actor-prefix", "alpha", "--developer-tools", "read_file,write_file,git_commit",
     "--review-tools", "read_file,run_test", "--enforce-policies", "externally");
@@ -465,6 +491,8 @@ test("non-npm consumer uses only its configured validator; same task ID stays is
   const answer = response(developer);
   put(alpha.project, inbox, { ...answer, revisionIdentity: "wrong-revision" });
   assert.equal((await scan()).pendingPacket, developer.packetId);
+  put(alpha.project, inbox, { ...answer, role: "QA" });
+  assert.equal((await scan()).pendingPacket, developer.packetId);
   put(alpha.project, inbox, answer);
   const review = outbound(alpha.project, await scan());
   assert.equal(review.role, "UAT/Product");
@@ -472,9 +500,23 @@ test("non-npm consumer uses only its configured validator; same task ID stays is
   await scan();
   const state = get(alpha.project, ".vibez/state/lifecycle/DEMO-001.lifecycle.json");
   assert.equal(state.currentState, "MERGE_READY");
-  assert.equal((await a("recovery", "check")).consistent, true);
-  const audit = await api.readProjectAudit({ repositoryRoot: alpha.project,
-    config: { configPath: "workflow.json", verifyLocalStorage: () => true } }, task);
+  const recovery = await a("recovery", "check");
+  assert.equal(recovery.consistent, false);
+  assert.deepEqual(recovery.findings.map(finding => finding.code), ["ORCHESTRATION_RUN_INCOMPLETE"]);
+  const historyLocation = { repositoryRoot: alpha.project,
+    config: { configPath: "workflow.json", verifyLocalStorage: () => true } };
+  const audit = await api.readProjectAudit(historyLocation, task);
+  const preflight = targetPackageVersion => api.checkProjectUpgrade({ ...historyLocation, targetPackageVersion,
+    quiescence: { localWritersDrained: true, externalSessionsDrained: true } });
+  const current = await preflight(manifest.version);
+  const rollback = await preflight("0.1.0-mig006.0");
+  assert.equal(current.target, manifest.version);
+  assert.equal(current.compatible, false, "An active workflow cannot switch readers");
+  assert.ok(current.findings.includes("UNSETTLED_LIFECYCLE"), JSON.stringify(current));
+  assert.ok(!current.findings.includes("PRIOR_READER_DOES_NOT_SUPPORT_DRIVER_HISTORY"));
+  assert.equal(rollback.snapshotSha256, current.snapshotSha256);
+  assert.ok(!rollback.findings.includes("PRIOR_READER_DOES_NOT_SUPPORT_DRIVER_HISTORY"));
+  assert.ok((await preflight("99.0.0")).findings.includes("UNSUPPORTED_READER"));
   assert.match(JSON.stringify(audit), /python-test/);
   assert.doesNotMatch(JSON.stringify(audit), /repository:build|repository:test/);
   assert.equal((await b("next")).state, "PLANNED");

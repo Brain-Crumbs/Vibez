@@ -46,10 +46,21 @@ try {
     receipt, manifest, archive: packaged, packagePaths: paths.map(path => path.slice("package/".length)),
     assets, tsc: join(staging, "compiler", "bin", "tsc"),
   }));
-  const env = { ...process.env, VIBEZ_CONFORMANCE_INPUTS: "inputs.json", npm_execpath: npm };
-  for (const key of ["NODE_PATH", "NODE_OPTIONS", "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE",
-    "VIBEZ_DRIVER_TEST_BIN", "VIBEZ_DRIVER_TEST_CLI_EXPORT"]) delete env[key];
-  execFileSync(process.execPath, ["--test", "tests/packed-package.test.mjs"], { cwd: staging, stdio: "inherit", env });
+  const gitConfig = join(staging, "gitconfig");
+  const npmConfig = join(staging, "npmrc");
+  writeFileSync(gitConfig, "");
+  const npmGlobalConfig = join(staging, "npmrc-global");
+  writeFileSync(npmConfig, "");
+  writeFileSync(npmGlobalConfig, "");
+  const env = { ...process.env };
+  for (const key of Object.keys(env)) {
+    if (/^(GIT_|NPM_CONFIG_|NODE_PATH$|NODE_OPTIONS$|GH_TOKEN$|GITHUB_TOKEN$|NODE_AUTH_TOKEN$|VIBEZ_DRIVER_TEST_)/i.test(key)) delete env[key];
+  }
+  Object.assign(env, { VIBEZ_CONFORMANCE_INPUTS: "inputs.json", npm_execpath: npm, GIT_CONFIG_NOSYSTEM: "1",
+    GIT_CONFIG_GLOBAL: gitConfig, GIT_TERMINAL_PROMPT: "0", NPM_CONFIG_USERCONFIG: npmConfig,
+    NPM_CONFIG_GLOBALCONFIG: npmGlobalConfig });
+  execFileSync(process.execPath, ["--test", "tests/packed-package.test.mjs"],
+    { cwd: staging, stdio: "inherit", env, timeout: 15 * 60 * 1000 });
   console.log(JSON.stringify({ revision: receipt.sourceCommit, version: receipt.version,
     sha256: receipt.sha256, node: process.version, platform: process.platform, arch: process.arch }));
 } finally {
