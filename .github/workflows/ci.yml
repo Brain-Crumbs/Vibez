@@ -200,4 +200,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+      - name: Record Linux filesystem
+        if: runner.os == 'Linux'
+        run: findmnt -T "$RUNNER_TEMP" -no FSTYPE
+      - name: Record Windows filesystem
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Get-Volume -DriveLetter $env:RUNNER_TEMP.Substring(0, 1) | Select-Object FileSystemType,DriveType
       - run: npm run test:conformance -- "${{ runner.temp }}/vibez candidate"

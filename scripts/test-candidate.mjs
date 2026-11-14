@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { release, tmpdir, version } from "node:os";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -62,7 +62,8 @@ try {
   execFileSync(process.execPath, ["--test", "tests/packed-package.test.mjs"],
     { cwd: staging, stdio: "inherit", env, timeout: 15 * 60 * 1000 });
   console.log(JSON.stringify({ revision: receipt.sourceCommit, version: receipt.version,
-    sha256: receipt.sha256, node: process.version, platform: process.platform, arch: process.arch }));
+    sha256: receipt.sha256, node: process.version, platform: process.platform, osVersion: version(),
+    osRelease: release(), arch: process.arch }));
 } finally {
   rmSync(staging, { recursive: true, force: true });
 }

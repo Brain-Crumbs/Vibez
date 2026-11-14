@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, cpSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import test from "node:test";
@@ -394,7 +394,7 @@ test("non-npm consumer uses only its configured validator; same task ID stays is
   runNpm(["install", "--offline", "--no-audit", "--no-fund", "--engine-strict", archive], tools);
   put(tools, "api.mjs", `
     export { createProjectServices, doctorProject } from "@brain-crumbs/vibez";
-    export { checkProjectUpgrade, readProjectAudit } from "@brain-crumbs/vibez/diagnostics";
+    export { checkProjectUpgrade, readProjectAudit, verifyHistoryBackup } from "@brain-crumbs/vibez/diagnostics";
   `);
   const api = await import(pathToFileURL(join(tools, "api.mjs")).href);
   const task = "DEMO-001";
@@ -515,10 +515,25 @@ test("non-npm consumer uses only its configured validator; same task ID stays is
   assert.ok(current.findings.includes("UNSETTLED_LIFECYCLE"), JSON.stringify(current));
   assert.ok(!current.findings.includes("PRIOR_READER_DOES_NOT_SUPPORT_DRIVER_HISTORY"));
   assert.equal(rollback.snapshotSha256, current.snapshotSha256);
+  const config = get(alpha.project, "workflow.json");
+  const layout = Object.fromEntries(["state", "evidence", "exchange", "intake", "responses", "outbox", "operations"]
+    .map(name => [name, config.paths[name]]));
+  const backup = join(temp, "verified history backup");
+  const restore = join(temp, "staged history restore");
+  mkdirSync(backup);
+  for (const path of Object.values(layout)) {
+    const source = join(alpha.project, path);
+    if (existsSync(source)) cpSync(source, join(backup, path), { recursive: true });
+  }
+  cpSync(backup, restore, { recursive: true });
+  assert.equal(api.verifyHistoryBackup(backup, layout, current.snapshotSha256).matches, true);
+  assert.equal(api.verifyHistoryBackup(restore, layout, current.snapshotSha256).matches, true);
   assert.ok(!rollback.findings.includes("PRIOR_READER_DOES_NOT_SUPPORT_DRIVER_HISTORY"));
   assert.ok((await preflight("99.0.0")).findings.includes("UNSUPPORTED_READER"));
-  assert.match(JSON.stringify(audit), /python-test/);
-  assert.doesNotMatch(JSON.stringify(audit), /repository:build|repository:test/);
+  const validation = await a("explain", "validation", task);
+  assert.match(JSON.stringify(validation), /python-test/);
+  assert.doesNotMatch(JSON.stringify(validation), /repository:build|repository:test/);
+  assert.equal(audit.evidence.filter(record => record.schemaId === "ipt.validation-evidence").length, 1);
   assert.equal((await b("next")).state, "PLANNED");
   assert.ok(!existsSync(join(beta.project, ".vibez")));
   assert.ok(!existsSync(join(beta.project, "marker.txt")));

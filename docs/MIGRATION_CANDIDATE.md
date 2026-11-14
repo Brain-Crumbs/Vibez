@@ -16,7 +16,9 @@ the source checkout and runs with only the installed runtime on the module path.
 The CI matrix matches each local pack to a single reference digest and tests it under each
 combination of Node 22 and 24 with Ubuntu 24.04 and the Windows runner. The
 receipt identifies the tested revision and the tarball by SHA-256 and npm
-SHA-512 integrity. Windows and Ubuntu results apply to the tested x64 runners.
+SHA-512 integrity. Windows and Ubuntu results apply to the tested x64 runners. The hosted Windows
+runner is Windows Server 2025, and the local validation machine is Windows 10
+on NTFS. The original Windows 11 target remains unverified and unsupported.
 See [support](SUPPORT.md) for storage boundaries. macOS, ARM, network shares,
 cloud-sync directories and concurrent writers on separate hosts are unsupported.
 
