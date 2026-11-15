@@ -1,6 +1,6 @@
 {
   "name": "@brain-crumbs/vibez",
-  "version": "0.1.0-mig006.0",
+  "version": "0.1.0-rc.1",
   "private": true,
   "description": "Vibez workflow library and CLI (private candidate).",
   "type": "module",
@@ -17,6 +17,7 @@
     "test:adversarial": "npm run build && node --test tests/adversarial-workflow.test.mjs",
     "test:adversarial:mutations": "npm run build && node scripts/adversarial-mutations.mjs",
     "pack:candidate": "node scripts/pack-candidate.mjs",
+    "test:conformance": "node scripts/test-candidate.mjs",
     "test:package": "npm run build && node --test tests/packed-package.test.mjs"
   },
   "engines": {
@@ -127,7 +128,9 @@
     "docs/CONFIGURED_RUNTIME.md",
     "docs/UNATTENDED_HOST.md",
     "docs/WORKFLOW_DRIVER.md",
-    "docs/SUPPORT.md"
+    "docs/SUPPORT.md",
+    "docs/MIGRATION_CANDIDATE.md",
+    "CHANGELOG.md"
   ],
   "license": "UNLICENSED"
 }

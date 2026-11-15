@@ -40,7 +40,7 @@ test("CI workflow pins actions to exact major versions, not floating refs", () =
   for (const use of actionUses) {
     assert.match(
       use,
-      /^actions\/(checkout|setup-node|setup-python)@v\d+$/,
+      /^actions\/(checkout|setup-node|setup-python|upload-artifact|download-artifact)@v\d+$/,
       `${use} must be pinned to an exact major-version tag`,
     );
   }
@@ -52,7 +52,8 @@ test("CI workflow pins actions to exact major versions, not floating refs", () =
 // and a future merge-readiness reader both mean by "this PR".
 test("all jobs check out the PR's actual head SHA, not the default pull_request merge-commit ref", () => {
   const checkoutBlocks = [...workflowText.matchAll(/uses: actions\/checkout@v4\n(?:.*\n)*?(?=\n\s*- name:|\n {2}\S|$)/g)];
-  assert.equal(checkoutBlocks.length, 3, "expected exactly one Vibez checkout step per job");
+  const jobs = [...workflowText.split("\njobs:\n")[1].matchAll(/^ {2}[a-z-]+:$/gm)];
+  assert.equal(checkoutBlocks.length, jobs.length, "expected exactly one Vibez checkout step per job");
   for (const [block] of checkoutBlocks) {
     assert.match(block, /ref: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/);
     assert.doesNotMatch(block, /repository:/);

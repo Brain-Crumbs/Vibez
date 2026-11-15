@@ -179,7 +179,7 @@ test("unsupported evidence blocks legacy writers and a changed receipted record 
   assert.equal(writer.record({ ...validation, revisionIdentity: record.history[0].revisionIdentity }).ok, true);
   const audit = await readProjectAudit(location, taskId);
   const receipted = audit.evidence.find(record => record.schemaId === "ipt.validation-evidence" && record.sequence === 2);
-  assert.equal(receipted.engine.packageVersion, newPackage);
+  assert.equal(receipted.engine.packageVersion, JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version);
   const lineage = validation.validatorId;
   const evidencePath = join(root, layout.state, "evidence", `${taskId}_003a_003avalidator_003a_003a${lineage}`, "0000002.json");
   const data = JSON.parse(readFileSync(evidencePath, "utf8"));

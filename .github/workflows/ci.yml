@@ -141,3 +141,70 @@ jobs:
           python schemas/validate_fixtures.py
           python schemas/validate_repository_contracts.py
           python scripts/seed_export.py
+
+  installed-candidate:
+    name: Pack exact candidate and record digests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run pack:candidate -- "${{ runner.temp }}/vibez candidate"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vibez-candidate-receipt-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/vibez candidate/candidate.json
+          if-no-files-found: error
+
+  installed-consumer:
+    name: Installed consumer (${{ matrix.os }}, Node ${{ matrix.node }})
+    needs: installed-candidate
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+        node: ["22", "24"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run pack:candidate -- "${{ runner.temp }}/vibez candidate"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v4
+        with:
+          name: vibez-candidate-receipt-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/reference receipt
+      - name: Verify reproducible candidate bytes
+        run: >-
+          node -e "const fs = require('node:fs');
+          const [first, second] = process.argv.slice(1).map(path => JSON.parse(fs.readFileSync(path)));
+          for (const key of ['sourceCommit', 'package', 'version', 'sha256', 'integrity'])
+          require('node:assert/strict').equal(first[key], second[key], key)"
+          "${{ runner.temp }}/vibez candidate/candidate.json"
+          "${{ runner.temp }}/reference receipt/candidate.json"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Record Linux filesystem
+        if: runner.os == 'Linux'
+        run: findmnt -T "$RUNNER_TEMP" -no FSTYPE
+      - name: Record Windows filesystem
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Get-Volume -DriveLetter $env:RUNNER_TEMP.Substring(0, 1) | Select-Object FileSystemType,DriveType
+      - run: npm run test:conformance -- "${{ runner.temp }}/vibez candidate"

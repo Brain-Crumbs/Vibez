@@ -1,17 +1,18 @@
 # Distribution and support decisions
 
-This is a design decision register. A decision marked unresolved is a release
-blocker, not permission to guess. The migration task can be accepted with these
-explicit blockers under AC-05; MIG-003/005/008 must enforce the relevant gate.
+This register records the approved distribution and support boundary. The
+[owner decision](https://github.com/Brain-Crumbs/Vibez/pull/23#issuecomment-6902648199) on 2026-11-15 confirms the package identity and complete-payload
+distribution rights, selects GitHub Releases, and limits support to verified
+platforms. Publication and acceptance still require exact-artifact evidence.
 
 | Decision | Disposition | Accountable owner and resolution criterion |
 | --- | --- | --- |
 | Repository | Brain-Crumbs/Vibez, public, accepted | Owner selected destination; MIG-003 verifies rights before copying source |
-| Package | Private candidate uses provisional `@brain-crumbs/vibez`, single ESM package, no CJS guarantee | Brain-Crumbs confirms scope/name control and collision check before approving a distributed artifact identity. The public registry returned no published package for that name during MIG-005; scope control remains unresolved |
-| Channel | Immutable versioned tarball plus SHA-256 first; no npm publication | Brain-Crumbs approves actual release location/access and immutability policy before MIG-008; public npm requires a later explicit decision |
-| Source/license rights | Scoped owner authorization for the MIG-003 source snapshot | [Decision and audit](https://github.com/Brain-Crumbs/Vibez/issues/3#issuecomment-6747942125). MIG-003 verifies each included path against the exact snapshot and records any required notices or exclusions before copying |
-| Runtime | Target Node 22 and 24 LTS, ESM, npm lockfile | MIG-005 establishes engines/package semantics; MIG-008 passes both majors. Historical Node 20 build remains a compatibility probe, not a security/support promise |
-| OS | Windows 11 NTFS; Ubuntu 24.04 local ext4; x64 baseline | MIG-008 installed matrix must pass; macOS/ARM unclaimed until independently tested |
+| Package | `@brain-crumbs/vibez`, single ESM package, no CJS guarantee | Owner confirmed identity control. `private: true` prevents npm publication; it does not prohibit the approved GitHub tarball channel |
+| Channel | Public GitHub Releases in Brain-Crumbs/Vibez; immutable versioned tarball, receipt and SHA-256; no npm publication | Enable GitHub release immutability before publishing. Preserve original assets/tags and issue a new version for corrections. A prerelease is the MIG-009 adoption candidate |
+| Source/license rights | Owner-authorized source export and complete MIG-008 candidate distribution | Retain source provenance, copyright and notices. The 2026-11-15 decision authorizes package distribution; `UNLICENSED` remains and no additional public license is granted |
+| Runtime | Node 22 and 24, ESM, npm lockfile | Both majors must pass the exact-candidate CI matrix. Node 20 is unsupported |
+| OS | Ubuntu 24.04 local ext4 and Windows Server 2025 local NTFS, x64, each on Node 22/24 | Owner approved this verified matrix. Local Windows 10/Node 24 is additional observational evidence only. Windows 11, other Windows versions, macOS and ARM are not supported by this candidate |
 | Filesystem | Single host, local disk, atomic same-directory publication, file fsync; POSIX directory fsync where available | MIG-004/007/008 test interruptions. Windows lacks directory fsync; no power-loss directory-entry durability guarantee. Network shares, cloud-sync directories and distributed writers unsupported for authoritative runtime stores |
 | Source history | Allowlisted exact-revision snapshot with per-path Git blob/SHA-256 and immutable source links | MIG-003 reproduces export independently; full history and old issues remain in Fantasy Football |
 | Rollback window | Seven days and one accepted ordinary task, whichever later | MIG-009 records dates/evidence, then MIG-010 may remove only inventoried dormant copies; see compatibility contract |
@@ -30,9 +31,10 @@ Use the [owner decision and scope digest](https://github.com/Brain-Crumbs/Vibez/
 to verify the exact candidate set. Keep required upstream notices and exclude
 any material with unclear redistribution rights until permission is recorded.
 Changes to the source revision or expanded scope require a refreshed decision.
-Package distribution requires its separate channel and rights decision. The
-private candidate has `UNLICENSED` metadata and ships the source export
-notice. Generating and testing the tarball locally grants no distribution rights.
+The separate 2026-11-15 owner decision now authorizes the complete MIG-008
+candidate through GitHub Releases. The package retains `UNLICENSED` metadata
+and the source export notice. Local packing alone does not constitute release
+acceptance, and npm publication remains unauthorized.
 
 ## Support and release evidence
 
