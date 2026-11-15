@@ -57,17 +57,20 @@ Preserve `agent` as the executable alias for compatibility; `vibez` is the equiv
 `validate <task> <actor> <run>`, `explain task|validation|reviews|merge <task>` or
 `explain transition <request>`, `manual export|run <request> <exchange>`,
 `manual import <packet> <result> <exchange>`, and `recovery check|apply <request>`
-(`check` takes no request). `review` and `rework` remain reserved at
-the source baseline. #78 alone implements the general driver; MIG-006 integrates
-it. No reserved command is advertised as working until its acceptance is proven.
+(`check` takes no request). Top-level `review` and `rework` remain reserved.
+`orchestrate` exposes the accepted manual workflow driver implemented by #78
+and integrated by MIG-006; see the [installed driver guide](WORKFLOW_DRIVER.md).
 `--json` retains the v1 envelope, one stdout object, progress separately, and exit
 codes 0/2/3/4/70. Successful transport/observation is not semantic PASS.
 
 ## #78 driver and #75 application-service agreement
 
-These are migration-side integration contracts; their owning issues remain open.
-Before implementation each owner must reconcile any incompatible proposal in a
-reviewed contract revision. There is no claim that the services already exist.
+These are migration-side integration contracts. Fantasy Football #78 is accepted,
+and MIG-006 integrated its manual workflow driver into Vibez. #75 retains
+ownership of planning, publication, application-service and supervisor semantics;
+AUT-003 owns unattended dispatch. Future incompatible proposals must be reconciled
+in a reviewed contract revision. The table distinguishes the installed project
+graph and manual driver from remaining service and supervisor work.
 
 | Consumer | Inputs from Vibez | Consumer owns | Must preserve / integration proof |
 | --- | --- | --- | --- |
