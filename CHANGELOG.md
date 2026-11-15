@@ -8,3 +8,6 @@
   and stopped-writer upgrade and rollback guidance.
 - Keeps the existing ESM API, CLI aliases and `ipt.*` schema identities.
 - Adds an installed-artifact conformance matrix and a migration source checkpoint.
+- Distributes the owner-approved candidate through immutable GitHub Releases,
+  limited to verified Ubuntu 24.04/ext4 and Windows Server 2025/NTFS x64
+  on Node 22 and 24. Windows 11 remains unsupported.

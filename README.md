@@ -1,9 +1,9 @@
 # Vibez
 
 Vibez is the source home of the deterministic agent development workflow.
-This seed builds directly from a Vibez checkout. It uses the existing private
-development package identity while the public API and installation contract
-are prepared.
+Install the versioned `@brain-crumbs/vibez` tarball through the
+[GitHub Release guide](docs/INSTALL.md), or build from a Vibez checkout.
+See the [verified support matrix](docs/SUPPORT.md).
 
 The [migration record](migration/SEED_EXPORT.md) links the audited source
 snapshot, export decision, scope, validation, and rollback. See the [roadmap](https://github.com/Brain-Crumbs/Vibez/issues/1)
@@ -12,7 +12,7 @@ for ownership and sequencing.
 
 ## Build and validate a fresh checkout
 
-Use Git, Node.js 20 or later, npm, and Python 3.11 or later. TypeScript and
+Use Git, Node.js 22 or 24, npm, and Python 3.11 or later. TypeScript and
 Python jsonschema are development tools. The compiled Node CLI needs neither
 Python nor a Fantasy Football checkout for ordinary commands.
 
@@ -38,8 +38,9 @@ node dist/cli/cli.js --help
 node dist/cli/cli.js --json status
 ```
 
-A fresh checkout has an empty active registry. Follow [operating instructions](AGENTS.md)
-before registering or starting work. To select a different checkout, use the
+The repository contains admitted task definitions; their runtime history stays
+in the original local state store. A fresh clone does not recreate prior DONE
+records. Follow [operating instructions](AGENTS.md) before registering or starting work. To select a different checkout, use the
 [configured runtime guide](docs/CONFIGURED_RUNTIME.md).
 
 - [CLI and operator documentation](docs/README.md)

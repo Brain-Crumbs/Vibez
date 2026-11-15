@@ -11,7 +11,7 @@ repository operations, and any executors supplied by the selected project.
 From a clean committed Vibez checkout, run `npm ci` and
 `npm run pack:candidate -- <new-output-directory>`. Use Git and a tar
 executable on PATH. The command archives the exact commit, builds in a
-temporary directory, and writes a private versioned tarball and
+temporary directory, and writes a versioned tarball and
 `candidate.json`. The receipt records the commit, package identity, Node and
 npm versions, SHA-256 and npm SHA-512 integrity. Compare the receipt and
 artifact before installing. For example, use `sha256sum /path/to/candidate.tgz`
@@ -19,11 +19,15 @@ on Ubuntu or `Get-FileHash -Algorithm SHA256 C:\path\to\candidate.tgz` in
 PowerShell. A missing receipt, mismatch, or existing output directory blocks
 reuse of that candidate location.
 
-The provisional package identity is `@brain-crumbs/vibez`. These local
-artifacts are for private validation. The release channel, name control,
-distribution rights and notices must be recorded before distributing a
-candidate. An approved consumer pins an immutable artifact URL and its
-integrity in the lockfile. See the [distribution decisions](SUPPORT.md).
+The approved package identity is `@brain-crumbs/vibez`. Obtain the tarball,
+`candidate.json`, `release.json` and `SHA256SUMS` from the
+[versioned GitHub Release](https://github.com/Brain-Crumbs/Vibez/releases/tag/v0.1.0-rc.1).
+The release is a prerelease for the staged consumer migration. Compare the
+tarball SHA-256 and SHA-512 with `candidate.json`, and its source commit with
+the release tag and `release.json`. Reject missing or mismatched evidence.
+An approved consumer pins the immutable asset URL and integrity in its lockfile.
+See [distribution and tested platforms](SUPPORT.md). `private: true` prevents
+npm publication; GitHub tarball installation remains supported.
 
 ## Install and run
 

@@ -1,8 +1,10 @@
 # Vibez migration candidate
 
 MIG-008 prepares `@brain-crumbs/vibez@0.1.0-rc.1` for a pinned consumer rollout.
-The package remains private and UNLICENSED. See the [decision register](SUPPORT.md)
-for distribution conditions and the [changelog](../CHANGELOG.md) for the candidate scope.
+The owner approved its identity, distribution rights and GitHub Releases channel.
+The manifest retains `private: true` to prevent npm publication and `UNLICENSED`
+to preserve the existing rights boundary. See the [decision register](SUPPORT.md)
+and [changelog](../CHANGELOG.md).
 
 ## Build and verify
 
@@ -24,8 +26,8 @@ cloud-sync directories and concurrent writers on separate hosts are unsupported.
 
 ## Install, diagnose and roll back
 
-Obtain the tarball and `candidate.json` from the approved location in the
-release receipt. Compare SHA-256 against the receipt and use
+Obtain the tarball, `candidate.json`, `release.json` and `SHA256SUMS` from
+[GitHub Release v0.1.0-rc.1](https://github.com/Brain-Crumbs/Vibez/releases/tag/v0.1.0-rc.1). Compare SHA-256 against the receipt and use
 `npm install --engine-strict --save-exact <verified-tarball>` from a separate
 tools directory. Commit the consumer's exact dependency and integrity lock
 once adoption is authorized. Check `vibez --json --version` against the receipt.
@@ -61,9 +63,22 @@ new version while preserving the original artifact and receipt.
 
 ## Release approval
 
-The owner records the package identity decision, rights for the complete
-candidate payload, release location, access and immutability policy before
-distribution. The release record links the reviewed commit, source checkpoint,
-matrix, independent reviews, and exact tarball digest. Public npm publication
-requires a separate decision. A private pack, CI run or conformance fixture
-does not itself distribute or accept the migration candidate.
+The [owner decision](https://github.com/Brain-Crumbs/Vibez/pull/23#issuecomment-6902648199) authorizes the complete candidate and GitHub Releases with support limited
+to the verified matrix in SUPPORT.md. Public npm publication is excluded.
+
+From a clean reviewed commit, pack to a new directory and wait for the exact
+Node 22/24 Ubuntu 24.04 and Windows Server 2025 matrix and independent
+implementation reviews. Enable repository release immutability. Create a
+draft prerelease named for the package version, targeting that exact commit;
+attach the tarball, candidate receipt, release provenance and SHA256SUMS
+before publishing. Never overwrite an existing tag or asset.
+
+The release provenance records source/destination commits, source checkpoint,
+package digest, compatibility/data versions, platform results, owner decision
+and review references. Publish only those allowlisted assets; never upload
+state, credentials, exchanges or local test workspaces. Once published, fetch
+all assets into a new directory, compare digests and tag identity, install
+from that download, and exercise documented diagnostics and rollback. Record
+independent download acceptance in the PR before native review/completion.
+The release is a migration candidate, not proof that MIG-009 adoption occurred.
+A faulty published candidate is retained and superseded by a new version.

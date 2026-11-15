@@ -1,7 +1,7 @@
 # Supported package boundary (API v1)
 
 Vibez is an ESM TypeScript/Node package with explicit exports and matching
-declarations. `@brain-crumbs/vibez` identifies the provisional private candidate.
+declarations. `@brain-crumbs/vibez` is the approved GitHub Release package identity.
 See [installation](INSTALL.md) and the [release decisions](SUPPORT.md). No wildcard exports, `src/`, `dist/`, or undocumented deep imports
 are supported. No CommonJS guarantee in v1. Internal modules remain separate.
 
