@@ -1,0 +1,55 @@
+{
+  "schemaId": "ipt.task",
+  "schemaVersion": "1.0.0",
+  "taskId": "FIX-001",
+  "title": "[FIX-001] Use configured validator identities in history diagnostics",
+  "objective": "Correct configured validator evidence in both Vibez history scans and publish a corrected immutable candidate for Fantasy Football MIG-009.",
+  "inScope": [
+    "Use validated configured validator identities for read-only audit and upgrade preflight.",
+    "Publish and verify the next immutable GitHub Releases candidate."
+  ],
+  "outOfScope": [
+    "Changes to validator execution, state formats, merge authority, or the original release assets."
+  ],
+  "dependencies": [],
+  "canonicalBranch": "fix/configured-history-validator-resolver",
+  "allowedPaths": [
+    "src/history/**",
+    "src/workflow-diagnostics/**",
+    "src/recovery-tools/**",
+    "tests/project-services.test.mjs",
+    "tests/**",
+    "docs/**",
+    "CHANGELOG.md",
+    "package.json",
+    "package-lock.json",
+    "migration/admissions/fix-001.json",
+    "tasks/definitions/fix-001.task.json",
+    "requirements/fix-001.requirement.json"
+  ],
+  "requirements": [
+    "FIX-001-R1"
+  ],
+  "acceptanceCriteria": [
+    "AC-01: Active configured history audit and preflight use declared validator identities and report actual missing and stale evidence.",
+    "AC-02: Unconfigured and historical records remain readable through their established readers; readonly diagnostics preserve records and fail closed on incompatible handoffs.",
+    "AC-03: Exact corrected immutable artifact passes the established Ubuntu and Windows Node 22/24 support matrix and independent QA, Architecture and UAT review.",
+    "AC-04: The corrected artifact reads the preserved rc.1 history without modifying it, and the documented handoff preserves consumer identities."
+  ],
+  "validationPlan": [
+    "Build/tests, Python schema, contract and provenance checks and adversarial mutation guards.",
+    "Check current, missing and stale configured evidence in both scans. Check unchanged refusal of unsettled state and incompatible readers.",
+    "Verify the actual installed artifact on the existing supported matrix, plus independent reviews."
+  ],
+  "affectedContracts": [
+    "control-plane.workflow-diagnostics",
+    "control-plane.recovery-tools"
+  ],
+  "requiredReviewRoles": [
+    "Developer",
+    "QA",
+    "Architect",
+    "UAT/Product",
+    "MergeController"
+  ]
+}

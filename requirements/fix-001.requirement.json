@@ -1,0 +1,18 @@
+{
+  "schemaId": "ipt.requirement",
+  "schemaVersion": "1.0.0",
+  "requirementId": "FIX-001-R1",
+  "taskId": "FIX-001",
+  "statement": "Correct configured validator evidence in both Vibez history scans and publish a corrected immutable candidate for Fantasy Football MIG-009.",
+  "acceptanceCriteria": [
+    "AC-01: Active configured history audit and preflight use declared validator identities and report actual missing and stale evidence.",
+    "AC-02: Unconfigured and historical records remain readable through their established readers; readonly diagnostics preserve records and fail closed on incompatible handoffs.",
+    "AC-03: Exact corrected immutable artifact passes the established Ubuntu and Windows Node 22/24 support matrix and independent QA, Architecture and UAT review.",
+    "AC-04: The corrected artifact reads the preserved rc.1 history without modifying it, and the documented handoff preserves consumer identities."
+  ],
+  "sourceRefs": [
+    "https://github.com/Brain-Crumbs/Vibez/issues/24",
+    "sha256:804b62e90dffc85dcc6de2b9a91301b0ecf2efb786fe48996cdcf9157f9bfedb",
+    "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/86"
+  ]
+}

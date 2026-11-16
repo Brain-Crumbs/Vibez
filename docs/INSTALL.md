@@ -21,7 +21,7 @@ reuse of that candidate location.
 
 The approved package identity is `@brain-crumbs/vibez`. Obtain the tarball,
 `candidate.json`, `release.json` and `SHA256SUMS` from the
-[versioned GitHub Release](https://github.com/Brain-Crumbs/Vibez/releases/tag/v0.1.0-rc.1).
+[versioned GitHub Release](https://github.com/Brain-Crumbs/Vibez/releases/tag/v0.1.0-rc.2).
 The release is a prerelease for the staged consumer migration. Compare the
 tarball SHA-256 and SHA-512 with `candidate.json`, and its source commit with
 the release tag and `release.json`. Reject missing or mismatched evidence.

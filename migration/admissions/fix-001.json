@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "taskId": "FIX-001",
+  "repository": "Brain-Crumbs/Vibez",
+  "issue": "https://github.com/Brain-Crumbs/Vibez/issues/24",
+  "integrationBase": "53b6966c0322aa201a70fde3a653827d08a83bbd",
+  "canonicalBranch": "fix/configured-history-validator-resolver",
+  "grant": "Owner instruction to fix the validator resolver, publish a corrected immutable release, and continue MIG-009 through exact-head independent review and merge.",
+  "prerequisites": [
+    {
+      "reviewedHead": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+      "taskId": "MIG-003",
+      "ci": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876",
+      "merge": "16a73b8071f5b9ef390d08504e325b779af291fe",
+      "pr": 15,
+      "independentReviewEvidence": "https://github.com/Brain-Crumbs/Vibez/pull/15"
+    },
+    {
+      "reviewedHead": "6590679e4a58c82c6b95014bf8d3dbec2e918f90",
+      "pr": 23,
+      "nativeAcceptance": "https://github.com/Brain-Crumbs/Vibez/pull/23#issuecomment-6903171161",
+      "release": "https://github.com/Brain-Crumbs/Vibez/releases/tag/v0.1.0-rc.1",
+      "merge": "53b6966c0322aa201a70fde3a653827d08a83bbd",
+      "independentReviewEvidence": "https://github.com/Brain-Crumbs/Vibez/pull/23#issuecomment-6903032771",
+      "taskId": "MIG-008",
+      "ci": "https://github.com/Brain-Crumbs/Vibez/actions/runs/43771379158"
+    }
+  ],
+  "dependencyProjection": {
+    "historical": [
+      "MIG-003"
+    ],
+    "external": [],
+    "baseline": [
+      "MIG-008"
+    ],
+    "native": []
+  },
+  "issueBodySha256": "804b62e90dffc85dcc6de2b9a91301b0ecf2efb786fe48996cdcf9157f9bfedb",
+  "definition": {
+    "path": "tasks/definitions/fix-001.task.json",
+    "sha256": "50cb7125821cabbde801ba07e4381359b06fd91e603559c59c69b1798d02779b"
+  },
+  "requirement": {
+    "path": "requirements/fix-001.requirement.json",
+    "sha256": "5a8a97de87a1e575be265edf06e87f08abb6189383a54f8194dc967f7609339d"
+  }
+}

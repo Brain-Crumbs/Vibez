@@ -46,6 +46,11 @@ export interface WorkflowExplanation {
   readonly merge: EvaluateMergeReadinessResult | null;
   readonly notes: readonly string[];
 }
+export interface ValidatorEvidenceRequirement {
+  readonly validatorId: string;
+  readonly required: boolean;
+}
+
 export interface WorkflowDiagnosticsDependencies {
   readonly source: StatusReportingDependencies;
   readonly validatorResolver: DeveloperValidatorResolver;
@@ -78,16 +83,21 @@ export class WorkflowDiagnostics {
     });
   }
 
-  explainValidation(taskId: string, observedAt: string): WorkflowExplanation {
+  explainValidation(taskId: string, observedAt: string,
+    declaredValidators?: readonly ValidatorEvidenceRequirement[]): WorkflowExplanation {
     const { task, view, lifecycle } = this.read(taskId, observedAt);
     const findings: DiagnosticFinding[] = [];
     const evidence: DiagnosticEvidence[] = [];
     if (view.revision === null) {
       findings.push(this.revisionMissing(view));
     } else {
-      const validators = this.dependencies.validatorResolver.resolve(task, view.revision);
-      // Constructor validates the same specs as BOOT-016, but never executes them.
-      new ValidationExecutor(validators);
+      let validators = declaredValidators;
+      if (validators === undefined) {
+        const specs = this.dependencies.validatorResolver.resolve(task, view.revision);
+        // Constructor validates the same specs as BOOT-016, but never executes them.
+        new ValidationExecutor(specs);
+        validators = specs;
+      }
       for (const validator of validators) {
         const status = view.validation.find(v => v.subject === validator.validatorId) ?? missingEvidence(validator.validatorId, validationEvidenceLineageId(taskId, validator.validatorId));
         evidence.push({ ...status, required: validator.required });

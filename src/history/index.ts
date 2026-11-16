@@ -18,7 +18,7 @@ import { inventory, optionalStat, type HistoryFile } from "./snapshot.js";
 
 const priorPackage = "0.1.0-mig005.1";
 const previousPackage = "0.1.0-mig007.0";
-const driverReaderPackages = ["0.1.0-mig006.0", "0.1.0-rc.1"];
+const driverReaderPackages = ["0.1.0-mig006.0", "0.1.0-rc.1", "0.1.0-rc.2"];
 const taskPattern = /^[A-Z]+-[0-9]{3,}$/;
 const commitPattern = /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/;
 const settled = new Set(["PLANNED", "READY", "DONE"]);
@@ -123,8 +123,16 @@ async function openHistory(location: HistoryLocation) {
       throw new Error("Snapshot bindings changed during inspection.");
     }
   }
+  const recoveryOptions = {
+    registry, paths, source,
+    // History needs only validated identities and requiredness. It must be
+    // able to inspect an archived project without its validator executables.
+    ...(config === null ? {} : {
+      declaredValidators: config.document.validators.map(({ id, required }) => ({ validatorId: id, required })),
+    }),
+  };
   return { root, config, projectIdentity: config?.projectIdentity ?? localHistoryIdentity(root), revision,
-    registry, paths, source, layout, store, bindingSha256, taskBindingsSha256, assertCurrent };
+    registry, paths, source, layout, store, recoveryOptions, bindingSha256, taskBindingsSha256, assertCurrent };
 }
 
 type History = Awaited<ReturnType<typeof openHistory>>;
@@ -320,7 +328,7 @@ async function inspectProjectAudit(location: HistoryLocation, taskId: string) {
         sequence: reference.sequence, resolves: finding === null, finding };
     }), authority: "RECORDED_TRANSITION",
   }));
-  const integrity = await checkRecoveryState(history.root, { registry: history.registry, paths: history.paths, source: history.source });
+  const integrity = await checkRecoveryState(history.root, history.recoveryOptions);
   if (inventory(history.root, history.layout).snapshotSha256 !== snapshot.snapshotSha256) throw new Error("Runtime changed during inspection.");
   history.assertCurrent();
   return { version: 1, taskId, projectIdentity: history.projectIdentity, configDigest: history.config?.configDigest ?? null,
@@ -378,7 +386,7 @@ export async function checkProjectUpgrade(request: UpgradeCheckRequest) {
         findings.add("PRIOR_READER_REJECTS_LEGACY_COLLISION");
       }
     }
-    const check = await checkRecoveryState(history.root, { registry: history.registry, paths: history.paths, source: history.source });
+    const check = await checkRecoveryState(history.root, history.recoveryOptions);
     for (const finding of check.findings) findings.add(finding.code);
     if (history.config === null) readLocalLifecycleStates(history.root, history.registry);
     const second = inventory(history.root, history.layout);
