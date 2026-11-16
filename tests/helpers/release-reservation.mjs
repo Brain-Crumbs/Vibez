@@ -24,20 +24,32 @@ export async function assertReleaseWaitsForReservation(t, lock, taskId, lockPath
     stdio: ["ignore", "ignore", "inherit", "ipc"],
   });
   const closed = new Promise(resolve => child.once("close", resolve));
+  const { signal } = t;
+  const stopChild = () => {
+    if (child.exitCode === null && child.signalCode === null) child.kill();
+  };
+  signal.addEventListener("abort", stopChild, { once: true });
   try {
+    signal.throwIfAborted();
     const [ready] = await Promise.race([
-      once(child, "message", { signal: t.signal }),
+      once(child, "message", { signal }),
       closed.then(() => { throw new Error("Reservation helper exited before readiness."); }),
     ]);
     assert.equal(ready, "ready");
+    let reservationCreated = false;
     lock.withLock(taskId, () => {
       writeFileSync(reservationPath, "", { encoding: "utf8", flag: "wx" });
+      reservationCreated = true;
     });
+    assert.ok(reservationCreated, "lock must run the reservation callback");
     assert.equal(existsSync(reservationPath), false, "release must wait for the competing reservation");
     assert.equal(existsSync(lockPath), false, "release must remove the held lock");
-    assert.equal(await closed, 0);
+    const code = await closed;
+    signal.throwIfAborted();
+    assert.equal(code, 0);
   } finally {
-    if (child.exitCode === null && child.signalCode === null) child.kill();
+    signal.removeEventListener("abort", stopChild);
+    stopChild();
     await closed;
   }
 }
