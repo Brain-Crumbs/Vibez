@@ -1,6 +1,8 @@
 # Vibez migration candidate
 
-MIG-008 prepares `@brain-crumbs/vibez@0.1.0-rc.1` for a pinned consumer rollout.
+MIG-008 established the pinned consumer rollout with rc.1. The corrected
+candidate, `@brain-crumbs/vibez@0.1.0-rc.2`, resolves configured validator
+evidence in the read-only audit and upgrade preflight.
 The owner approved its identity, distribution rights and GitHub Releases channel.
 The manifest retains `private: true` to prevent npm publication and `UNLICENSED`
 to preserve the existing rights boundary. See the [decision register](SUPPORT.md)
@@ -27,7 +29,7 @@ cloud-sync directories and concurrent writers on separate hosts are unsupported.
 ## Install, diagnose and roll back
 
 Obtain the tarball, `candidate.json`, `release.json` and `SHA256SUMS` from
-[GitHub Release v0.1.0-rc.1](https://github.com/Brain-Crumbs/Vibez/releases/tag/v0.1.0-rc.1). Compare SHA-256 against the receipt and use
+[GitHub Release v0.1.0-rc.2](https://github.com/Brain-Crumbs/Vibez/releases/tag/v0.1.0-rc.2). Compare SHA-256 against the receipt and use
 `npm install --engine-strict --save-exact <verified-tarball>` from a separate
 tools directory. Commit the consumer's exact dependency and integrity lock
 once adoption is authorized. Check `vibez --json --version` against the receipt.

@@ -1,6 +1,6 @@
 {
   "name": "@brain-crumbs/vibez",
-  "version": "0.1.0-rc.1",
+  "version": "0.1.0-rc.2",
   "private": true,
   "description": "Vibez workflow library and CLI (private candidate).",
   "type": "module",

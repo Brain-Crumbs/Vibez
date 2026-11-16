@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-rc.2
+
+- Resolves configured validator evidence in the read-only history audit and
+  upgrade preflight, including during active review.
+- Preserves existing history formats and the fail-closed upgrade safeguards.
+  Archive an unfinished rc.1 run with its original reader and use a separately
+  admitted checkout for the corrected run.
+
 ## 0.1.0-rc.1
 
 - Packages the configured manual workflow driver, the audited BOOT-037 import,

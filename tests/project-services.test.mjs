@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -125,6 +125,7 @@ test("configured graph uses package assets and literal validators with isolated 
   assert.ok(existsSync(a.config.paths.evidence));
   const audit = await a.diagnostics.audit(taskId);
   assert.equal(audit.projectIdentity, a.config.projectIdentity);
+  assert.equal(audit.findings.includes("VALIDATOR_EVIDENCE_MISSING"), false, JSON.stringify(audit.findings));
   assert.ok(audit.evidence.some(item => item.engine?.configDigest === a.config.configDigest && item.outcome === "PASS"));
   assert.equal(audit.providerAttempts[0].authority, "OBSERVATION_ONLY");
   assert.equal(audit.providerAttempts[0].state, "PENDING");
@@ -132,6 +133,7 @@ test("configured graph uses package assets and literal validators with isolated 
     quiescence: { localWritersDrained: true, externalSessionsDrained: true } });
   assert.equal(preflight.compatible, false);
   assert.ok(preflight.findings.includes("UNSETTLED_EXTERNAL_PACKET"), JSON.stringify(preflight));
+  assert.equal(preflight.findings.includes("VALIDATOR_EVIDENCE_MISSING"), false, JSON.stringify(preflight.findings));
 
   assert.ok(!existsSync(join(alpha.root, "schemas")) && !existsSync(join(alpha.root, ".agent")));
   assert.ok(!existsSync(b.config.paths.state));
@@ -161,6 +163,22 @@ test("configured graph uses package assets and literal validators with isolated 
   assert.equal(finalStatus.tasks.find(task => task.taskId === taskId).state, "MERGE_READY");
   assert.equal(finalStatus.tasks.find(task => task.taskId === "DEMO-002").state, "PLANNED");
   assert.equal(existsSync(join(installed, ".vibez")), false);
+
+  alpha.git("commit", "--allow-empty", "-m", "Advance the canonical revision without revalidation");
+  const staleAudit = await a.diagnostics.audit(taskId);
+  assert.ok(staleAudit.findings.includes("VALIDATOR_EVIDENCE_STALE"), JSON.stringify(staleAudit.findings));
+  const stalePreflight = await a.diagnostics.checkUpgrade({ targetPackageVersion: "0.1.0-rc.2",
+    quiescence: { localWritersDrained: true, externalSessionsDrained: true } });
+  assert.equal(stalePreflight.compatible, false);
+  assert.ok(stalePreflight.findings.includes("VALIDATOR_EVIDENCE_STALE"), JSON.stringify(stalePreflight.findings));
+
+  renameSync(a.config.paths.evidence, join(alpha.root, ".vibez/offline-evidence"));
+  const missingAudit = await a.diagnostics.audit(taskId);
+  assert.ok(missingAudit.findings.includes("VALIDATOR_EVIDENCE_MISSING"), JSON.stringify(missingAudit.findings));
+  const missingPreflight = await a.diagnostics.checkUpgrade({ targetPackageVersion: "0.1.0-rc.2",
+    quiescence: { localWritersDrained: true, externalSessionsDrained: true } });
+  assert.equal(missingPreflight.compatible, false);
+  assert.ok(missingPreflight.findings.includes("VALIDATOR_EVIDENCE_MISSING"), JSON.stringify(missingPreflight.findings));
   assert.equal(existsSync(join(alpha.root, ".agent")), false);
 });
 

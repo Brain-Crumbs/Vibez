@@ -1,4 +1,4 @@
-import { ValidationExecutor } from "../validation-framework/index.js";
+import { ValidationExecutor, ValidationFrameworkError } from "../validation-framework/index.js";
 import type { DeveloperValidatorResolver } from "../dev-validation/index.js";
 import { validationEvidenceLineageId } from "../evidence-store/index.js";
 import { createLifecycleRecord, getTransitionRule, transitionLifecycle, type TransitionRequest } from "../lifecycle/index.js";
@@ -46,6 +46,11 @@ export interface WorkflowExplanation {
   readonly merge: EvaluateMergeReadinessResult | null;
   readonly notes: readonly string[];
 }
+export interface ValidatorEvidenceRequirement {
+  readonly validatorId: string;
+  readonly required: boolean;
+}
+
 export interface WorkflowDiagnosticsDependencies {
   readonly source: StatusReportingDependencies;
   readonly validatorResolver: DeveloperValidatorResolver;
@@ -58,6 +63,24 @@ const NOTES = [
   "Clear means the stated diagnostic scope has no observed failed predicates; it is not gate approval or permission to act.",
   "Local registered tasks and canonical local commits are authoritative inputs here; GitHub bootstrap checklists and uncommitted changes are not imported.",
 ];
+
+
+function validateDeclaredValidators(validators: readonly ValidatorEvidenceRequirement[]): void {
+  if (!Array.isArray(validators) || validators.length === 0) {
+    throw new ValidationFrameworkError("EMPTY_VALIDATOR_SET", "At least one validator declaration is required.");
+  }
+  const seen = new Set<string>();
+  for (const validator of validators) {
+    if (typeof validator?.validatorId !== "string" || validator.validatorId === ""
+      || validator.validatorId.trim() !== validator.validatorId || typeof validator.required !== "boolean") {
+      throw new ValidationFrameworkError("INVALID_VALIDATOR_SPEC", "Validator declarations require a nonempty trimmed ID and a boolean required flag.");
+    }
+    if (seen.has(validator.validatorId)) {
+      throw new ValidationFrameworkError("DUPLICATE_VALIDATOR_ID", "Validator ID is declared more than once: " + validator.validatorId);
+    }
+    seen.add(validator.validatorId);
+  }
+}
 
 /** Composes existing deterministic producers. No mutation ports or executors are called. */
 export class WorkflowDiagnostics {
@@ -78,16 +101,23 @@ export class WorkflowDiagnostics {
     });
   }
 
-  explainValidation(taskId: string, observedAt: string): WorkflowExplanation {
+  explainValidation(taskId: string, observedAt: string,
+    declaredValidators?: readonly ValidatorEvidenceRequirement[]): WorkflowExplanation {
     const { task, view, lifecycle } = this.read(taskId, observedAt);
     const findings: DiagnosticFinding[] = [];
     const evidence: DiagnosticEvidence[] = [];
     if (view.revision === null) {
       findings.push(this.revisionMissing(view));
     } else {
-      const validators = this.dependencies.validatorResolver.resolve(task, view.revision);
-      // Constructor validates the same specs as BOOT-016, but never executes them.
-      new ValidationExecutor(validators);
+      let validators = declaredValidators;
+      if (validators === undefined) {
+        const specs = this.dependencies.validatorResolver.resolve(task, view.revision);
+        // Constructor validates the same specs as BOOT-016, but never executes them.
+        new ValidationExecutor(specs);
+        validators = specs;
+      } else {
+        validateDeclaredValidators(validators);
+      }
       for (const validator of validators) {
         const status = view.validation.find(v => v.subject === validator.validatorId) ?? missingEvidence(validator.validatorId, validationEvidenceLineageId(taskId, validator.validatorId));
         evidence.push({ ...status, required: validator.required });
@@ -109,7 +139,7 @@ export class WorkflowDiagnostics {
       }
     }
     return this.result("validation", "REQUIRED_VALIDATOR_EVIDENCE", view, observedAt, findings, { evidence,
-      notes: [...NOTES, "Requiredness comes from the same injected validator resolver used by developer validation; the local default requires repository:build and repository:test. Optional outcomes remain observations. No validators are executed."],
+      notes: [...NOTES, "Requiredness comes from validated declarations for offline observation or the resolver used by developer validation. Local defaults are repository:build and repository:test. Optional outcomes remain observations. No validators are executed."],
     });
   }
 

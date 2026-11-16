@@ -8,7 +8,7 @@ import { getTransitionRule, type LifecycleRecord } from "../lifecycle/index.js";
 import { parseOrchestrationRunJournal } from "../orchestration-engine/run-store.js";
 import { createLocalStatusDependencies, type StatusReportingDependencies } from "../status-reporting/index.js";
 import { loadTaskRegistry, type RegisteredTask, type TaskRegistry } from "../task-registry/index.js";
-import { WorkflowDiagnostics } from "../workflow-diagnostics/index.js";
+import { WorkflowDiagnostics, type ValidatorEvidenceRequirement } from "../workflow-diagnostics/index.js";
 import { inspectEvidenceReferences } from "./evidence-integrity.js";
 import { parseRecoveryRequest, recoveryHash } from "./recovery.js";
 
@@ -51,6 +51,8 @@ export async function checkRecoveryState(repositoryRoot: string, options: {
   paths?: { state: string; evidence: string; orchestration: string };
   source?: StatusReportingDependencies;
   validatorResolver?: DeveloperValidatorResolver;
+  /** Evidence identities from validated project configuration, when reading an offline store. */
+  declaredValidators?: readonly ValidatorEvidenceRequirement[];
 } = {}): Promise<RecoveryCheckReport> {
   const state = options.paths?.state ?? STATE;
   const evidence = options.paths?.evidence ?? `${state}/evidence`;
@@ -83,7 +85,8 @@ export async function checkRecoveryState(repositoryRoot: string, options: {
         add("REGISTRY_TASK_INVALID", "tasks/definitions", `Invalid registry task identity '${taskId}'.`, INSPECT);
         continue;
       }
-      await inspectTask(repositoryRoot, task, checkedAt, areas, add, state, evidence, options.source, options.validatorResolver);
+      await inspectTask(repositoryRoot, task, checkedAt, areas, add, state, evidence, options.source, options.validatorResolver,
+        options.declaredValidators);
     }
     for (const area of ["lifecycle", "assignments"]) {
       const suffix = area === "lifecycle" ? ".lifecycle.json" : ".lock.json";
@@ -132,7 +135,7 @@ export async function checkRecoveryState(repositoryRoot: string, options: {
 
 async function inspectTask(root: string, task: RegisteredTask, now: string, areas: ReadonlyMap<string, readonly string[]>, add: AddFinding,
   state: string, evidence: string, configuredSource?: StatusReportingDependencies,
-  validatorResolver?: DeveloperValidatorResolver): Promise<void> {
+  validatorResolver?: DeveloperValidatorResolver, declaredValidators?: readonly ValidatorEvidenceRequirement[]): Promise<void> {
   const taskId = task.taskId;
   const lifecyclePath = `${state}/lifecycle/${taskId}.lifecycle.json`;
   const assignmentPath = `${state}/assignments/${taskId}.lock.json`;
@@ -196,7 +199,7 @@ async function inspectTask(root: string, task: RegisteredTask, now: string, area
     try {
       const state = lifecycle?.currentState ?? "PLANNED";
       if (POST_VALIDATION.includes(state)) {
-        for (const finding of diagnostics.explainValidation(taskId, now).findings) {
+        for (const finding of diagnostics.explainValidation(taskId, now, declaredValidators).findings) {
           add(finding.code, lifecyclePath, finding.message, finding.remediation.action, taskId);
         }
       }
