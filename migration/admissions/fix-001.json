@@ -39,7 +39,7 @@
   "issueBodySha256": "804b62e90dffc85dcc6de2b9a91301b0ecf2efb786fe48996cdcf9157f9bfedb",
   "definition": {
     "path": "tasks/definitions/fix-001.task.json",
-    "sha256": "50cb7125821cabbde801ba07e4381359b06fd91e603559c59c69b1798d02779b"
+    "sha256": "790e8473693bc5974a0ab6808d15558e3f58c778ec459934bceae0aee5669879"
   },
   "requirement": {
     "path": "requirements/fix-001.requirement.json",

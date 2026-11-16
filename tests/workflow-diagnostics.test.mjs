@@ -245,6 +245,21 @@ test("empty, duplicate, or invalid validator resolutions fail closed rather than
     assert.throws(() => s.diagnostics.explainValidation(taskId, observedAt), error => error.code === code);
   }
 });
+test("malformed offline validator declarations fail closed", t => {
+  const s = setup(t);
+  s.validate();
+  const cases = [
+    [[], "EMPTY_VALIDATOR_SET"],
+    [[{ validatorId: "offline", required: true }, { validatorId: "offline", required: false }], "DUPLICATE_VALIDATOR_ID"],
+    [[{ validatorId: " ", required: true }], "INVALID_VALIDATOR_SPEC"],
+    [[{ validatorId: "offline", required: "true" }], "INVALID_VALIDATOR_SPEC"],
+    [[null], "INVALID_VALIDATOR_SPEC"],
+  ];
+  for (const [validators, code] of cases) {
+    assert.throws(() => s.diagnostics.explainValidation(taskId, observedAt, validators), error => error.code === code);
+  }
+  assert.deepEqual(s.resolverCalls, []);
+});
 test("missing Architecture approval names its required role and does not invent Developer approval", t => {
   const s = setup(t, [task(taskId, { requiredReviewRoles: ["Developer", "QA", "Architect", "MergeController"] })]);
   s.review(taskId, "QA"); const result = s.diagnostics.explainReviews(taskId, observedAt);

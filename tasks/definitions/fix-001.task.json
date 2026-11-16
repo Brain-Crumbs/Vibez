@@ -17,7 +17,7 @@
     "src/history/**",
     "src/workflow-diagnostics/**",
     "src/recovery-tools/**",
-    "tests/project-services.test.mjs",
+    "contracts/workflow-diagnostics/README.md",
     "tests/**",
     "docs/**",
     "CHANGELOG.md",
