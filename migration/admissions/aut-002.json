@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "taskId": "AUT-002",
+  "repository": "Brain-Crumbs/Vibez",
+  "issue": "https://github.com/Brain-Crumbs/Vibez/issues/10",
+  "integrationBase": "5a914eb8e92dc1d84102104219b39f69bab94c17",
+  "canonicalBranch": "automation/aut-002-headless-provider",
+  "grant": "Owner authorization to implement, independently review, publish and merge exactly AUT-002 after verified WSL native-state relocation.",
+  "prerequisites": [
+    {
+      "taskId": "MIG-006",
+      "pr": 21,
+      "reviewedHead": "27c5a8b18ecc47755bce9fe199281ec7bb07709d",
+      "merge": "b746895fafc8c7354c91ca8bf38f4031e0ec53f8",
+      "ci": "https://github.com/Brain-Crumbs/Vibez/actions/runs/43498050753",
+      "nativeDoneEvidence": "MIG-006::merge@1",
+      "nativeLifecycleSha256": "bd50b4bb73c40fb08855365c0e2679c3de922462d895bc622d4d9ca3e1d43b45"
+    },
+    {
+      "taskId": "AUT-001",
+      "pr": 19,
+      "reviewedHead": "f0f652dc6a9e3156a27827713eb99cb64e686a45",
+      "merge": "85fdce8cbe0ac0d46b46a1e0b4772df485a6b76b",
+      "ci": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42914578509",
+      "nativeDoneEvidence": "AUT-001::merge@1",
+      "nativeLifecycleSha256": "fe1687d4e009835088cc05136089616014554c392683aa467b94886adfde3dd8"
+    },
+    {
+      "taskId": "MIG-003",
+      "pr": 15,
+      "reviewedHead": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+      "merge": "16a73b8071f5b9ef390d08504e325b779af291fe",
+      "ci": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876",
+      "mainCi": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42869658896",
+      "sealedCommit": "fdebe9111ce7aa004566c4068a2c15a9a95ab00c"
+    }
+  ],
+  "hostCutover": {
+    "pr": 27,
+    "completion": "https://github.com/Brain-Crumbs/Vibez/pull/27#issuecomment-6954980725",
+    "evidence": "FIX-002::merge@1"
+  },
+  "dependencyProjection": {
+    "historical": [
+      "MIG-003"
+    ],
+    "external": [],
+    "native": [
+      "MIG-006",
+      "AUT-001"
+    ]
+  },
+  "issueBodySha256": "b8f40eece89cc3d21599cdd3b70929aebd901ca77e250db15e07eb32d5e6a823",
+  "definition": {
+    "path": "tasks/definitions/aut-002.task.json",
+    "sha256": "a7c3c9bfbc0c53d504d0db5aca9690da6eafca713cdc6745d8aa64bee75007f5"
+  },
+  "requirement": {
+    "path": "requirements/aut-002.requirement.json",
+    "sha256": "ef4df2cb04ddcdbac4b6bc0963840a67da0340048d74363480fa2c7a8191db6b"
+  }
+}
