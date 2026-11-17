@@ -180,6 +180,10 @@ function syncDirectory(path: string) {
   try { fsyncSync(fd); } finally { closeSync(fd); }
 }
 
+export function confirmNativeRelocationPublication(root: string) {
+  syncDirectory(join(root, ".git"));
+}
+
 export function publishNativeRelocation(root: string, record: NativeHistoryRelocationRecord): void {
   const gitDir = join(root, ".git");
   const destination = join(gitDir, marker);
@@ -205,7 +209,7 @@ export function publishNativeRelocation(root: string, record: NativeHistoryReloc
     } catch (error: unknown) {
       if (readMarker(root) !== text) throw error;
     }
-    syncDirectory(gitDir);
+    confirmNativeRelocationPublication(root);
   } finally {
     if (!published) {
       if (optionalStat(file) !== null) unlinkSync(file);

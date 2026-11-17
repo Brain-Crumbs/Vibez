@@ -341,3 +341,18 @@ test("relocation verifies the precise union of completed stores and still record
   assert.equal(post.compatible, true, JSON.stringify(post));
   assert.equal(post.fileCount, source.manifest.files.length + baseline.manifest.files.length + 1);
 });
+
+test("relocation refuses evidence for a registered task without its completed lifecycle", async t => {
+  const { root } = history(t, false, taskId, true);
+  const otherTask = "BOOT-491";
+  const { root: incomplete, lifecyclePath } = history(t, false, otherTask, true);
+  rmSync(lifecyclePath);
+  relocationGit(root, "fetch", incomplete, "main");
+  relocationGit(root, "merge", "--allow-unrelated-histories", "--no-edit", "FETCH_HEAD");
+  cpSync(join(incomplete, layout.state, "evidence"), join(root, layout.state, "evidence"), { recursive: true });
+  relocationGit(root, "remote", "add", "origin", relocationOrigin);
+  const report = await checkProjectUpgrade({ repositoryRoot: root, targetPackageVersion: relocationVersion, quiescence: drain });
+  assert.equal(report.compatible, true);
+  await assert.rejects(prepareNativeHistoryRelocation({ repositoryRoot: root, quiescence: drain,
+    expectedSnapshotSha256: report.snapshotSha256 }), /without a completed task/);
+});

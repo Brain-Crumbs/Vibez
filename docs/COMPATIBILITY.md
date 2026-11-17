@@ -238,7 +238,8 @@ configured bindings and repeated relocation are outside this procedure.
    `readProjectAudit` to verify the original task histories before enabling
    the destination writer. New evidence uses the destination identity. The
    exact imported files retain their original identity. Keep only one writer
-   active and keep the marker and manifests outside version control.
+   active and keep the marker and manifests outside version control. Back up the marker
+   separately with the verified runtime snapshot.
 
 Use the exact built package in a trusted operator program. For example, with
 absolute paths and the independently recorded digests:
@@ -266,8 +267,13 @@ await activateNativeHistoryRelocation({
 A digest verifies bytes against a trusted observation. A worker, PR or
 runtime file cannot authorize relocation. The destination marker belongs to
 the trusted operator. Diagnostics refuse missing or modified imported files.
-Older readers refuse a relocated store. Before the first post-relocation
-write, a failed cutover can be abandoned. Retain the verified copies and
+Pin the relocation-aware reader for all future operations. Its preflight
+refuses downgrades. An older reader does not understand the Git marker and
+may accept a receiptless snapshot. On Windows, publication verifies and
+flushes the file before the directory rename. Windows directory entries
+do not have the same power-loss guarantee as flushed POSIX directories.
+
+Before the first post-relocation write, a failed cutover can be abandoned. Retain the verified copies and
 reopen the eligible original checkout under its pinned reader. After the
 first write, keep the latest state and marker together with a compatible
 reader. Restoring a pre-move snapshot would lose new history.
