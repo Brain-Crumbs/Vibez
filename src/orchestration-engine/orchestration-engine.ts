@@ -462,7 +462,7 @@ export class SequentialOrchestrationEngine {
       }
       const result = await this.runAgent(x, "developer-agent", "Developer", taskId, start.sourceRevision, start.context, actor("Developer"));
       this.addStage(x, "developer-agent", "Developer", result.outcome, summarizeAgentResult("Developer", result), result.evidenceRefs);
-      if (this.dependencies.prepareAgentInput && result.outcome !== "PASS") return this.stoppedResult(taskId, request.runId, stages, state(), "developer-agent", result.nonPass!.reason, result.nonPass!.remediation);
+      if (result.outcome !== "PASS") return this.stoppedResult(taskId, request.runId, stages, state(), "developer-agent", result.nonPass!.reason, result.nonPass!.remediation);
       const validation = await this.operation(x, "dev-validation", () => this.dependencies.developerValidation.validate({
         taskId, actorId: actor("Developer"), runId: stageRunId(request.runId, "dev-validation"), occurredAt: now(),
       }));

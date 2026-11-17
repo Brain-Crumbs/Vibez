@@ -27,8 +27,8 @@ export interface LocalLlamaIntent {
   readonly occurredAt: string;
 }
 
-type Outcome = "COMPLETED" | "TRANSPORT_FAILED" | "CANCELLED" | "MALFORMED" | "RETIRED";
-type Terminal = { readonly status: Outcome; readonly binding: string; readonly result?: AgentRunResult };
+type Outcome = "COMPLETED" | "TRANSPORT_FAILED" | "CANCELLED" | "EFFECT_REFUSED" | "MALFORMED" | "RETIRED";
+type Terminal = { readonly status: Outcome; readonly binding: string; readonly result?: AgentRunResult; readonly workspaceRevision?: string };
 
 function sync(path: string) {
   const fd = openSync(path, "r");
@@ -62,8 +62,10 @@ function readRecord(file: string): unknown {
 
 export class LocalLlamaJournal {
   private readonly lease: string;
+  private readonly mutation: string;
   constructor(private readonly root: string) {
     this.lease = join(root, "active");
+    this.mutation = join(root, "mutating");
   }
 
   private attemptPath(attempt: string) {
@@ -84,14 +86,26 @@ export class LocalLlamaJournal {
     const record = readRecord(join(path, "terminal.json"));
     if (!object(record) || !object(record.terminal) || digest(record.terminal) !== record.sha256 ||
         record.terminal.binding !== binding || typeof record.terminal.status !== "string" ||
-        !["COMPLETED", "TRANSPORT_FAILED", "CANCELLED", "MALFORMED", "RETIRED"].includes(record.terminal.status) ||
+        !["COMPLETED", "TRANSPORT_FAILED", "CANCELLED", "EFFECT_REFUSED", "MALFORMED", "RETIRED"].includes(record.terminal.status) ||
         (record.terminal.status === "COMPLETED") !== object(record.terminal.result)) {
       throw unavailable("The original local worker outcome is unresolved or quarantined. A second launch is blocked.");
     }
     return record.terminal as unknown as Terminal;
   }
 
+  private mutate<T>(action: () => T): T {
+    try { mkdirSync(this.mutation, { mode: 0o700 }); }
+    catch { throw unavailable("Another host mutation is active or quarantined."); }
+    sync(this.root);
+    try { return action(); }
+    finally { rmdirSync(this.mutation); sync(this.root); }
+  }
+
   begin(intent: LocalLlamaIntent) {
+    return this.mutate(() => this.beginLocked(intent));
+  }
+
+  private beginLocked(intent: LocalLlamaIntent) {
     if (optionalStat(this.lease) !== null) throw unavailable("A local worker is active or quarantined.");
     // A competing, crashed or interrupted reservation is never stolen by age or PID.
     try { mkdirSync(this.lease, { mode: 0o700 }); } catch { throw unavailable("Could not reserve the local worker."); }
@@ -108,6 +122,10 @@ export class LocalLlamaJournal {
   }
 
   finish(attempt: string, terminal: Terminal) {
+    this.mutate(() => this.finishLocked(attempt, terminal));
+  }
+
+  private finishLocked(attempt: string, terminal: Terminal) {
     const path = this.attemptPath(attempt);
     const holder = this.holder(attempt, terminal.binding);
     writeRecord(join(path, "terminal.json"), { terminal, sha256: digest(terminal) });
@@ -133,13 +151,17 @@ export class LocalLlamaJournal {
 
   /** An explicit trusted recovery. Leave old intents and terminal records intact. */
   retire(attempt: string, binding: string, verifyDrained: () => boolean) {
-    const path = this.attemptPath(attempt);
+    this.mutate(() => this.retireLocked(attempt, binding, verifyDrained));
+  }
+
+  private retireLocked(attempt: string, binding: string, verifyDrained: () => boolean) {
+    this.attemptPath(attempt);
     this.holder(attempt, binding);
     if (verifyDrained() !== true) throw unavailable("The underlying local worker or workspace effect has not been drained.");
     let terminal: Terminal | null;
     try { terminal = this.find(attempt, binding); } catch { terminal = null; }
     if (terminal === null) {
-      this.finish(attempt, { status: "RETIRED", binding });
+      this.finishLocked(attempt, { status: "RETIRED", binding });
     } else {
       this.release(this.holder(attempt, binding));
     }

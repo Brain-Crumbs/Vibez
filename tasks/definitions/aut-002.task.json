@@ -29,7 +29,9 @@
     "migration/admissions/aut-002.json",
     "tasks/definitions/aut-002.task.json",
     "requirements/aut-002.requirement.json",
-    "src/project-services/index.ts"
+    "src/project-services/index.ts",
+    "src/host-policy/index.ts",
+    "src/orchestration-engine/orchestration-engine.ts"
   ],
   "requirements": [
     "AUT-002-R1"

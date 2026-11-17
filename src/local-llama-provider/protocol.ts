@@ -11,6 +11,9 @@ export interface LocalLlamaEdit {
 
 const credential = /(?:-----BEGIN [A-Z ]*PRIVATE KEY-----|(?:gh[pousr]_|github_pat_|sk-(?:proj-)?)[A-Za-z0-9_-]{18,}|Bearer [A-Za-z0-9_.-]{18,})/i;
 const modelControlToken = /<\|[^|\r\n]{1,80}\|>/g;
+function escapeControls(text: string) {
+  return text.replace(modelControlToken, value => value.replace(/</g, "\\u003c"));
+}
 const stringType = { type: "string" };
 const strings = { type: "array", items: stringType, minItems: 1, maxItems: 8 };
 const struct = (properties: Record<string, unknown>) => ({
@@ -31,8 +34,7 @@ export function responseSchema(binding: string, editablePath: string | null) {
 
 export function renderPrompt(request: AgentRunRequest, packet: string,
   snapshots: Readonly<Record<string, string>>, binding: string, editablePath: string | null) {
-  const modelInput = JSON.stringify({ context: JSON.parse(packet), snapshots })
-    .replace(modelControlToken, value => value.replace(/</g, "\\u003c"));
+  const modelInput = escapeControls(JSON.stringify({ context: JSON.parse(packet), snapshots }));
   if (credential.test(modelInput)) throw invalid("Credential material is outside the local worker input contract.");
   const roleRule = request.role === "Developer"
     ? "You author the requested change. The host will apply an accepted replacement after this response. " +
@@ -47,7 +49,7 @@ export function renderPrompt(request: AgentRunRequest, packet: string,
     roleRule +
     " Never include credentials or private reasoning. Produce one complete JSON object.",
     "<|im_end|>\n<|im_start|>user\nInvocation binding: " + binding,
-    "Editable file: " + (editablePath ?? "none"),
+    "Editable file: " + escapeControls(editablePath ?? "none"),
     "Inputs:\n" + modelInput,
     "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
   ].join("\n");

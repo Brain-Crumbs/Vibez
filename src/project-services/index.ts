@@ -49,6 +49,9 @@ export interface ProjectHost {
   readonly verifiedArtifactSha256?: string;
   readonly executors: ReadonlyMap<string, ProjectValidatorCommand>;
   readonly providers?: ReadonlyMap<string, AgentProvider>;
+  /** Trusted role bindings for configured, non-manual orchestration. */
+  readonly actorIdFor?: NonNullable<OrchestrationDependencies["actorIdFor"]>;
+  readonly toolPermissionPolicyFor?: NonNullable<OrchestrationDependencies["toolPermissionPolicyFor"]>;
   readonly hasCredentialReference?: (id: string) => boolean;
   readonly integration: ProjectIntegration;
   readonly authorizePublication?: (request: { repository: string; taskId: string; revision: string }) => boolean;
@@ -419,6 +422,8 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
     retryPolicy: { maxAttempts: document.budgets.maxAttempts, delayMs: document.budgets.retryDelayMs },
     timeoutMsFor: () => document.budgets.providerTimeoutMs,
     maxAttemptsFor: budget.effective,
+    ...(host.actorIdFor === undefined ? {} : { actorIdFor: host.actorIdFor }),
+    ...(host.toolPermissionPolicyFor === undefined ? {} : { toolPermissionPolicyFor: host.toolPermissionPolicyFor }),
   };
   const engine = new SequentialOrchestrationEngine(engineDependencies);
   function taskStates() {

@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { createLocalLlamaRuntime, LOCAL_LLAMA_PROVIDER_ID } from "../dist/public/providers.js";
+import { LocalLlamaJournal } from "../dist/local-llama-provider/journal.js";
 import { parseOutput, renderPrompt } from "../dist/local-llama-provider/protocol.js";
 
 const hash = value => createHash("sha256").update(value).digest("hex");
@@ -56,8 +57,8 @@ async function fixture(t, {mode="ok", effect}={}) {
     "const f=require('node:fs');",
     "const schema=JSON.parse(process.argv.at(-1));",
     "f.appendFileSync("+JSON.stringify(proof)+",'launch\\n');",
-    "f.writeSync(3,JSON.stringify({'child-pid':2147483646}));",
     "const mode="+JSON.stringify(mode)+";",
+    "if(mode!=='no-ack')f.writeSync(3,JSON.stringify({'child-pid':2147483646}));",
     "const replacement=schema.properties.replacement.anyOf?.[1]?.properties.path.const;",
     "let prompt='';process.stdin.on('data',s=>prompt+=s);",
     "process.stdin.on('end',()=>{",
@@ -72,21 +73,24 @@ async function fixture(t, {mode="ok", effect}={}) {
   writeFileSync(binary,"fixture");
   writeFileSync(model,"fixture");
   const modelName="fake-model-for-tests";
-  const {runtime,retireDrainedAttempt}=await createLocalLlamaRuntime({repositoryRoot:repo,projectIdentity:hash("project"),operationDirectory:ops,
+  const options={repositoryRoot:repo,projectIdentity:hash("project"),operationDirectory:ops,
     assets:{runtimeVersion:"fake-release",model:modelName,launcherPath:launch,launcherSha256:hash(readFileSync(launch)),
-      runnerSha256:hash("fixture"),runtimeDirectory:assetsDir,dependencyDirectory:assetsDir,modelPath:model,modelSha256:hash("fixture")},
+      runnerSha256:hash("fixture"),runtimeDirectory:assetsDir,dependencyDirectory:assetsDir,libraries:[],modelPath:model,modelSha256:hash("fixture")},
     contextTokens:4096,outputTokens:128,snapshotPaths:()=>["marker.txt"],editablePath:()=>"marker.txt",
-    replaceFile:effect ?? (async()=>{}),runValidator:async()=>{throw Error("No fixture validator");}});
+    replaceFile:effect ? (edit, input)=>effect({git,repo,ops},edit,input) : (()=>({status:"ROLLED_BACK"})),
+    runValidator:async()=>{throw Error("No fixture validator");}};
+  const {runtime,retireDrainedAttempt}=await createLocalLlamaRuntime(options);
   const make=(name="QA",id="role-one")=>{
     const request=input(name,git("rev-parse","HEAD"),id);
     const scope={signal:new AbortController().signal,paths:["marker.txt"],maxTurns:1,maxCostMicros:0,
+      worktreeRoot:repo,projectIdentity:hash("project"),branch:"main",assertAuthorized:()=>{},
       role:{role:name,principal:request.actorId,provider:LOCAL_LLAMA_PROVIDER_ID,model:modelName,
         tools:request.toolPermissionPolicy.allowedTools,network:"none"}};
     return {request,scope};
   };
   const count=()=>readdirSync(parent).includes("launches") ? readFileSync(proof,"utf8").trim().split("\n").length : 0;
   const active=()=>JSON.parse(readFileSync(join(ops,"active","attempt.json"),"utf8"));
-  return { runtime,make,count,active,retireDrainedAttempt };
+  return { runtime,make,count,active,retireDrainedAttempt,options,parent,ops,launch };
 }
 const linux = process.platform === "linux";
 
@@ -97,6 +101,8 @@ test("scoped runtime journals and reuses exactly one terminal response", {skip:!
   assert.deepEqual(await runtime.runAgent(request,scope),first);
   await assert.rejects(runtime.runAgent({...request,contextPackage:{...request.contextPackage,task:{changed:true}}},scope), /different or uncertain/);
   await assert.rejects(runtime.runAgent(request,{...scope,maxCostMicros:1}), /zero-cost/);
+  await assert.rejects(runtime.runAgent(request,{...scope,worktreeRoot:"/outside"}), /binding/);
+  await assert.rejects(runtime.runAgent(request,{...scope,projectIdentity:hash("other project")}), /binding/);
   await assert.rejects(runtime.runAgent(request,{...scope,role:{...scope.role,tools:["workspace.replace"]}}), /capability/);
   await assert.rejects(runtime.runAgent({...request,contextPackage:{...request.contextPackage,role:"Developer"}},scope), /binding/);
   await assert.rejects(runtime.runAgent(request,{...scope,paths:["other-file"]}), /snapshot path|different or uncertain/);
@@ -118,20 +124,20 @@ test("cancelled and timed-out launches are reaped before another launch", {skip:
   const first=make();
   const cancel=new AbortController();
   const active=runtime.runAgent(first.request,{...first.scope,signal:cancel.signal});
-  const rejection=assert.rejects(active, /interruption/);
+  const rejection=assert.rejects(active, /interrupted/);
   for(let ticks=0;count()===0&&ticks<100;ticks++)await new Promise(resolve=>setTimeout(resolve,10));
   assert.equal(count(),1);
   cancel.abort();
   await rejection;
   const later=make("QA","role-two");
-  await assert.rejects(runtime.runAgent({...later.request,timeoutMs:400},later.scope), /interruption|quarantined/);
+  await assert.rejects(runtime.runAgent({...later.request,timeoutMs:400},later.scope), /interrupted|quarantined/);
   assert.equal(count(),2);
 });
 
 test("lost workspace acknowledgement blocks replay and overlapping roles until trusted drain", {skip:!linux}, async t=>{
-  const {runtime,make,count,active,retireDrainedAttempt}=await fixture(t,{effect:async()=>{throw Error("effect outcome unavailable");}});
+  const {runtime,make,count,active,retireDrainedAttempt}=await fixture(t,{effect:()=>{throw Error("fixture-sensitive-callback-error");}});
   const {request,scope}=make("Developer");
-  await assert.rejects(runtime.runAgent(request,scope), /effect outcome unavailable/);
+  await assert.rejects(runtime.runAgent(request,scope), error=>error.code==="PROVIDER_ERROR" && !error.message.includes("fixture-sensitive"));
   const second=make("QA","another");
   await assert.rejects(runtime.runAgent(second.request,second.scope), /active or quarantined/);
   await assert.rejects(runtime.runAgent(request,scope), /unresolved or quarantined/);
@@ -143,4 +149,77 @@ test("lost workspace acknowledgement blocks replay and overlapping roles until t
   const result=await runtime.runAgent(second.request,second.scope);
   assert.equal(result.role,"QA");
   assert.equal(count(),2);
+});
+
+test("disjoint mounts and fresh runtime digest checks fail before a launch", {skip:!linux}, async t=>{
+  const {runtime,make,count,options,parent,ops,launch}=await fixture(t);
+  await assert.rejects(createLocalLlamaRuntime({...options,assets:{...options.assets,dependencyDirectory:parent}}), /overlap/);
+  await assert.rejects(createLocalLlamaRuntime({...options,assets:{...options.assets,dependencyDirectory:ops}}), /overlap/);
+  writeFileSync(launch,"modified", {mode:0o700});
+  const {request,scope}=make();
+  await assert.rejects(runtime.runAgent(request,scope), /approved digest/);
+  assert.equal(count(),0);
+});
+
+test("a lost launcher acknowledgement quarantines the exact attempt across competing invocations", {skip:!linux}, async t=>{
+  const {runtime,make,count,active,retireDrainedAttempt}=await fixture(t,{mode:"no-ack"});
+  const first=make();
+  await assert.rejects(runtime.runAgent(first.request,first.scope), /unconfirmed/);
+  const second=make("QA","second");
+  await assert.rejects(runtime.runAgent(second.request,second.scope), /active or quarantined/);
+  assert.equal(count(),1);
+  const {attempt,binding}=active();
+  retireDrainedAttempt(attempt,binding,()=>true);
+  await assert.rejects(runtime.runAgent(first.request,first.scope), /terminal/);
+  assert.equal(count(),1);
+});
+
+test("each journal mutation fences recovery against release of a successor", {skip:!linux}, t=>{
+  const root=mkdtempSync(join(tmpdir(),"vibez-llama-journal-"));
+  t.after(()=>rmSync(root,{recursive:true,force:true}));
+  const first=new LocalLlamaJournal(root);
+  const second=new LocalLlamaJournal(root);
+  const make=key=>({version:1,attempt:hash(key),binding:hash("binding-"+key)});
+  const old=make("old");
+  const next=make("new");
+  first.begin(old);
+  first.retire(old.attempt,old.binding,()=>{
+    assert.throws(()=>second.retire(old.attempt,old.binding,()=>true), /mutation/);
+    assert.throws(()=>second.begin(next), /mutation/);
+    return true;
+  });
+  second.begin(next);
+  assert.throws(()=>first.retire(old.attempt,old.binding,()=>true), /changed/);
+  assert.throws(()=>first.begin(make("third")), /active or quarantined/);
+  second.finish(next.attempt,{status:"CANCELLED",binding:next.binding});
+});
+
+test("a fresh grant denial immediately before the workspace effect leaves the file untouched", {skip:!linux}, async t=>{
+  let effect=0;
+  const {runtime,make,count}=await fixture(t,{effect:()=>{effect++;return {status:"ROLLED_BACK"};}});
+  const {request,scope}=make("Developer");
+  let observations=0;
+  await assert.rejects(runtime.runAgent(request,{...scope,assertAuthorized:()=>{
+    if(++observations===2)throw Error("private revocation details");
+  }}),err=>err.code==="PROVIDER_ERROR"&&!err.message.includes("private revocation details"));
+  assert.equal(count(),1);
+  assert.equal(effect,0);
+});
+
+test("a settled but late commit is recorded and never reported as Developer PASS", {skip:!linux}, async t=>{
+  const {runtime,make,ops}=await fixture(t,{effect:({git,repo},edit)=>{
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,650);
+    writeFileSync(join(repo,edit.path),edit.content);
+    git("add",edit.path);
+    git("commit","-m","Apply fixture replacement","--",edit.path);
+    return {status:"COMMITTED",revision:git("rev-parse","HEAD")};
+  }});
+  const {request,scope}=make("Developer");
+  await assert.rejects(runtime.runAgent({...request,timeoutMs:500},scope), error=>error.code==="TIMEOUT");
+  const one=readdirSync(ops);
+  assert.equal(one.length,1);
+  const {terminal}=JSON.parse(readFileSync(join(ops,one[0],"terminal.json"),"utf8"));
+  assert.equal(terminal.status,"CANCELLED");
+  assert.match(terminal.workspaceRevision,/^[a-f0-9]{40}$/);
+  assert.equal(Object.hasOwn(terminal,"result"),false);
 });

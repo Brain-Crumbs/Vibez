@@ -24,15 +24,19 @@ supported package platforms.
 3. Supply `LocalLlamaAssets` with canonical absolute paths for the verified
    launcher, extracted llama.cpp directory, Ubuntu library directory and
    model. Pin launcher, `llama-completion` and model SHA-256 values, plus
-   runtime and model names. The host verifies the complete runtime and
-   dependencies before selecting those directories. Do not place
-   credentials, unrelated libraries or controller files in those mounts.
+   runtime and model names. List each required shared library separately
+   with its directory (`runtime` or `dependencies`), filename and SHA-256.
+   Pins are verified before every launch and only the listed files are
+   mounted. Keep both asset and OS mounts separate from the repository
+   and operations directory.
 4. Use `createLocalLlamaRuntime` from `@brain-crumbs/vibez/providers` and
    pass its runtime to `scopedAgentProvider` in `./integration`. The
    operation directory must be private, on a supported local filesystem,
    outside the repository, and shared by all incarnations of that project
    host. Register the resulting provider as `local-llama.cpp` with existing
-   configured services. Assign a distinct principal to Developer, QA,
+   configured services. Supply trusted \`actorIdFor\` and
+   \`toolPermissionPolicyFor\` mappings on \`ProjectHost\`. Increment the host
+   identity if the implementation or policy changes. Assign a distinct principal to Developer, QA,
    Architect and UAT/Product. The native controller retains merge authority.
 
 ```ts
@@ -51,6 +55,11 @@ const { runtime } = await createLocalLlamaRuntime({
 const provider = scopedAgentProvider(policy, runtime, { maxTurns: 1, maxCostMicros: 0 });
 ```
 
+The runtime validator port uses the existing trusted isolated executor.
+Configured native validation resolves commands through `ProjectHost.executors`.
+Use isolated launcher commands for validators that run repository code.
+
+
 ## Scope and result binding
 
 Each invocation starts one fresh process with the owning gate's compiled
@@ -58,10 +67,13 @@ context. With `snapshot.read`, the trusted host may include the contents of
 approved tracked files at the invocation revision. Developer may receive
 `workspace.replace` for one existing approved file in that snapshot.
 The model proposes replacement text through the structured response.
-Only the host's scoped effect can apply it. Scope, path and current revision
-are checked before the effect. The host must confine that effect to the
-authorized file, check the expected source and honor cancellation before
-making changes. It must return only after the change has settled. Reviewers
+Only the host's scoped effect can apply it. The runtime rechecks the
+current grant, checkout, branch and revision immediately before the effect.
+The host must use a synchronous, exclusive source-ref fence for that
+one authorized file. Return \`COMMITTED\` with the exact resulting revision,
+or \`ROLLED_BACK\` after settling without a commit. The runtime verifies the
+single parent, changed path and exact bytes on Git HEAD before recording a
+completed edit. A late effect never returns PASS. Reviewers
 receive no replacement capability. For an invocation that produces a
 commit, use the old revision for the invocation record. Native validation
 and later reviews use fresh contexts for the actual resulting HEAD.
@@ -92,6 +104,9 @@ tools and larger allocations before launch. The host still charges the
 reserved time and turn through the normal durable policy ledger.
 
 The versioned intent and exclusive lease are durable before launch.
+Journal mutation is serialized across local host processes. An incomplete
+mutation remains blocked. Preserve those records and inspect the affected
+operation offline after all original writers are stopped.
 The attempt identity and binding cannot change on retry. A terminal
 response is reused from the private journal. An uncertain launch,
 termination or workspace effect leaves the original attempt reserved.
@@ -116,8 +131,8 @@ identities.
 
 Run `npm run build` and
 `node scripts/rehearse-local-llama.mjs /absolute/path/to/verified-assets.json`.
-The script creates a disposable configured consumer, launches Developer
-and the three reviewers, records a real developer revision change and
+The script invokes configured \`services.orchestration.run\` in a
+disposable consumer. It launches Developer and the three reviewers, then records the resulting developer revision and
 checks actual validation and reviews through the native gates. It ends
 at `MERGE_READY` in that disposable checkout with no remote integration.
 It provides real provider evidence for the bounded task. The independent

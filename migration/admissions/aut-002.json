@@ -53,7 +53,7 @@
   "issueBodySha256": "b8f40eece89cc3d21599cdd3b70929aebd901ca77e250db15e07eb32d5e6a823",
   "definition": {
     "path": "tasks/definitions/aut-002.task.json",
-    "sha256": "a7c3c9bfbc0c53d504d0db5aca9690da6eafca713cdc6745d8aa64bee75007f5"
+    "sha256": "8dd3aa6a5fa32fea13c0eb53b52ae5f6715a763a5926d82788913f6476bdccdf"
   },
   "requirement": {
     "path": "requirements/aut-002.requirement.json",

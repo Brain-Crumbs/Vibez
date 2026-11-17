@@ -12,6 +12,11 @@ export interface LocalLlamaAssets {
   readonly runtimeDirectory: string;
   readonly runnerSha256: string;
   readonly dependencyDirectory: string;
+  readonly libraries: readonly {
+    readonly directory: "runtime" | "dependencies";
+    readonly filename: string;
+    readonly sha256: string;
+  }[];
   readonly modelPath: string;
   readonly modelSha256: string;
   readonly runtimeVersion: string;
@@ -26,6 +31,23 @@ async function verifyFile(path: string, expectedSha256: string) {
   if (hash.digest("hex") !== expectedSha256) throw invalid("An inference asset does not match its approved digest.");
 }
 
+function libraryPaths(assets: LocalLlamaAssets) {
+  const targets = new Set<string>();
+  if (!Array.isArray(assets.libraries) || assets.libraries.length > 64) throw invalid("Invalid local library manifest.");
+  return assets.libraries.map(item => {
+    if (!["runtime", "dependencies"].includes(item.directory) ||
+        !/^lib[A-Za-z0-9_.+-]+[.]so(?:[.][0-9]+)*$/.test(item.filename)) {
+      throw invalid("A library manifest entry is outside the supported profile.");
+    }
+    const parent = item.directory === "runtime" ? assets.runtimeDirectory : assets.dependencyDirectory;
+    const source = realpathSync(join(parent, item.filename));
+    const target = "/runtime/" + item.filename;
+    if (!source.startsWith(parent + "/") || targets.has(target)) throw invalid("A library overlaps or escapes its pinned directory.");
+    targets.add(target);
+    return { source, target, sha256: item.sha256 };
+  });
+}
+
 /** Only an operator-approved fixed toolchain is mounted. No worktree, home or credential path is mounted. */
 export async function verifyAssets(assets: LocalLlamaAssets) {
   if (process.platform !== "linux" || ![assets.launcherPath, assets.runtimeDirectory,
@@ -37,6 +59,7 @@ export async function verifyAssets(assets: LocalLlamaAssets) {
     verifyFile(assets.launcherPath, assets.launcherSha256),
     verifyFile(join(assets.runtimeDirectory, "llama-completion"), assets.runnerSha256),
     verifyFile(assets.modelPath, assets.modelSha256),
+    ...libraryPaths(assets).map(library => verifyFile(library.source, library.sha256)),
   ]);
 }
 
@@ -77,10 +100,11 @@ function runProcess(assets: LocalLlamaAssets, cwd: string, input: string, schema
     "--unshare-all", "--die-with-parent", "--new-session", "--cap-drop", "ALL", "--clearenv", "--info-fd", "3",
     "--ro-bind", "/usr", "/usr", "--symlink", "usr/lib", "/lib", "--symlink", "usr/lib64", "/lib64",
     "--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp",
-    "--ro-bind", assets.runtimeDirectory, "/runtime", "--ro-bind", assets.dependencyDirectory, "/runtime-deps",
+    "--dir", "/runtime", "--ro-bind", join(assets.runtimeDirectory, "llama-completion"), "/runtime/llama-completion",
+    ...libraryPaths(assets).flatMap(library => ["--ro-bind", library.source, library.target]),
     "--ro-bind", assets.modelPath, "/model.gguf", "--ro-bind", input, "/prompt",
     "--chdir", "/tmp", "--setenv", "HOME", "/tmp",
-    "--setenv", "LD_LIBRARY_PATH", "/runtime:/runtime-deps",
+    "--setenv", "LD_LIBRARY_PATH", "/runtime",
     "/runtime/llama-completion", "--model", "/model.gguf", "--offline", "--no-display-prompt",
     "--no-conversation", "--no-context-shift", "--no-warmup", "--no-perf", "--simple-io", "--file", "/prompt",
     "--ctx-size", String(contextTokens), "--n-predict", String(outputTokens), "--threads", "6",
@@ -97,6 +121,7 @@ function runProcess(assets: LocalLlamaAssets, cwd: string, input: string, schema
     };
     child.once("error", () => { failed = true; });
     child.stdout.on("data", bytes => {
+      if (failed || signal.aborted) return;
       output += decoder.decode(bytes, { stream: true });
       if (output.length > 128 * 1024) {
         failed = true;
@@ -104,6 +129,7 @@ function runProcess(assets: LocalLlamaAssets, cwd: string, input: string, schema
       }
     });
     child.stdio[3]?.on("data", bytes => {
+      if (failed) return;
       info += new TextDecoder().decode(bytes);
       if (info.length > 1024) { failed = true; abort(); }
     });
