@@ -50,8 +50,9 @@ and return only after the worker and children have stopped. Workers have
 access only to their stage's input and scoped outputs. Validate result/context
 bindings through the existing AgentRunner and native review gates.
 A launcher that cannot enforce a cost limit must reject the invocation.
-AUT-002 owns the concrete headless provider. AUT-003 owns unattended queue
-dispatch and lifecycle supervision.
+See [local headless role execution](LOCAL_HEADLESS.md) for the supported
+scoped adapter. AUT-003 owns unattended queue dispatch and lifecycle
+supervision.
 
 ## GitHub deployment gate
 

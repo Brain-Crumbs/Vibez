@@ -132,7 +132,8 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
   const graphErrors = validateDependencyDag(registry);
   if (graphErrors.length) throw new ConfigError("CONFIG_INVALID", "Task dependencies contain unresolved or cyclic edges.");
   const capabilities = provider.capabilities();
-  const requiredRoles = new Set(["Developer", ...document.policy.reviewRoles, ...[...registry.values()].flatMap(task => task.requiredReviewRoles)]);
+  const requiredRoles = new Set(["Developer", ...document.policy.reviewRoles,
+    ...[...registry.values()].flatMap(task => task.requiredReviewRoles.filter(role => role !== "MergeController"))]);
   if ([...requiredRoles].some(role => !(capabilities.supportedRoles as readonly string[]).includes(role)) ||
     !capabilities.supportsTimeout || !capabilities.supportsCancellation) {
     throw new ConfigError("TOOL_UNAVAILABLE", "Execution provider lacks the configured role, timeout, or cancellation capabilities.");

@@ -210,3 +210,15 @@ If structural compatibility remains but semantic behavior changes (for example, 
 
 A trusted unattended launcher enforces the capability envelope under an
 external worker identity. See the [host policy](../../docs/UNATTENDED_HOST.md).
+
+
+## Concrete local adapter
+
+The [local headless adapter](../../docs/LOCAL_HEADLESS.md) implements the
+neutral invocation contract for Developer, QA, Architect and UAT/Product.
+It uses separate host-owned attempt records and launches only a pinned,
+isolated Linux inference process. Compiled context, exact invocation
+binding, allowed snapshot and replacement inputs, and termination before
+result acceptance are checked before the owning gates receive a result.
+The neutral request and result formats are unchanged. The model does not
+serve as the merge controller.
