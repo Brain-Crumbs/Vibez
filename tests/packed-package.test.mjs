@@ -113,7 +113,6 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
   const module = join(project, "consumer.mjs");
   run(process.execPath, [join(project, "consumer.js")], unrelated);
   writeFileSync(module, readFileSync(join(root, "tests/helpers/packed-consumer.mjs"), "utf8"));
-  run(process.execPath, [module, packReceipt.version], unrelated);
   // The generic operation service is exercised against the installed tarball,
   // using public exports and a disposable consumer rather than source imports.
   const operationTests=join(project,"operation-consumer.test.mjs");
@@ -129,6 +128,8 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
   assert.equal(operations.status,0,operations.stdout+operations.stderr);
   assert.match(operations.stdout,/# tests [1-9][0-9]*/);
   assert.doesNotMatch(operations.stderr,/skipping running files/);
+  // The consumer damage check removes packaged schemas; run it after operations.
+  run(process.execPath, [module, packReceipt.version], unrelated);
 
   const localBin = join(project, "node_modules", ".bin");
   for (const alias of ["agent", "vibez"]) {
