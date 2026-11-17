@@ -22,7 +22,7 @@ const pack = (runNpm, temp) => conformance
       return { receipt, archive: join(temp, receipt.filename), paths: receipt.files.map(file => file.path) };
     })();
 const installedDocs = ["docs/INSTALL.md", "docs/PUBLIC_API.md", "docs/CLI.md", "docs/COMPATIBILITY.md",
-  "docs/CONFIGURED_RUNTIME.md", "docs/UNATTENDED_HOST.md", "docs/SUPPORT.md", "docs/WORKFLOW_DRIVER.md",
+  "docs/CONFIGURED_RUNTIME.md", "docs/UNATTENDED_HOST.md", "docs/LOCAL_HEADLESS.md", "docs/SUPPORT.md", "docs/WORKFLOW_DRIVER.md",
   "docs/MIGRATION_CANDIDATE.md", "CHANGELOG.md"];
 
 const publicApi = {

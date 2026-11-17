@@ -102,6 +102,11 @@ export interface ScopedObservation {
 export interface ScopedCapabilities {
   readonly signal: AbortSignal;
   readonly paths: readonly string[];
+  readonly projectIdentity: string;
+  readonly worktreeRoot: string;
+  readonly branch: string;
+  /** Reobserve authorization immediately before a trusted side effect. */
+  readonly assertAuthorized: () => void;
   readonly role?: HostGrant["roles"][number];
 }
 
@@ -174,6 +179,7 @@ export class ScopedHostPolicy {
   readonly #lease: string;
   readonly #holder = randomUUID();
   readonly #now: () => number;
+  readonly #worktreeRoot: string;
   readonly #observe: ScopedHostOptions["observe"];
   readonly #verifyDrained: ScopedHostOptions["verifyDrained"];
   readonly #running = new Set<string>();
@@ -187,6 +193,7 @@ export class ScopedHostPolicy {
     this.grantDigest = digest(this.grant);
     this.#root = realpathSync(options.ledgerDirectory);
     const worktree = realpathSync(options.worktreeRoot);
+    this.#worktreeRoot = worktree;
     if (!lstatSync(this.#root).isDirectory() || below(worktree, this.#root) || below(this.#root, worktree)) {
       throw new HostPolicyError("STORAGE_UNAVAILABLE");
     }
@@ -384,7 +391,10 @@ export class ScopedHostPolicy {
       controller.signal.throwIfAborted();
       const role = operation.action === "agent" || operation.action === "review" ?
         this.grant.roles.find(candidate => candidate.role === operation.role) : undefined;
-      const result = await effect(Object.freeze({ signal: controller.signal, paths: task!.paths, ...(role ? { role } : {}) }));
+      const result = await effect(Object.freeze({ signal: controller.signal, paths: task!.paths,
+        projectIdentity: this.grant.projectIdentity, worktreeRoot: this.#worktreeRoot, branch: task!.branch,
+        assertAuthorized: () => { check(); controller.signal.throwIfAborted(); },
+        ...(role ? { role } : {}) }));
       // A trusted adapter returns only after the operation is drained. A lost
       // response or thrown adapter leaves an unresolved reservation for recovery.
       this.#record({ ...record, occurredAtMs: this.#now(), decision: "settled", charge: zero });

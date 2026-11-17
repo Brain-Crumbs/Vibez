@@ -3,3 +3,5 @@ export { AgentProviderError, AgentRunner, type AgentProvider, type AgentProvider
   type AgentRunResult, type AgentToolPermissionPolicy, type AgentNetworkAccess } from "../agent-provider/index.js";
 export { FileManualAgentProvider, LOCAL_MANUAL_PROVIDER_ID } from "../local-agent-adapter/index.js";
 export type * from "../local-agent-adapter/index.js";
+export { createLocalLlamaRuntime, LOCAL_LLAMA_PROVIDER_ID, type LocalLlamaRuntimeOptions,
+  type LocalLlamaAssets, type LocalLlamaEdit } from "../local-llama-provider/index.js";

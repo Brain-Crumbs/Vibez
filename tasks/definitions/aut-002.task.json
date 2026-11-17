@@ -1,0 +1,65 @@
+{
+  "schemaId": "ipt.task",
+  "schemaVersion": "1.0.0",
+  "taskId": "AUT-002",
+  "title": "Implement a real headless agent adapter with isolated role sessions",
+  "objective": "Replace manual role packet copy and paste with fresh automated provider sessions through Vibez’s neutral runner and unchanged owning gates.",
+  "inScope": [
+    "Implement one documented provider with host-owned capability enforcement and narrow read/write tools. Keep provider/model binaries and credentials outside the repository.",
+    "Persist invocation and session identity, redacted public metadata and durable restart handling. Reject stale results and preserve source revision changes across developer handoff.",
+    "Exercise actual independent isolated Developer, QA, Architect and UAT/Product sessions and all documented failure paths."
+  ],
+  "outOfScope": [
+    "Vendor dependencies in the neutral engine, unrestricted shell or network, GUI automation, AUT-003 scheduling or policy replacement, package release."
+  ],
+  "dependencies": [
+    "MIG-006",
+    "AUT-001"
+  ],
+  "canonicalBranch": "automation/aut-002-headless-provider",
+  "allowedPaths": [
+    "src/local-llama-provider/**",
+    "src/public/providers.ts",
+    "src/host-policy/worker.ts",
+    "contracts/agent-provider/**",
+    "tests/**",
+    "docs/**",
+    "scripts/**",
+    "package.json",
+    "migration/admissions/aut-002.json",
+    "tasks/definitions/aut-002.task.json",
+    "requirements/aut-002.requirement.json",
+    "src/project-services/index.ts",
+    "src/host-policy/index.ts",
+    "src/orchestration-engine/orchestration-engine.ts"
+  ],
+  "requirements": [
+    "AUT-002-R1"
+  ],
+  "acceptanceCriteria": [
+    "AC-01: At least one real provider runs all configured required roles without copying packets/results or manually switching chats.",
+    "AC-02: Every role has fresh scoped context and enforced tool permissions; Developer cannot self-approve via labels or shared session state.",
+    "AC-03: Returned results validate through the unchanged owning gates; malformed/wrong-binding output cannot advance lifecycle.",
+    "AC-04: Restart/uncertain dispatch reconciles the original session or blocks safely, without duplicate active writers.",
+    "AC-05: Cancellation/timeout and budget enforcement are honest about external work still running.",
+    "AC-06: Manual-provider compatibility and a documented neutral conformance contract remain intact."
+  ],
+  "validationPlan": [
+    "Run all README checks, conformance and independent role reviews.",
+    "Exercise wrong/stale bindings, malformed output, transport failure, timed-out or cancelled workers, resource/cost refusal and lost acknowledgement without duplicate workers.",
+    "Run a fresh actual provider task in an isolated disposable checkout with developer source change, deterministic validation and three independent review contexts entering the native gates. Confirm manual fallback and rollback from a stopped set of sessions."
+  ],
+  "affectedContracts": [
+    "control-plane.agent-provider",
+    "control-plane.orchestration-engine",
+    "control-plane.context-compiler",
+    "control-plane.review-framework"
+  ],
+  "requiredReviewRoles": [
+    "Developer",
+    "QA",
+    "Architect",
+    "UAT/Product",
+    "MergeController"
+  ]
+}

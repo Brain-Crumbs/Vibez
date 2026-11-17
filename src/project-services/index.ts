@@ -49,6 +49,10 @@ export interface ProjectHost {
   readonly verifiedArtifactSha256?: string;
   readonly executors: ReadonlyMap<string, ProjectValidatorCommand>;
   readonly providers?: ReadonlyMap<string, AgentProvider>;
+  /** Trusted role bindings for configured, non-manual orchestration. */
+  readonly actorIdFor?: NonNullable<OrchestrationDependencies["actorIdFor"]>;
+  readonly toolPermissionPolicyFor?: NonNullable<OrchestrationDependencies["toolPermissionPolicyFor"]>;
+  readonly requirePassingDeveloperResult?: true;
   readonly hasCredentialReference?: (id: string) => boolean;
   readonly integration: ProjectIntegration;
   readonly authorizePublication?: (request: { repository: string; taskId: string; revision: string }) => boolean;
@@ -132,7 +136,8 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
   const graphErrors = validateDependencyDag(registry);
   if (graphErrors.length) throw new ConfigError("CONFIG_INVALID", "Task dependencies contain unresolved or cyclic edges.");
   const capabilities = provider.capabilities();
-  const requiredRoles = new Set(["Developer", ...document.policy.reviewRoles, ...[...registry.values()].flatMap(task => task.requiredReviewRoles)]);
+  const requiredRoles = new Set(["Developer", ...document.policy.reviewRoles,
+    ...[...registry.values()].flatMap(task => task.requiredReviewRoles.filter(role => role !== "MergeController"))]);
   if ([...requiredRoles].some(role => !(capabilities.supportedRoles as readonly string[]).includes(role)) ||
     !capabilities.supportsTimeout || !capabilities.supportsCancellation) {
     throw new ConfigError("TOOL_UNAVAILABLE", "Execution provider lacks the configured role, timeout, or cancellation capabilities.");
@@ -418,6 +423,9 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
     retryPolicy: { maxAttempts: document.budgets.maxAttempts, delayMs: document.budgets.retryDelayMs },
     timeoutMsFor: () => document.budgets.providerTimeoutMs,
     maxAttemptsFor: budget.effective,
+    ...(host.requirePassingDeveloperResult === true ? { requirePassingDeveloperResult: true as const } : {}),
+    ...(host.actorIdFor === undefined ? {} : { actorIdFor: host.actorIdFor }),
+    ...(host.toolPermissionPolicyFor === undefined ? {} : { toolPermissionPolicyFor: host.toolPermissionPolicyFor }),
   };
   const engine = new SequentialOrchestrationEngine(engineDependencies);
   function taskStates() {
