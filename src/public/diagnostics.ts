@@ -1,4 +1,7 @@
 export { checkProjectUpgrade, readProjectAudit, historyCompatibility, verifyHistoryBackup,
+  prepareNativeHistoryRelocation, activateNativeHistoryRelocation,
+  type NativeHistoryExportRequest, type NativeHistoryActivationRequest,
+  type NativeHistoryRelocationManifest, type NativeHistoryRelocationRecord,
   type HistoryLocation, type UpgradeCheckRequest } from "../history/index.js";
 export { ProjectStatusReporter } from "../status-reporting/status-reporting.js";
 export type * from "../status-reporting/status-reporting.js";

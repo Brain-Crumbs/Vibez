@@ -15,10 +15,17 @@ import { localHistoryIdentity } from "./native-writer.js";
 import { evidenceReceiptIdentity, hashText, identityDigest, isSha, object, parseProvenance } from "./provenance.js";
 import { validate as validateDriverRecord } from "../workflow-driver/io.js";
 import { inventory, optionalStat, type HistoryFile } from "./snapshot.js";
+import {
+  assertImportedHistory, assertNativeRelocationFiles, assertNoNativeRelocation, assertRelocationBinding,
+  assertRelocationCheckout, assertRelocationStorage, confirmNativeRelocationPublication, nativeRelocationRepository, openNativeRelocation,
+  publishNativeRelocation,
+  readRelocationManifest, verifyRelocationInventory, relocationReader,
+  type NativeHistoryRelocationManifest, type NativeHistoryRelocationRecord,
+} from "./relocation.js";
 
 const priorPackage = "0.1.0-mig005.1";
 const previousPackage = "0.1.0-mig007.0";
-const driverReaderPackages = ["0.1.0-mig006.0", "0.1.0-rc.1", "0.1.0-rc.2"];
+const driverReaderPackages = ["0.1.0-mig006.0", "0.1.0-rc.1", "0.1.0-rc.2", relocationReader];
 const taskPattern = /^[A-Z]+-[0-9]{3,}$/;
 const commitPattern = /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/;
 const settled = new Set(["PLANNED", "READY", "DONE"]);
@@ -63,7 +70,7 @@ function commit(value: unknown) {
   return typeof value === "string" && commitPattern.test(value) ? value : null;
 }
 
-async function openHistory(location: HistoryLocation) {
+async function openHistory(location: HistoryLocation, proposed?: NativeHistoryRelocationRecord) {
   const root = realpathSync(location.repositoryRoot);
   if (projectGit(root, ["rev-parse", "--show-prefix"]).trim() !== "") throw new Error("Select the original checkout root.");
   const revision = projectGit(root, ["rev-parse", "--verify", "HEAD"]).trim();
@@ -114,8 +121,18 @@ async function openHistory(location: HistoryLocation) {
     return [name, value];
   }));
   const taskBindingsSha256 = readTaskBindings();
+  const projectIdentity = config?.projectIdentity ?? localHistoryIdentity(root);
+  const installedRelocation = openNativeRelocation(root, projectIdentity);
+  const relocation = proposed ?? installedRelocation?.record;
+  if (relocation !== undefined && (config !== null || exchanges.length !== 0 || bindingText !== null ||
+      taskBindingsSha256 !== digest([]) || (proposed !== undefined && installedRelocation !== null))) {
+    throw new Error("Native relocation requires the original unconfigured runtime layout.");
+  }
+  if (proposed !== undefined) assertRelocationBinding(root, projectIdentity, proposed);
   function assertCurrent() {
     config?.assertCurrent(revision);
+    if (installedRelocation !== null) installedRelocation.assertCurrent();
+    else assertNoNativeRelocation(root);
     const info = optionalStat(markerPath);
     if ((info === null) !== (bindingSha256 === null) || (info !== null &&
       (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1 || hashText(readFileSync(markerPath, "utf8")) !== bindingSha256)) ||
@@ -131,27 +148,60 @@ async function openHistory(location: HistoryLocation) {
       declaredValidators: config.document.validators.map(({ id, required }) => ({ validatorId: id, required })),
     }),
   };
-  return { root, config, projectIdentity: config?.projectIdentity ?? localHistoryIdentity(root), revision,
+  return { root, config, projectIdentity, revision, relocation,
     registry, paths, source, layout, store, recoveryOptions, bindingSha256, taskBindingsSha256, assertCurrent };
 }
 
 type History = Awaited<ReturnType<typeof openHistory>>;
 
+function historyText(history: History, file: HistoryFile): string {
+  const base = history.layout[file.area];
+  if (base === undefined) throw new Error("Unknown history area.");
+  const value = readFileSync(join(history.root, base, file.name), "utf8");
+  if (hashText(value) !== file.sha256) throw new Error("Record changed while inspected.");
+  return value;
+}
+
+function assertCompletedNativeHistory(history: History, files: readonly HistoryFile[]) {
+  assertNativeRelocationFiles(files);
+  const completed = new Set<string>();
+  for (const file of files.filter(file => file.name.startsWith("lifecycle/"))) {
+    const id = /^lifecycle\/([A-Z]+-[0-9]{3,})\.lifecycle\.json$/.exec(file.name)?.[1];
+    if (id === undefined || !history.registry.has(id) || history.source.lifecycle.get(id)?.currentState !== "DONE") {
+      throw new Error("Native relocation requires completed lifecycle records.");
+    }
+    completed.add(id);
+  }
+  for (const file of files) {
+    let task: unknown;
+    if (file.name.startsWith("assignments/.history/")) {
+      task = /^assignments\/\.history\/([A-Z]+-[0-9]{3,})(?:-|\.)/.exec(file.name)?.[1];
+    } else if (file.name.startsWith("evidence/")) {
+      const evidence: unknown = JSON.parse(historyText(history, file));
+      task = object(evidence) && object(evidence.payload) ? evidence.payload.taskId : null;
+    } else if (file.name.startsWith("recovery/") && file.name.endsWith(".intent.json")) {
+      const intent: unknown = JSON.parse(historyText(history, file));
+      task = object(intent) && object(intent.request) ? intent.request.taskId : null;
+    } else {
+      continue;
+    }
+    if (typeof task !== "string" || !completed.has(task)) {
+      throw new Error("Native relocation refuses records without a completed task.");
+    }
+  }
+}
+
 function scanObservations(history: History, files: readonly HistoryFile[]) {
   const findings = new Set<string>();
   const provenance = new Map<string, ReturnType<typeof parseProvenance>[]>();
+  const relocation = history.relocation;
+  const imported = relocation === undefined ? undefined : assertImportedHistory(relocation, files);
   const runs: { taskId: string | null; ownerDigest: string | null; runDigest: string | null;
     keyDigest: string | null; attempts: Record<string, number>; pendingStage: string | null; authority: string }[] = [];
   const agentResults: { taskId: string; subject: unknown; view: Record<string, unknown> }[] = [];
   const exchange = new Map<string, { packets: Set<string>; results: Set<string> }>();
   for (const file of files) {
-    const text = () => {
-      const base = history.layout[file.area];
-      if (base === undefined) throw new Error("Unknown history area.");
-      const value = readFileSync(join(history.root, base, file.name), "utf8");
-      if (hashText(value) !== file.sha256) throw new Error("Record changed while inspected.");
-      return value;
-    };
+    const text = () => historyText(history, file);
     const legacyDefaultExchange = history.config === null && file.area === "state" && file.name.startsWith("manual-exchange/");
     const exchangePath = legacyDefaultExchange ? `${legacyLayout.state}/manual-exchange`
       : /^exchange(?:-[0-9]+)?$/.test(file.area) ? history.layout[file.area] : undefined;
@@ -235,7 +285,9 @@ function scanObservations(history: History, files: readonly HistoryFile[]) {
     }
     if ((file.area === "operations" || file.area === "state") && file.name.startsWith("audit-provenance/") && !file.name.endsWith(".tmp")) {
       const receipt = parseProvenance(text(), file.name.slice("audit-provenance/".length));
-      if (receipt.projectIdentity !== history.projectIdentity) throw new Error("Foreign provenance receipt.");
+      const projectIdentity = relocation !== undefined && imported?.has(file.name) && file.area === "state"
+        ? relocation.source.projectIdentity : history.projectIdentity;
+      if (receipt.projectIdentity !== projectIdentity) throw new Error("Foreign provenance receipt.");
       const existing = provenance.get(receipt.subject) ?? [];
       existing.push(receipt);
       provenance.set(receipt.subject, existing);
@@ -351,7 +403,11 @@ export async function readProjectAudit(location: HistoryLocation, taskId: string
 }
 
 /** Read-only decision aid. A compatible report never authorizes a writer or rebinds a run. */
-export async function checkProjectUpgrade(request: UpgradeCheckRequest) {
+export function checkProjectUpgrade(request: UpgradeCheckRequest) {
+  return inspectUpgrade(request);
+}
+
+async function inspectUpgrade(request: UpgradeCheckRequest, proposed?: NativeHistoryRelocationRecord) {
   const findings = new Set<string>();
   const target = historyCompatibility.readerPackages.find(version => version === request.targetPackageVersion) ?? null;
   if (target === null) findings.add("UNSUPPORTED_READER");
@@ -365,7 +421,7 @@ export async function checkProjectUpgrade(request: UpgradeCheckRequest) {
   let projectIdentity: string | null = null;
   let fileCount = 0;
   try {
-    const history = await openHistory(request);
+    const history = await openHistory(request, proposed);
     configDigest = history.config?.configDigest ?? null;
     projectIdentity = history.projectIdentity;
     bindingSha256 = history.bindingSha256;
@@ -373,6 +429,7 @@ export async function checkProjectUpgrade(request: UpgradeCheckRequest) {
     checkoutRevision = history.revision;
     const snapshot = inventory(history.root, history.layout);
     const observations = scanObservations(history, snapshot.files);
+    if (history.relocation !== undefined && target !== relocationReader) findings.add("PRIOR_READER_REJECTS_RELOCATED_HISTORY");
     for (const code of observations.findings) findings.add(code);
     if ((target === null || !driverReaderPackages.includes(target)) && snapshot.files.some(file => file.area === "driver" || file.area === "operations" && file.name.startsWith("driver/"))) {
       findings.add("PRIOR_READER_DOES_NOT_SUPPORT_DRIVER_HISTORY");
@@ -411,3 +468,99 @@ export async function checkProjectUpgrade(request: UpgradeCheckRequest) {
 }
 
 export { verifyHistoryBackup } from "./snapshot.js";
+
+export type { NativeHistoryRelocationManifest, NativeHistoryRelocationRecord } from "./relocation.js";
+
+type RelocationQuiescence = NonNullable<UpgradeCheckRequest["quiescence"]>;
+
+export interface NativeHistoryExportRequest {
+  readonly repositoryRoot: string;
+  readonly expectedSnapshotSha256: string;
+  readonly quiescence: RelocationQuiescence;
+}
+
+function assertRelocationQuiescence(quiescence: RelocationQuiescence) {
+  if (quiescence?.localWritersDrained !== true || quiescence?.externalSessionsDrained !== true) {
+    throw new Error("Confirm all original and destination writers and external sessions are drained.");
+  }
+}
+
+/** Export a verified stopped native snapshot without writing or transferring any runtime file. */
+export async function prepareNativeHistoryRelocation(request: NativeHistoryExportRequest) {
+  assertRelocationQuiescence(request.quiescence);
+  if (!isSha(request.expectedSnapshotSha256)) throw new Error("Pin the source snapshot SHA-256.");
+  const { repositoryRoot, quiescence, expectedSnapshotSha256 } = request;
+  const history = await openHistory({ repositoryRoot });
+  assertRelocationCheckout(history.root);
+  assertNoNativeRelocation(history.root);
+  const repository = nativeRelocationRepository(history.root);
+  const report = await inspectUpgrade({ repositoryRoot, quiescence, expectedSnapshotSha256,
+    expectedProjectIdentity: history.projectIdentity, expectedBindingSha256: null,
+    expectedTaskBindingsSha256: digest([]), targetPackageVersion: relocationReader });
+  if (!report.compatible) throw new Error("Source history is not compatible: " + report.findings.join(", "));
+  const snapshot = inventory(history.root, history.layout);
+  assertCompletedNativeHistory(history, snapshot.files);
+  if (snapshot.snapshotSha256 !== expectedSnapshotSha256 || nativeRelocationRepository(history.root) !== repository) {
+    throw new Error("Only the pinned, completed native snapshot can be exported.");
+  }
+  history.assertCurrent();
+  const manifest: NativeHistoryRelocationManifest = { version: 1, repository, revision: history.revision,
+    projectIdentity: history.projectIdentity, ...snapshot };
+  return { manifest, manifestSha256: digest(manifest) };
+}
+
+export interface NativeHistoryActivationRequest {
+  readonly repositoryRoot: string;
+  readonly sourceManifest: unknown;
+  /** The trusted operator verified the destination filesystem and mount layout. */
+  readonly destinationStorageVerified: true;
+  readonly expectedSourceManifestSha256: string;
+  readonly destinationBaseline?: { readonly manifest: unknown; readonly expectedManifestSha256: string };
+  readonly quiescence: RelocationQuiescence;
+}
+
+/** Accept an independently verified manifest over a stopped restore. Only a host-local Git marker is written. */
+export async function activateNativeHistoryRelocation(request: NativeHistoryActivationRequest): Promise<NativeHistoryRelocationRecord> {
+  assertRelocationQuiescence(request.quiescence);
+  const source = readRelocationManifest(request.sourceManifest, request.expectedSourceManifestSha256);
+  const { repositoryRoot, quiescence, destinationBaseline } = request;
+  const baseline = destinationBaseline === undefined ? undefined :
+    readRelocationManifest(destinationBaseline.manifest, destinationBaseline.expectedManifestSha256);
+  const history = await openHistory({ repositoryRoot });
+  assertRelocationStorage(history.root, request.destinationStorageVerified);
+  const destinationBaselineSha256 = destinationBaseline?.expectedManifestSha256 ?? null;
+  if (baseline !== undefined && (baseline.projectIdentity !== history.projectIdentity ||
+      baseline.repository !== source.repository)) {
+    throw new Error("The destination baseline belongs to a different checkout.");
+  }
+  if (baseline !== undefined) projectGit(history.root, ["merge-base", "--is-ancestor", baseline.revision, "HEAD"]);
+  const record: NativeHistoryRelocationRecord = {
+    version: 1, source, sourceManifestSha256: request.expectedSourceManifestSha256,
+    destinationProjectIdentity: history.projectIdentity, destinationRevision: history.revision, destinationBaselineSha256,
+  };
+  if (history.relocation !== undefined) {
+    if (history.relocation.sourceManifestSha256 !== record.sourceManifestSha256 ||
+        history.relocation.destinationBaselineSha256 !== destinationBaselineSha256) throw new Error("Another relocation is already active.");
+    assertImportedHistory(history.relocation, inventory(history.root, history.layout).files);
+    history.assertCurrent();
+    confirmNativeRelocationPublication(history.root);
+    return history.relocation;
+  }
+  assertRelocationBinding(history.root, history.projectIdentity, record);
+  const restored = inventory(history.root, history.layout);
+  verifyRelocationInventory(source, baseline, restored.files);
+  assertCompletedNativeHistory(history, source.files);
+  if (baseline !== undefined) assertCompletedNativeHistory(history, baseline.files);
+  const expectedSnapshotSha256 = restored.snapshotSha256;
+  const report = await inspectUpgrade({ repositoryRoot, quiescence, expectedSnapshotSha256,
+    expectedProjectIdentity: history.projectIdentity, expectedBindingSha256: null,
+    expectedTaskBindingsSha256: digest([]), targetPackageVersion: relocationReader }, record);
+  if (!report.compatible) throw new Error("Restored history is not compatible: " + report.findings.join(", "));
+  if (inventory(history.root, history.layout).snapshotSha256 !== expectedSnapshotSha256) {
+    throw new Error("Restored history changed before activation.");
+  }
+  history.assertCurrent();
+  assertRelocationBinding(history.root, history.projectIdentity, record);
+  publishNativeRelocation(history.root, record);
+  return record;
+}

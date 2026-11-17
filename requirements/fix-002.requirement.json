@@ -1,0 +1,18 @@
+{
+  "schemaId": "ipt.requirement",
+  "schemaVersion": "1.0.0",
+  "requirementId": "FIX-002-R1",
+  "taskId": "FIX-002",
+  "statement": "Relocate verified, quiescent and completed native history within the same GitHub project, preserving original runtime and provenance bytes.",
+  "acceptanceCriteria": [
+    "AC-01: Validate the source snapshot and same-project destination before activation, including owner-confirmed quiescence and explicit snapshot and manifest digests.",
+    "AC-02: Preserve original records and audit provenance byte-for-byte. Validate imported receipts alongside new destination evidence.",
+    "AC-03: Reject foreign, edited, missing, colliding, or unpinned histories and unsupported scopes. Activation is durable and safely repeatable.",
+    "AC-04: Document Windows-to-WSL handoff and rollback limits. No runtime state, credentials, or live transfer manifests are tracked.",
+    "AC-05: Pass fresh independent QA, Architecture, and UAT reviews and exact-head CI, then merge through the protected native controller. Retain validation and operational restore evidence."
+  ],
+  "sourceRefs": [
+    "https://github.com/Brain-Crumbs/Vibez/issues/26",
+    "sha256:4877de245d179c6b53148d8824dcf910c5fff851026ec5fbb23d1f08e843bbc5"
+  ]
+}

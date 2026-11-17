@@ -27,7 +27,7 @@ all 24 source modules, source contracts, current tests and downstream test owner
 | `./workflow` | `DeveloperStartWorkflow`, `SequentialOrchestrationEngine`, `FileOrchestrationRunStore`, `parseOrchestrationRunJournal`, orchestration ports | Start/validate/review/rework/readiness/merge delegated to existing owners |
 | `./providers` | `AgentProvider`, `AgentRunner`, `AgentProviderError`, `FileManualAgentProvider`, packet/result types | All five roles and PASS/FAIL/BLOCKED remain reachable; transport is not approval |
 | `./integration` | `PullRequestLifecycleAdapter`, `MergeReadinessPolicyEngine`, `ControlledMergeController`, their Git/GitHub/CI operation ports and concrete GitHub adapters | Canonical PR, current checks, exact head, separately granted merge authority |
-| `./diagnostics` | Status, diagnostics and recovery ports, plus `readProjectAudit`, `checkProjectUpgrade`, `verifyHistoryBackup` and `historyCompatibility` | Read-only audit and upgrade checks remain distinct from authorized offline recovery |
+| `./diagnostics` | Status, diagnostics and recovery ports, plus `readProjectAudit`, `checkProjectUpgrade`, `verifyHistoryBackup` and `historyCompatibility`, plus `prepareNativeHistoryRelocation` and `activateNativeHistoryRelocation` | Read-only checks and explicit host-owned activation for verified stopped native history |
 | `./cli` | `runCli`, `CliRunContext`, `CliRunResult`, `OutputEnvelope`, `EXIT_CODES` | Stable command/exit/JSON behavior; no parsing human output |
 
 Low-level port types needed for custom providers, stores, validators, context

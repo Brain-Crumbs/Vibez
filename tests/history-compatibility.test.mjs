@@ -6,9 +6,12 @@ import { join } from "node:path";
 import test from "node:test";
 import { runCli } from "../dist/cli/core.js";
 import { inspectEvidenceReferences } from "../dist/recovery-tools/evidence-integrity.js";
-import { createLocalEvidenceWriter } from "../dist/history/native-writer.js";
+import { createLocalEvidenceWriter, recordLocalProvenance } from "../dist/history/native-writer.js";
 import { FileEvidenceStore } from "../dist/evidence-store/index.js";
-import { checkProjectUpgrade, historyCompatibility, readProjectAudit, verifyHistoryBackup } from "../dist/public/diagnostics.js";
+import {
+  activateNativeHistoryRelocation, checkProjectUpgrade, historyCompatibility, prepareNativeHistoryRelocation,
+  readProjectAudit, verifyHistoryBackup,
+} from "../dist/public/diagnostics.js";
 
 const timestamp = "2026-11-10T20:00:00Z";
 const taskId = "BOOT-003";
@@ -26,23 +29,24 @@ function temp(t) {
   return root;
 }
 
-function history(t, repeat = false) {
+function history(t, repeat = false, id = taskId, provenance = false) {
+  const taskId = id;
   const root = temp(t);
   const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: "pipe" }).trim();
   git("init", "-b", "main");
   git("config", "user.name", "Audit fixture");
   git("config", "user.email", "fixture@example.invalid");
   const canonicalBranch = "fixture/audit";
-  const task = { ...fixture("task"), dependencies: [], canonicalBranch, requirements: [], affectedContracts: [] };
+  const task = { ...fixture("task"), taskId, dependencies: [], canonicalBranch, requirements: [], affectedContracts: [] };
   mkdirSync(join(root, "tasks/definitions"), { recursive: true });
-  writeFileSync(join(root, "tasks/definitions/task.task.json"), JSON.stringify(task));
+  writeFileSync(join(root, "tasks/definitions", taskId.toLowerCase() + ".task.json"), JSON.stringify(task));
   git("add", "tasks");
   git("commit", "-m", "First fixture revision");
   const first = git("rev-parse", "HEAD");
   git("commit", "--allow-empty", "-m", "Second fixture revision");
   const second = git("rev-parse", "HEAD");
   git("branch", canonicalBranch);
-  const store = new FileEvidenceStore(join(root, layout.state, "evidence"));
+  const store = provenance ? createLocalEvidenceWriter(root) : new FileEvidenceStore(join(root, layout.state, "evidence"));
   function evidence(payload) {
     const result = store.record(payload);
     assert.equal(result.ok, true, JSON.stringify(result));
@@ -50,7 +54,7 @@ function history(t, repeat = false) {
   }
   const lifecyclePath = join(root, layout.state, "lifecycle", `${taskId}.lifecycle.json`);
   mkdirSync(join(lifecyclePath, ".."), { recursive: true });
-  const validation = fixture("validation-evidence");
+  const validation = { ...fixture("validation-evidence"), taskId };
   const eventId = `dev-validation:${taskId}:assigned-run:IN_DEVELOPMENT->DEV_VALIDATED`;
   const event = (id, fromState, toState, revisionIdentity, evidenceRef = "observation") => ({
     eventId: id, taskId, fromState, toState, revisionIdentity, evidenceRef, occurredAt: timestamp,
@@ -235,4 +239,121 @@ test("valid assignment archives may contain recovery-like text in the lock ID", 
   writeFileSync(join(directory, `${taskId}-${lockId}-released-2026-11-10T20_3A00_3A00Z-0.json`), JSON.stringify(record));
   const report = await checkProjectUpgrade({ repositoryRoot: root, quiescence: drain, targetPackageVersion: newPackage });
   assert.equal(report.compatible, true, JSON.stringify(report));
+});
+
+const relocationVersion = "0.1.0-rc.3";
+const relocationOrigin = "https://github.com/example/native.git";
+const relocationMarker = ".git/vibez-native-relocation/history.json";
+const relocationGit = (root, ...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: "pipe" }).trim();
+
+async function relocationExport(root) {
+  const repositoryRoot = root;
+  relocationGit(root, "remote", "add", "origin", relocationOrigin);
+  const check = await checkProjectUpgrade({ repositoryRoot, targetPackageVersion: relocationVersion, quiescence: drain });
+  assert.equal(check.compatible, true, JSON.stringify(check));
+  const exported = await prepareNativeHistoryRelocation({ repositoryRoot, quiescence: drain,
+    expectedSnapshotSha256: check.snapshotSha256 });
+  return exported;
+}
+
+test("a digest-pinned native restore retains original provenance and refuses an injected or modified historical receipt", async t => {
+  const { root } = history(t, true, taskId, true);
+  const sourceAudit = await readProjectAudit({ repositoryRoot: root }, taskId);
+  assert.ok(sourceAudit.evidence.every(record => record.engine?.projectIdentity === sourceAudit.projectIdentity));
+  const { manifest, manifestSha256 } = await relocationExport(root);
+  const target = temp(t);
+  relocationGit(target, "clone", root, ".");
+  relocationGit(target, "remote", "set-url", "origin", relocationOrigin);
+  mkdirSync(join(target, ".agent"));
+  cpSync(join(root, layout.state), join(target, layout.state), { recursive: true });
+  const request = { repositoryRoot: target, quiescence: drain, destinationStorageVerified: true, sourceManifest: manifest,
+    expectedSourceManifestSha256: manifestSha256 };
+  const check = version => checkProjectUpgrade({ repositoryRoot: target, quiescence: drain, targetPackageVersion: version });
+
+  assert.equal((await check(relocationVersion)).compatible, false);
+  await assert.rejects(activateNativeHistoryRelocation({ ...request, expectedSourceManifestSha256: "0".repeat(64) }), /pinned digest/);
+  await assert.rejects(activateNativeHistoryRelocation({ ...request, destinationStorageVerified: false }), /supported local storage/);
+  await assert.rejects(activateNativeHistoryRelocation({ ...request, quiescence: { ...drain, externalSessionsDrained: false } }), /drained/);
+  relocationGit(target, "remote", "set-url", "origin", "https://github.com/example/foreign.git");
+  await assert.rejects(activateNativeHistoryRelocation(request), /different checkout/);
+  relocationGit(target, "remote", "set-url", "origin", relocationOrigin);
+  assert.equal(existsSync(join(target, relocationMarker)), false);
+
+  const accepted = await activateNativeHistoryRelocation(request);
+  const markerBefore = readFileSync(join(target, relocationMarker));
+  assert.deepEqual(await activateNativeHistoryRelocation(request), accepted);
+  assert.deepEqual(readFileSync(join(target, relocationMarker)), markerBefore);
+  assert.notEqual(accepted.destinationProjectIdentity, manifest.projectIdentity);
+  assert.equal(verifyHistoryBackup(target, layout, manifest.snapshotSha256).matches, true);
+  const restored = await readProjectAudit({ repositoryRoot: target }, taskId);
+  assert.deepEqual(restored.events, sourceAudit.events);
+  assert.deepEqual(restored.evidence, sourceAudit.evidence);
+  assert.deepEqual(restored.findings, []);
+  assert.equal((await check(relocationVersion)).compatible, true);
+  assert.deepEqual((await check("0.1.0-rc.2")).findings, ["PRIOR_READER_REJECTS_RELOCATED_HISTORY"]);
+  await assert.rejects(prepareNativeHistoryRelocation({ repositoryRoot: target, quiescence: drain,
+    expectedSnapshotSha256: manifest.snapshotSha256 }), /already has/);
+
+  const receipt = manifest.files.find(file => file.name.startsWith("audit-provenance/"));
+  const receiptPath = join(target, layout.state, receipt.name);
+  rmSync(receiptPath);
+  assert.equal((await check(relocationVersion)).compatible, false);
+  cpSync(join(root, layout.state, receipt.name), receiptPath);
+
+  recordLocalProvenance(root, "1".repeat(64), null, "fixture");
+  cpSync(join(root, layout.state, "audit-provenance"), join(target, layout.state, "audit-provenance"), { recursive: true });
+  assert.equal((await check(relocationVersion)).compatible, false);
+  await assert.rejects(readProjectAudit({ repositoryRoot: target }, taskId), /History unavailable/);
+});
+
+test("relocation verifies the precise union of completed stores and still records destination provenance", async t => {
+  const { root } = history(t, false, taskId, true);
+  const otherTask = "BOOT-490";
+  const { root: target } = history(t, false, otherTask, true);
+  relocationGit(target, "fetch", root, "main");
+  relocationGit(target, "merge", "--allow-unrelated-histories", "--no-edit", "FETCH_HEAD");
+  const source = await relocationExport(root);
+  const baseline = await relocationExport(target);
+  const repositoryRoot = target;
+  const request = { repositoryRoot, quiescence: drain, destinationStorageVerified: true, sourceManifest: source.manifest,
+    expectedSourceManifestSha256: source.manifestSha256 };
+  const before = await readProjectAudit({ repositoryRoot }, otherTask);
+  cpSync(join(root, layout.state), join(target, layout.state), { recursive: true });
+  await assert.rejects(activateNativeHistoryRelocation(request), /restored bytes differ/i);
+  await assert.rejects(activateNativeHistoryRelocation({ ...request, destinationBaseline: {
+    manifest: source.manifest, expectedManifestSha256: source.manifestSha256,
+  } }), /different checkout/);
+  assert.equal(existsSync(join(target, relocationMarker)), false);
+  const accepted = await activateNativeHistoryRelocation({ ...request, destinationBaseline: {
+    manifest: baseline.manifest, expectedManifestSha256: baseline.manifestSha256,
+  } });
+  const prior = await readProjectAudit({ repositoryRoot }, taskId);
+  const own = await readProjectAudit({ repositoryRoot }, otherTask);
+  assert.equal(prior.state, "DONE");
+  assert.equal(own.state, "DONE");
+  assert.deepEqual(own.events, before.events);
+  assert.deepEqual(own.evidence, before.evidence);
+  assert.equal(prior.evidence[0].engine.projectIdentity, source.manifest.projectIdentity);
+  assert.equal(own.evidence[0].engine.projectIdentity, accepted.destinationProjectIdentity);
+
+  // New local bookkeeping after cutover does not affect any imported hash.
+  recordLocalProvenance(target, "8".repeat(64), null, "fixture");
+  const post = await checkProjectUpgrade({ repositoryRoot, quiescence: drain, targetPackageVersion: relocationVersion });
+  assert.equal(post.compatible, true, JSON.stringify(post));
+  assert.equal(post.fileCount, source.manifest.files.length + baseline.manifest.files.length + 1);
+});
+
+test("relocation refuses evidence for a registered task without its completed lifecycle", async t => {
+  const { root } = history(t, false, taskId, true);
+  const otherTask = "BOOT-491";
+  const { root: incomplete, lifecyclePath } = history(t, false, otherTask, true);
+  rmSync(lifecyclePath);
+  relocationGit(root, "fetch", incomplete, "main");
+  relocationGit(root, "merge", "--allow-unrelated-histories", "--no-edit", "FETCH_HEAD");
+  cpSync(join(incomplete, layout.state, "evidence"), join(root, layout.state, "evidence"), { recursive: true });
+  relocationGit(root, "remote", "add", "origin", relocationOrigin);
+  const report = await checkProjectUpgrade({ repositoryRoot: root, targetPackageVersion: relocationVersion, quiescence: drain });
+  assert.equal(report.compatible, true);
+  await assert.rejects(prepareNativeHistoryRelocation({ repositoryRoot: root, quiescence: drain,
+    expectedSnapshotSha256: report.snapshotSha256 }), /without a completed task/);
 });
