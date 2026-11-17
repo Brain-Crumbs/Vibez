@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "taskId": "AUT-003",
+  "repository": "Brain-Crumbs/Vibez",
+  "issue": "https://github.com/Brain-Crumbs/Vibez/issues/11",
+  "issueUpdatedAt": "2026-11-08T19:17:56Z",
+  "integrationBase": "38dea54d2940027ebb93619bbc70d9a5b5a91343",
+  "canonicalBranch": "automation/aut-003-unattended-supervisor",
+  "prerequisites": [
+    {
+      "taskId": "AUT-002",
+      "pr": 28,
+      "reviewedHead": "191190caf8768fd896bf14fe13e98a7cabfc9fc6",
+      "merge": "38dea54d2940027ebb93619bbc70d9a5b5a91343",
+      "ci": "https://github.com/Brain-Crumbs/Vibez/actions/runs/44140228485",
+      "reviews": "https://github.com/Brain-Crumbs/Vibez/pull/28#issuecomment-6956288577",
+      "nativeDoneEvidence": "AUT-002::merge@1",
+      "completion": "https://github.com/Brain-Crumbs/Vibez/pull/28#issuecomment-6956575328",
+      "nativeLifecycleSha256": "ba3b212377f55a8bbbfbd6069f789ef2ced76314e3f028b9af9601b62f792f20"
+    }
+  ],
+  "historicalPrerequisite": {
+    "taskId": "MIG-003",
+    "pr": 15,
+    "reviewedHead": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+    "merge": "16a73b8071f5b9ef390d08504e325b779af291fe",
+    "sealedCommit": "fdebe9111ce7aa004566c4068a2c15a9a95ab00c",
+    "receipt": "migration/admissions/mig-003.json",
+    "ci": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876",
+    "mainCi": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42869658896",
+    "allSixJobs": "success",
+    "reviews": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+    "reviewedRoles": [
+      "QA",
+      "Architect",
+      "UAT/Product"
+    ],
+    "reviewReportSha256": [
+      "29fb6acfe2e11a15b6426bb419b56cb3725caa0818c56bd0d2028d1b7c56e0db",
+      "304a16ba1d0f7d210ec176a3f84e10a0ca8d55bafd2730aca430e09e004411ee",
+      "1e214dfdc930206d864248d68e2e233a795b84576a664960147b1f21365fcec9"
+    ],
+    "evidenceSnapshotSha256": "68d2141bba01111653b28a75566b62b6cb45845075f4a202053c8bb85de5e852",
+    "observedAt": "2026-11-17T18:39:33.361Z",
+    "verifier": "AUT-003 admission with independent Architecture inspection",
+    "rationale": "Verified accepted seed merge and sealed ancestry; exact-source and merged-main checks succeeded; all independent reports bind the accepted source. Historical acceptance is retained without inventing native seed state."
+  },
+  "dependencyProjection": {
+    "native": [
+      "AUT-002"
+    ],
+    "historical": [
+      "MIG-003"
+    ],
+    "external": []
+  },
+  "nativeVerification": {
+    "filesystem": "ext4",
+    "auditedDoneTasks": [
+      "MIG-004",
+      "MIG-005",
+      "MIG-006",
+      "MIG-007",
+      "MIG-008",
+      "AUT-001",
+      "FIX-002",
+      "AUT-002"
+    ],
+    "originalReceiptsVerified": 169,
+    "source": "https://github.com/Brain-Crumbs/Vibez/pull/27#issuecomment-6954980725"
+  },
+  "issueBodySha256": "187173982cc27345fa7f18ba6b19b7633e6d29579808a21c7ad56f27766f0139",
+  "definition": {
+    "path": "tasks/definitions/aut-003.task.json",
+    "sha256": "bf0ec9848b3f8ad25531ab1b4f935b2402aa6c2daeade4a2e9cb6cb529c042ec"
+  },
+  "requirement": {
+    "path": "requirements/aut-003.requirement.json",
+    "sha256": "0527859c710edf26d2e2338d9d57a3d11460a331626cc5806af4741181e697bb"
+  },
+  "sharedOwnership": {
+    "planningAndHttp": "Brain-Crumbs/IPTFantasyFootball#75",
+    "driver": "Brain-Crumbs/IPTFantasyFootball#78",
+    "unattendedComposition": "Brain-Crumbs/Vibez#11",
+    "decision": "Expose one reusable operation supervisor from the configured driver/service; no competing lifecycle authority."
+  }
+}
