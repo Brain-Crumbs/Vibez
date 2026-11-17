@@ -45,7 +45,10 @@
     "tasks/definitions/aut-003.task.json",
     "requirements/aut-003.requirement.json",
     "src/host-policy/index.ts",
-    "migration/admissions/aut-003-scope-1.json"
+    "migration/admissions/aut-003-scope-1.json",
+    "src/history/index.ts",
+    "package-lock.json",
+    "migration/admissions/aut-003-scope-2.json"
   ],
   "requirements": [
     "AUT-003-R1"

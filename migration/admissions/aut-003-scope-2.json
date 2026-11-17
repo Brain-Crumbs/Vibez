@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "taskId": "AUT-003",
+  "parentAdmission": "migration/admissions/aut-003-scope-1.json",
+  "parentRevision": "4fe649ec28eac5e07d8b38a31335b5e4121edbec",
+  "previousDefinitionSha256": "619ddc3e77099af319b51e0f2d04c47b45ad57dfe98b6c466acc08aa258b9aa5",
+  "definitionSha256": "2b96e7a9f8014b4090d0b511a8dcfeb1a459bd8ed11181320f513eb0b7a77923",
+  "addedPaths": [
+    "src/history/index.ts",
+    "package-lock.json",
+    "migration/admissions/aut-003-scope-2.json"
+  ],
+  "reason": "Read-only recognition of versioned supervisor/control/rework history and pending/lock/quiescence upgrade findings; distinguish private candidate reader 0.1.0-rc.4 from prior rc.3 without changing lifecycle/evidence authority or releasing the package.",
+  "independentArchitecture": "Approved by /root/aut003_architecture before implementation. Preserve relocation source reader rc.3; rc.4 reads preserved relocated history; prior readers reject new operation history. Existing workflow-driver contract documents history as a consumer.",
+  "originalAssignment": {
+    "ownerId": "aut003-developer",
+    "runId": "aut003-20261117"
+  },
+  "preserved": "Original admissions, context, assignment, and source histories are retained. Unrelated uncommitted candidate work is excluded from this amendment commit."
+}
