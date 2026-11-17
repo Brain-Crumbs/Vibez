@@ -84,7 +84,7 @@ export class WorkflowOperations {
     requireValue(history.length>0&&history.every((name,index)=>name===`${String(index+1).padStart(12,"0")}.json`),"Operation journal is missing or incomplete.","UNSAFE_RECOVERY");
     const records=history.map(name=>{const record=read(this.path(`${operationId}/audit/${name}`));validate(this.root,"workflow-operation",record);return record as WorkflowOperation;});
     const value = records.at(-1)!;
-    requireValue(records.every((record,index)=>record.sequence===index+1&&record.operationId === operationId && record.binding === this.binding && record.grantDigest === this.host.policy.grantDigest),
+    requireValue(records.every((record,index)=>record.sequence===index+1&&record.operationId === operationId && record.binding === this.binding && record.grantDigest === value.grantDigest),
       "Restore the original package, host, configuration and grant; never create a fresh operation to reset allowances.", "STALE_BINDING");
     for(const [index,record] of records.entries()) {
       requireValue(record.current===null||record.sessions.includes(record.current),"Current session is missing from original operation history.","UNSAFE_RECOVERY");
@@ -107,10 +107,13 @@ export class WorkflowOperations {
   }
   status(operationId:string) {
     const operation=this.inspect(operationId),control=this.control(operationId);
-    return {operation,requestedControl:control.command,requestedControlSequence:control.sequence,acknowledged:operation.controlSequence===control.sequence};
+    return {operation,requestedControl:control.command,requestedControlSequence:control.sequence,acknowledged:operation.controlSequence===control.sequence&&(control.command==="run"||operation.status===({pause:"PAUSED",drain:"DRAINED",cancel:"CANCELLED"} as const)[control.command])};
   }
   private claimsWorkspace(record:Readonly<WorkflowOperation>):boolean {
     return record.status!=="DONE"&&!(record.status==="CANCELLED"&&record.sessions.length===0&&record.pending===null&&record.polls===0&&record.retries===0&&record.reworks===0);
+  }
+  private assertGrant(record:Readonly<WorkflowOperation>):void {
+    requireValue(record.grantDigest===this.host.policy.grantDigest,"Restore this operation's original grant before continuing or controlling it.","STALE_BINDING");
   }
   private save(record: WorkflowOperation): void {
     record.sequence += 1;
@@ -132,6 +135,7 @@ export class WorkflowOperations {
   }
   private command(operationId: string, command: Command): Readonly<WorkflowOperation> {
     const record = this.inspect(operationId);
+    this.assertGrant(record);
     requireValue(record.status !== "DONE", "A completed operation is immutable.");
     const lock = this.path(`${operationId}/control.lock`);
     try { writeFileSync(lock, id(), {flag:"wx"}); } catch { throw new DriverError("CONTROL_BUSY", "Another control request is in progress; retry the same request."); }
@@ -148,9 +152,10 @@ export class WorkflowOperations {
     if(existsSync(safePath(this.root,`${driverDirectory(this.profile)}/writer.lock`)))return record;
     try {await exclusive(this.root,this.profile,async()=>{
       const current={...this.inspect(operationId)} as WorkflowOperation;
-      if(this.control(operationId).command!==command)return;
+      const requested=this.control(operationId);
+      if(requested.command!==command)return;
       current.status=this.pendingEffects.size===0&&this.host.verifyDrained(current)?command==="cancel"?"CANCELLED":command==="pause"?"PAUSED":"DRAINED":"QUARANTINED";
-      if(current.status!=="QUARANTINED")current.controlSequence=this.control(operationId).sequence;
+      if(current.status!=="QUARANTINED")current.controlSequence=requested.sequence;
       this.save(current);
     });}catch(error){if(!(error instanceof DriverError)||error.code!=="DRIVER_BUSY")throw error;}
     return this.inspect(operationId);
@@ -173,7 +178,7 @@ export class WorkflowOperations {
     checkedProfile(this.root,this.profile); bindProfile(this.profile,graph.config);
     await exclusive(this.root,this.profile,async()=>{
       this.operationPath(operationId);
-      if (existsSync(this.path(`${operationId}/audit`))) { requireValue(this.inspect(operationId).planId===planId,"Operation ID already belongs to a different plan.","IDENTITY_CONFLICT"); return; }
+      if (existsSync(this.path(`${operationId}/audit`))) { this.assertGrant(this.inspect(operationId)); requireValue(this.inspect(operationId).planId===planId,"Operation ID already belongs to a different plan.","IDENTITY_CONFLICT"); return; }
       const active = this.list().find(record=>this.claimsWorkspace(record));
       requireValue(!active, `Operation ${active?.operationId} still owns this workspace. Resume or drain its original identity.`, "OPERATION_ACTIVE");
       const plans=this.plans.filter(plan=>plan.planId===planId);
@@ -187,6 +192,7 @@ export class WorkflowOperations {
   }
   async resume(operationId: string, once = false, signal?:AbortSignal): Promise<Readonly<WorkflowOperation>> {
     const record=this.inspect(operationId);
+    this.assertGrant(record);
     if(record.status==="DONE")return record;
     requireValue(this.pendingEffects.size===0&&this.host.verifyDrained(record),"The original external writers must be drained before resume.","WRITER_PENDING");
     await this.recoverLocks(record);
@@ -258,7 +264,7 @@ export class WorkflowOperations {
     try {
     if(signal?.aborted)abort();
     do {
-      const before=this.inspect(operationId);
+      const before=this.inspect(operationId);this.assertGrant(before);
       if(before.status==="DONE" || (before.status==="EXCEPTION" && this.control(operationId).sequence===0))return before;
       if(before.nextAtMs>this.clock()) {
         if(once)return before;
@@ -285,8 +291,8 @@ export class WorkflowOperations {
             if(control!=="run")throw new DriverError("CONTROL_REQUESTED",control);
             requireValue(this.clock()-record.startedAtMs<plan.budgets.maxRuntimeMs,"Operation wall-clock allowance is exhausted.","BUDGET_EXHAUSTED");
           };
-          check();
-          record.status="RUNNING";record.exception=null;record.controlSequence=this.control(operationId).sequence;
+          const acknowledged=this.control(operationId);check();
+          record.status="RUNNING";record.exception=null;record.controlSequence=acknowledged.sequence;
           const runtime:DriverRuntime={...this.host.runtime,config:graph.config,services:this.services,signal:controller.signal,
             unattended:{taskIds:plan.tasks.map(t=>t.taskId),check,effect:async(operation,action)=>{
               check();
@@ -344,11 +350,12 @@ export class WorkflowOperations {
             throw new DriverError("JUDGMENT_BLOCKED","The native attempt has no supported automatic successor; inspect its preserved role judgment.");
           }
         } catch(error) {
-          let command:Command="run";
-          try {command=this.control(operationId).command;}catch(controlError){this.fail(record,controlError);return;}
+          let requested:Control={command:"run",sequence:0};
+          try {requested=this.control(operationId);}catch(controlError){this.fail(record,controlError);return;}
+          const command=requested.command;
           if(command!=="run") {
             record.status=this.pendingEffects.size===0&&this.host.verifyDrained(record)?command==="cancel"?"CANCELLED":command==="pause"?"PAUSED":"DRAINED":"QUARANTINED";
-            if(record.status!=="QUARANTINED")record.controlSequence=this.control(operationId).sequence;
+            if(record.status!=="QUARANTINED")record.controlSequence=requested.sequence;
             record.exception=null;this.save(record);
           } else {
             const code=error instanceof Error&&"code" in error?String(error.code):"HOST_FAILURE";

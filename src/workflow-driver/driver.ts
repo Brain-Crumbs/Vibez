@@ -232,6 +232,7 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
           const response=await g.fetchImpl(`https://api.github.com/repos/${p.repository}/pulls/${ready.pullRequestNumber}`,{method:"GET",headers:{Authorization:`Bearer ${token}`}});
           const pr=await response.json() as GithubPull;
           requireValue(response.ok&&pr.draft===false&&pr.number===ready.pullRequestNumber,"Only the exact ready-for-review PR can receive a merge intent.");
+          runtime.unattended?.check();
           assertPull(pr,p,s,task.canonicalBranch,head);clean(root,head);
           intent={sessionId:s.sessionId,repository:p.repository,issueNumber:s.issueNumber,branch:task.canonicalBranch,number:pr.number,head};
           write(intentPath,intent,true);
@@ -240,6 +241,7 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
         const boundIntent = intent;
         return configured.mergeWithIntent(input, {
           number: boundIntent.number, head: boundIntent.head,
+          assertDispatch: () => runtime.unattended?.check(),
           check: async (number, fresh) => {
             requireValue(number === boundIntent.number, "PR differs from the original merge intent.", "PR_CONFLICT");
             const token = runtime.token ?? process.env.IPT_GITHUB_TOKEN ?? process.env.GITHUB_TOKEN;
@@ -251,6 +253,7 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
               "The original ready PR could not be verified.", "PR_CONFLICT");
             assertPull(pr, p, s, boundIntent.branch, boundIntent.head, !fresh);
             if (fresh) {
+              runtime.unattended?.check();
               clean(root, boundIntent.head);
               requireValue(git(root, "branch", "--show-current") === boundIntent.branch, "The canonical branch changed before merge.");
               const remote = assertRemote(root, p, runtime);

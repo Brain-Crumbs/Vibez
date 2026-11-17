@@ -29,7 +29,6 @@ import { WorkflowDiagnostics } from "../workflow-diagnostics/index.js";
 import type { DriverRuntime } from "../workflow-driver/driver.js";
 import { WorkflowOperations, unattendedProfile, type UnattendedHost } from "../workflow-driver/operations.js";
 import { scopedAgentProvider, scopedValidator } from "../host-policy/worker.js";
-import { scopedMergeEffect } from "../host-policy/merge.js";
 import { createProjectContext, trackedFiles } from "./context.js";
 import { createRetryBudget, type RetryBudgetGrant } from "./retry-budget.js";
 import { configuredValidators, type ProjectValidatorCommand } from "./validators.js";
@@ -344,10 +343,19 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
     pullRequests: host.integration.pullRequests, ciStatus: host.integration.ci,
   });
   const integration = host.integration.merge;
+  const mergeCapabilities=new Map<string,{assertAuthorized:()=>void}>();
+  const unattendedMergeEffect:ControlledMergeDependencies["mergeEffect"]=host.unattended?
+    (task,request,execute)=>host.unattended!.policy.execute({action:"merge",taskId:task.taskId,revision:request.expectedHeadSha,pullRequestNumber:request.number},async capability=>{
+      const key=`${request.number}:${request.expectedHeadSha}`;
+      if(mergeCapabilities.has(key))throw new ConfigError("TOOL_UNAVAILABLE","The original merge effect is still active.");
+      mergeCapabilities.set(key,capability);
+      try{capability.assertAuthorized();return await execute();}finally{mergeCapabilities.delete(key);}
+    }):undefined;
   type MergeIntentGuard = {
     number: number;
     head: string;
     check: (number: number, fresh: boolean) => Promise<void>;
+    assertDispatch?: () => void;
   };
   async function getIntentPullRequest(guard: MergeIntentGuard, number: number) {
     await guard.check(number, false);
@@ -359,7 +367,7 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
   }
   const mergeFor = (guard?: MergeIntentGuard) => new ControlledMergeController({ ...common, lockStore, integrationTarget, mergeReadiness: readiness,
     taskLock: new FileControlledMergeTaskLock(lifecycleRoot, {}, true),
-    ...(host.unattended ? { mergeEffect: scopedMergeEffect(host.unattended.policy) } : host.mergeEffect === undefined ? {} : { mergeEffect: host.mergeEffect }),
+    ...(unattendedMergeEffect ? { mergeEffect: unattendedMergeEffect } : host.mergeEffect === undefined ? {} : { mergeEffect: host.mergeEffect }),
     pullRequests: {
       findPullRequestsByHead: async head => {
         if (!guard) return integration.findPullRequestsByHead(head);
@@ -378,6 +386,12 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
           if (host.authorizeMerge?.({ ...request, repository }) !== true) {
             throw new ConfigError("IDENTITY_CONFLICT", "Merge authority changed before publication.");
           }
+        }
+        guard?.assertDispatch?.();
+        if(host.unattended){
+          const capability=mergeCapabilities.get(`${request.number}:${request.expectedHeadSha}`);
+          if(!capability)throw new ConfigError("IDENTITY_CONFLICT","The fresh merge lacks its original scoped capability.");
+          capability.assertAuthorized();
         }
         return integration.mergePullRequest(request);
       }),
@@ -640,7 +654,7 @@ export interface ConfiguredDriverServices {
   readonly diagnostics: Pick<WorkflowDiagnostics,"explainTask"|"explainTransition"|"explainValidation"|"explainReviews"|"explainMerge">;
   readonly pullRequests: Pick<PullRequestLifecycleAdapter,"ensurePullRequest">;
   readonly recovery: Pick<LocalRecoveryTools,"apply">;
-  mergeWithIntent(request:Parameters<ControlledMergeController["merge"]>[0],guard:{number:number;head:string;check:(number:number,fresh:boolean)=>Promise<void>}):ReturnType<ControlledMergeController["merge"]>;
+  mergeWithIntent(request:Parameters<ControlledMergeController["merge"]>[0],guard:{number:number;head:string;check:(number:number,fresh:boolean)=>Promise<void>;assertDispatch?:()=>void}):ReturnType<ControlledMergeController["merge"]>;
   publishWithGuard(request:Parameters<PullRequestLifecycleAdapter["ensurePullRequest"]>[0],beforeWrite:(number?:number)=>Promise<void>,effect?:<T>(action:()=>Promise<T>)=>Promise<T>):ReturnType<PullRequestLifecycleAdapter["ensurePullRequest"]>;
   prepareWrite():void;
   authorizePublication(taskId:string,revision:string):boolean;

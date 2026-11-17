@@ -49,6 +49,7 @@ async function fixture(t,options={}) {
     if(u.pathname==="/graphql") {const pr=pulls.find(p=>p.node_id===JSON.parse(init.body).variables.id);pr.draft=false;if(options.lostReady){options.lostReady=false;throw Object.assign(new Error("lost ready"),{code:"NETWORK_FAILED"});}return response({data:{}});}
     const number=/\/pulls\/(\d+)$/.exec(u.pathname)?.[1];
     if(!number&&u.pathname.endsWith("/pulls"))await options.onLookup?.();
+    if(number)await options.onFetchPull?.(Number(number));
     return response(number?pulls.find(p=>p.number===Number(number)):pulls.filter(p=>p.state==="open"&&(!u.searchParams.get("head")||u.searchParams.get("head").endsWith(":"+p.head.ref))));
   };
   const ledger=join(lab,"ledger");mkdirSync(ledger);
@@ -66,11 +67,11 @@ async function fixture(t,options={}) {
       ...(pr?{pullRequest:{number:pr.number,revision:pr.head.sha,head:pr.head.ref,base:pr.base.ref,open:pr.state==="open",ready:!pr.draft,protectionsVerified:true}}:{})};}};
   let policy=new ScopedHostPolicy(policyOptions);
   t.after(()=>{policy.close();rmSync(lab,{recursive:true,force:true});});
-  const plan={schemaId:"vibez.workflow-plan",schemaVersion:"1.0.0",planId:"two-markers",tasks:tasks.map((task,n)=>({taskId:task.taskId,issueNumber:n+101,definitionSha256:digest(task)})),
+  const plan={schemaId:"vibez.workflow-plan",schemaVersion:"1.0.0",planId:"two-markers",tasks:(options.firstTaskPlan?tasks.slice(0,1):tasks).map((task,n)=>({taskId:task.taskId,issueNumber:n+101,definitionSha256:digest(task)})),
     budgets:{maxPolls:3,maxRetries:2,maxReworks:2,maxRuntimeMs:600000,initialDelayMs:1,maxDelayMs:4,...options.planBudgets}};
   const host={identity:"operations-fixture@1",actorIdFor:role=>role.toLowerCase(),toolPermissionPolicyFor:()=>({allowedTools:[],networkAccess:"none"}),requirePassingDeveloperResult:true,
     executors:new Map(config.validators.map(({id})=>[id,{command:command.command,args:command.args,category:command.category,timeoutMs:command.timeoutMs}])),
-    authorizePublication:()=>true,authorizeMerge:()=>true,authorizeRecovery:()=>options.authorizeRecovery===true,
+    authorizePublication:()=>true,authorizeMerge:()=>{options.authorizeMergeSeen=true;return true;},authorizeRecovery:()=>options.authorizeRecovery===true,
     integration:{repository:config.project.repository,
       publication:{findOpenPullRequests:async({head})=>pulls.filter(p=>p.state==="open"&&p.head.ref===head).map(native),
         createPullRequest:async input=>{counts.create++;const pr={number:pulls.length+1,node_id:`node-${pulls.length+1}`,title:input.title,body:input.body,draft:true,state:"open",
@@ -100,6 +101,8 @@ async function fixture(t,options={}) {
   const services=await createProjectServices(location,host);
   return {root,git,host,plan,get policy(){return policy;},counts,pulls,services,location,config,
     restart:async()=>{policy.close();policy=new ScopedHostPolicy(policyOptions);host.unattended.policy=policy;return createProjectServices(location,host);},
+    switchGrant:async(plan,grantId,taskIds)=>{policy.close();const nextGrant={...grant,grantId,tasks:grant.tasks.filter(task=>taskIds.includes(task.taskId))};const nextLedger=join(lab,grantId);mkdirSync(nextLedger,{recursive:true});policy=new ScopedHostPolicy({...policyOptions,grant:nextGrant,ledgerDirectory:nextLedger});host.unattended.policy=policy;host.unattended.plans=[plan];return createProjectServices(location,host);},
+    allTasks:tasks,
     advance:(ms=100)=>{clock+=ms;},revoke:()=>{revoked=true;},setDrained:value=>{drained=value;}};
 }
 
@@ -154,7 +157,11 @@ test("incomplete approval yields durable clarification and issue text cannot aut
   const result=await f.services.operations.start("not-approved",operationId,true);
   assert.equal(result.status,"EXCEPTION");assert.equal(result.exception.code,"CLARIFICATION_REQUIRED");assert.equal(f.counts.agent.length,0);
   assert.ok(f.services.operations.audit(operationId).length>=2);
-  await f.services.operations.pause(operationId);
+  let newerControl;const verifyDrained=f.host.unattended.verifyDrained;
+  f.host.unattended.verifyDrained=()=>{f.host.unattended.verifyDrained=verifyDrained;newerControl=f.services.operations.cancel(operationId);return true;};
+  await f.services.operations.pause(operationId);await newerControl;
+  assert.equal(f.services.operations.status(operationId).requestedControl,"cancel");
+  assert.equal(f.services.operations.status(operationId).acknowledged,false,"A newer control cannot inherit the older pause acknowledgment");
   const lock=join(f.root,".vibez/operations/driver/writer.lock");writeFileSync(lock,randomUUID(),{flag:"wx"});
   const pending=JSON.parse((await f.services.cli(["--json","orchestrate","operation","cancel",operationId])).stdout).data;
   assert.equal(pending.operation.status,"PAUSED");assert.equal(pending.acknowledged,false);
@@ -405,4 +412,58 @@ test("concurrent validation cannot replace the active signal or launch a second 
   assert.deepEqual(charges.map(charge=>charge.validatorId),["marker"]);assert.equal(charges.reduce((sum,charge)=>sum+charge.charge.commands,0),1);
   assert.deepEqual(evidenceBytes(f.root),beforeEvidence);
   assert.deepEqual(f.services.status.read(new Date().toISOString()).tasks.find(task=>task.taskId==="DEMO-001"),beforeState);
+});
+
+
+test("completed grant history permits a later approved plan without authorizing foreign replay",async t=>{
+  const f=await fixture(t,{firstTaskPlan:true}),firstId=randomUUID();
+  const first=await f.services.operations.start(f.plan.planId,firstId);assert.equal(first.status,"DONE",JSON.stringify(first));assert.deepEqual(first.completed,["DEMO-001"]);
+  const originalAudit=JSON.stringify(f.services.operations.audit(firstId));
+  const task=f.allTasks[1],nextPlan={...f.plan,planId:"second-marker",tasks:[{taskId:task.taskId,issueNumber:102,definitionSha256:digest(task)}]};
+  const next=await f.switchGrant(nextPlan,"second-approved-grant",["DEMO-002"]);
+  assert.deepEqual(next.operations.inspect(firstId),first);
+  await assert.rejects(next.operations.resume(firstId,true),{code:"STALE_BINDING"});
+  await assert.rejects(next.operations.start(f.plan.planId,firstId,true),{code:"STALE_BINDING"});
+  const second=await next.operations.start(nextPlan.planId,randomUUID());assert.equal(second.status,"DONE",JSON.stringify(second));assert.deepEqual(second.completed,["DEMO-002"]);
+  assert.equal(JSON.stringify(next.operations.audit(firstId)),originalAudit);assert.deepEqual([f.counts.agent.length,f.counts.create,f.counts.merge],[8,2,2]);
+});
+
+test("an unfinished operation under another grant still owns the workspace",async t=>{
+  const f=await fixture(t,{firstTaskPlan:true,pendingCi:true}),firstId=randomUUID();
+  const first=await f.services.operations.start(f.plan.planId,firstId,true);assert.equal(first.status,"WAITING");
+  const task=f.allTasks[1],plan={...f.plan,planId:"second-marker",tasks:[{taskId:task.taskId,issueNumber:102,definitionSha256:digest(task)}]};
+  const other=await f.switchGrant(plan,"different-approved-grant",["DEMO-002"]);
+  await assert.rejects(other.operations.start(plan.planId,randomUUID(),true),{code:"OPERATION_ACTIVE"});
+  await assert.rejects(other.operations.cancel(firstId),{code:"STALE_BINDING"});
+  assert.deepEqual(other.operations.inspect(firstId),first);assert.equal(f.counts.agent.length,4);assert.equal(f.counts.merge,0);
+});
+
+
+test("cancellation during pre-merge reads never dispatches a fresh merge",async t=>{
+  for(const stage of ["intent","fresh"])await t.test(stage,{timeout:30000},async t=>{
+    let entered,release;const reached=new Promise(resolve=>{entered=resolve;}),blocked=new Promise(resolve=>{release=resolve;});
+    const options={},f=await fixture(t,options),operationId=randomUUID(),controller=new AbortController();
+    options.onFetchPull=async()=>{
+      const record=f.services.operations.inspect(operationId),intent=record.current&&existsSync(join(f.root,".vibez/operations/driver/merge-intents",record.current+".json"));
+      if(record.pending!=="run"||f.pulls[0]?.draft!==false||(stage==="intent"?intent:!intent||!options.authorizeMergeSeen))return;
+      options.onFetchPull=undefined;f.setDrained(false);entered();await blocked;f.setDrained(true);
+    };
+    const run=f.services.operations.start(f.plan.planId,operationId,false,controller.signal);
+    try{await reached;controller.abort();const result=await run;assert.equal(result.status,"QUARANTINED",JSON.stringify(result));assert.equal(f.counts.merge,0);}finally{release();}
+    await new Promise(resolve=>setTimeout(resolve,150));
+    assert.equal(f.counts.merge,0);assert.equal(f.services.status.read(new Date().toISOString()).tasks.find(task=>task.taskId==="DEMO-001").state,"MERGE_READY");
+  });
+});
+
+
+test("revocation during final merge preflight prevents the original authorized effect",async t=>{
+  const options={},f=await fixture(t,options);let injected=false;
+  options.onFetchPull=async()=>{
+    if(!options.authorizeMergeSeen||!f.policy.decisions().some(decision=>decision.decision==="allow"&&decision.action==="merge"))return;
+    options.onFetchPull=undefined;injected=true;f.revoke();await new Promise(resolve=>setTimeout(resolve,150));
+  };
+  const result=await f.services.operations.start(f.plan.planId,randomUUID());
+  assert.equal(injected,true);assert.equal(result.status,"EXCEPTION",JSON.stringify(result));assert.equal(f.counts.merge,0);
+  assert.ok(f.policy.decisions().some(decision=>decision.decision==="deny"&&decision.reason==="INACTIVE_GRANT"));
+  assert.equal(f.services.status.read(new Date().toISOString()).tasks.find(task=>task.taskId==="DEMO-001").state,"MERGE_READY");
 });

@@ -64,7 +64,7 @@
       "COMPLETED is returned through ControlledMergeController confirmed DONE only; the engine never performs the merge HTTP call itself",
       "every stage summary and provider invocation uses a stable derived identity ${request.runId}::<stage-id>; retrying a provider stage does not create another role identity",
       "retryPolicy defaults to maxAttempts=3, delayMs=100; maxAttempts must be an integer 1..10 including the first attempt; delayMs must be an integer 0..60000",
-      "provider attempt counts are persisted before invocation per stage/key and survive restarts/resumes; only actual recoverable AgentProviderError TIMEOUT or PROVIDER_ERROR automatically retries with a fixed abortable delay",
+      "provider attempt counts are persisted before invocation per stage/key and survive restarts/resumes; only actual recoverable AgentProviderError TIMEOUT or PROVIDER_ERROR automatically retries with a capped exponential abortable delay",
       "provider CANCELLED, malformed results, unsupported roles, context mismatch, preconditions, and mutating-gate failures are not automatically retried; semantic review/validation FAIL or BLOCKED is never retryable infrastructure",
       "the final failed provider attempt propagates its typed error; a later resume without remaining budget throws RETRY_EXHAUSTED; explicit policy increases remain bounded by 10 total attempts",
       "overall request timeout and caller abort compose a signal passed to AgentRunner; timeoutMsFor(role) independently supplies per-attempt provider timeout; CANCELLED and overall TIMEOUT remain distinct errors",

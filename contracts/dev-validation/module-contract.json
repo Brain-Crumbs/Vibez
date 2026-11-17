@@ -7,7 +7,7 @@
     "interfaces": [
       "DeveloperValidationGate.validate(request): Promise<DeveloperValidationResult>",
       "DeveloperValidationGate.enterRework({taskId,actorId,runId,failedRunId,occurredAt}): DeveloperValidationReworkResult",
-      "DeveloperValidationRequest { taskId, actorId, runId, occurredAt, assertSource?, commandEnvironment?, routeFirstReview? }",
+      "DeveloperValidationRequest { taskId, actorId, runId, occurredAt, signal?, assertSource?, commandEnvironment?, routeFirstReview? }",
       "DeveloperValidationStateStore.get/save lifecycle persistence boundary",
       "DeveloperValidationBranchAdapter.assertCurrentTaskBranch/currentRevision boundary",
       "DeveloperValidationEvidenceStore.record/checkRevision boundary",

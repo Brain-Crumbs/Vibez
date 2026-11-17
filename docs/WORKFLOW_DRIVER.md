@@ -293,11 +293,18 @@ allowance was created, cancel and verify the acknowledgment, then start a correc
 host-approved plan with a new UUID. The rejected record remains available. An
 operation with task work or spent allowance keeps its claim and must use its
 original identity; this exception cannot reset a task budget.
+Completed history remains readable when the same configured host later receives
+a new grant. A new grant may admit its own plan after prior work completes; it
+cannot resume or control an operation bound to a different grant. Any unfinished
+foreign-grant operation continues to block workspace admission.
 
-Only the authorized task/dependency closure is eligible. External or pre-native
-prerequisites must already have accepted admission evidence and native task state;
-the supervisor never marks a prerequisite complete. The native start gate creates
-the canonical branch from the integration target. Native validators and separate
+Only the authorized task/dependency closure is eligible. External and pre-native
+prerequisites retain their evidence-backed admission edges; registered native
+dependencies outside the plan must already be DONE. The supervisor never invents
+native state or marks a prerequisite complete. The native start gate creates
+the canonical branch from the integration target. Only the scoped start action
+may observe the configured integration branch; every other action still requires
+the task's canonical branch. Native validators and separate
 QA, Architecture and UAT roles decide outcomes. Current evidence gates non-force
 publication, draft/ready conversion, exact-head CI and the native merge controller.
 Only that controller records MERGED/DONE. After confirmed merge, a clean

@@ -122,9 +122,13 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
     .replaceAll('"../dist/public/config.js"',JSON.stringify(manifest.name+"/config"))
     .replaceAll('"../dist/public/integration.js"',JSON.stringify(manifest.name+"/integration"))
     .replaceAll('"../dist/public/diagnostics.js"',JSON.stringify(manifest.name+"/diagnostics")));
-  const operations=spawnSync(process.execPath,["--test",operationTests],{cwd:unrelated,encoding:"utf8",timeout:300000,
-    env:{...process.env,VIBEZ_OPERATIONS_CONFIG:join(installed,"examples/beta/vibez.config.json")}});
+  const operationEnvironment={...process.env,VIBEZ_OPERATIONS_CONFIG:join(installed,"examples/beta/vibez.config.json")};
+  // A nested runner otherwise exits successfully without running any files.
+  delete operationEnvironment.NODE_TEST_CONTEXT;
+  const operations=spawnSync(process.execPath,["--test","--test-reporter=tap",operationTests],{cwd:unrelated,encoding:"utf8",timeout:600000,env:operationEnvironment});
   assert.equal(operations.status,0,operations.stdout+operations.stderr);
+  assert.match(operations.stdout,/# tests [1-9][0-9]*/);
+  assert.doesNotMatch(operations.stderr,/skipping running files/);
 
   const localBin = join(project, "node_modules", ".bin");
   for (const alias of ["agent", "vibez"]) {
