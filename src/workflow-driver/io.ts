@@ -64,6 +64,16 @@ export function writeText(path: string, bytes: string, immutable = false): void 
   try { writeFileSync(fd, bytes, { encoding: "utf8" }); fsyncSync(fd); } finally { closeSync(fd); }
   try { if (immutable) linkSync(temp, path); else renameSync(temp, path); }
   finally { if (existsSync(temp)) unlinkSync(temp); }
+  // Persist directory entries too: an external effect must not outlive its
+  // write-ahead intent after a POSIX host crash. Node cannot fsync directories
+  // on Windows; there the guarantee remains process-interruption recovery.
+  if(process.platform!=="win32") {
+    let directory=dirname(path);
+    while(true) {
+      const directoryFd=openSync(directory,"r");try{fsyncSync(directoryFd);}finally{closeSync(directoryFd);}
+      const parent=dirname(directory);if(parent===directory)break;directory=parent;
+    }
+  }
 }
 export function schema(_root: string, family: string): Record<string, unknown> { return readPackageJson(`schemas/v1/${family}.schema.json`).document; }
 export function validate(root: string, family: string, value: unknown): void {

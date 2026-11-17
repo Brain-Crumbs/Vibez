@@ -11,6 +11,9 @@ import { followSuccessors, scan, successor } from "../workflow-driver/inbox.js";
 import type { DriverProfile, DriverSession } from "../workflow-driver/model.js";
 
 export const ORCHESTRATE_HELP = `orchestrate init --actor-prefix operator --developer-tools read_file,write_file,git_commit --review-tools read_file,run_test --enforce-policies externally [--repository owner/repo]
+orchestrate operation start <approved-plan-id> --id UUID [--once]
+orchestrate operation resume <operation-id> [--once]
+orchestrate operation status|inspect|audit|pause|drain|cancel <operation-id>
 orchestrate prepare --stdin | --issue-file path.md
 orchestrate run|resume <session-id> [--once]
 orchestrate watch [session-id] [--once]
@@ -37,6 +40,22 @@ function argsFor(args: readonly string[]) {
 export async function runOrchestrateCommand(args: readonly string[], repositoryRoot: string, runtime: DriverRuntime = {}): Promise<{data:unknown;human:string}> {
   const root = resolve(repositoryRoot);
   if (args.length === 0 || ["help", "--help", "-h"].includes(args[0]!)) return {data:{usage:ORCHESTRATE_HELP},human:ORCHESTRATE_HELP};
+  if(args[0]==="operation") {
+    const service=runtime.operations;
+    requireValue(service,"Configure the trusted unattended host and approved plan before requesting an operation.","HOST_REQUIRED");
+    const {positional,flags}=argsFor(args.slice(1)), action=positional[0], target=positional[1];
+    requireValue(target&&positional.length===2&&[...flags.keys()].every(flag=>flag==="--once"||(action==="start"&&flag==="--id")),"Supply an operation and original identifier; start also requires --id UUID.");
+    let data:unknown;
+    if(action==="start") {requireValue(flags.has("--id"),"Start requires a stable caller-supplied --id UUID.");data=await service.start(target,flags.get("--id"),flags.has("--once"),runtime.signal);}
+    else if(action==="resume")data=await service.resume(target,flags.has("--once"),runtime.signal);
+    else {requireValue(flags.size===0,"Control/inspection commands do not accept flags.");
+      if(action==="status")data=service.status(target);
+      else if(action==="inspect")data=service.inspect(target);
+      else if(action==="audit")data=service.audit(target);
+      else if(action==="pause"||action==="drain"||action==="cancel") {const operation=await service[action](target);const status=service.status(target);data={request:action,operation,acknowledged:status.acknowledged&&status.requestedControl===action&&operation.status===({pause:"PAUSED",drain:"DRAINED",cancel:"CANCELLED"} as const)[action]};}
+      else throw new DriverError("INVALID_INPUT","Unknown operation command.");}
+    return {data,human:JSON.stringify(data,null,2)};
+  }
   const {positional, flags} = argsFor(args), operation = positional[0]!;
   const allowed: Record<string,string[]> = {
     init:["--base","--checks","--actor-prefix","--developer-tools","--review-tools","--enforce-policies","--repository","--max-attempts","--retry-delay-ms","--role-timeout-ms","--issues-dir","--responses-dir","--outbound-dir","--archive-dir","--exchange-dir"], prepare:["--stdin","--issue-file"],

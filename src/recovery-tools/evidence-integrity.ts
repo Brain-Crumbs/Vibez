@@ -15,6 +15,8 @@ export function inspectEvidenceReferences(taskId: string, event: LifecycleHistor
   const role = resumed ? reviewer.get(previous?.fromState ?? "") : reviewer.get(event.fromState);
   const merge = event.toState === "MERGED" || event.toState === "DONE";
   const validation = event.toState === "DEV_VALIDATED" || event.toState === "DEV_VALIDATION_FAILED" ||
+    (event.fromState === "DEV_VALIDATION_FAILED" && event.toState === "REWORK_REQUIRED") ||
+    (resumed && previous?.fromState === "DEV_VALIDATION_FAILED") ||
     (event.fromState === "DEV_VALIDATED" && event.toState === "MERGE_READY");
   const schema = merge ? "ipt.merge-evidence" : validation ? "ipt.validation-evidence"
     : role !== undefined ? "ipt.review-result" : null;

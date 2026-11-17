@@ -2,7 +2,7 @@
   "schemaId": "ipt.module-contract",
   "schemaVersion": "1.1.0",
   "moduleId": "control-plane.orchestration-engine",
-  "moduleVersion": "2.2.0",
+  "moduleVersion": "2.3.0",
   "structuralContract": {
     "interfaces": [
       "new SequentialOrchestrationEngine(dependencies: OrchestrationDependencies)",
@@ -14,7 +14,8 @@
       "OrchestrationStageId = developer-start | developer-agent | dev-validation | qa-agent | qa-review | architecture-agent | architecture-review | uat-agent | uat-review | review-rework | merge-readiness | controlled-merge",
       "ORCHESTRATION_STAGE_IDS: readonly OrchestrationStageId[], twelve stage identifiers in report order",
       "OrchestrationStageOutcome = PASS | FAIL | BLOCKED",
-      "OrchestrationRetryPolicy { maxAttempts, delayMs }",
+      "OrchestrationRetryPolicy { maxAttempts, delayMs }; delay grows exponentially from delayMs and is capped at 60000ms",
+      "Optional beforeDispatch trusted control fence; start and review ports accept synchronous or asynchronous implementations",
       "OrchestrationErrorCode = INVALID_REQUEST | IDEMPOTENCY_CONFLICT | RECOVERY_REQUIRED | RETRY_EXHAUSTED | CANCELLED | TIMEOUT | WAITING_INPUT",
       "OrchestrationError { code, recoverable }",
       "classifyOrchestrationFailure(error: unknown): OrchestrationFailure",

@@ -62,6 +62,7 @@ export class DeveloperValidationError extends Error {
 }
 
 export interface DeveloperValidationRequest {
+  readonly signal?: AbortSignal;
   /** Optional host source fence. Invoked before execution and before durable writes. */
   readonly assertSource?: (revision:string)=>void;
   readonly commandEnvironment?:Readonly<Record<string,string|undefined>>;
@@ -99,6 +100,23 @@ export interface DeveloperValidationDependencies {
   readonly evidenceStore: DeveloperValidationEvidenceStore;
   readonly validatorResolver: DeveloperValidatorResolver;
   readonly evidenceLocation: string;
+  /** Opt-in owner of the additive validation failure rework transition. */
+  readonly reworkLock?: { withLock<T>(taskId: string, action: () => T): T };
+}
+
+export interface DeveloperValidationReworkRequest {
+  readonly taskId: string;
+  readonly actorId: string;
+  readonly runId: string;
+  readonly occurredAt: string;
+  readonly failedRunId: string;
+}
+
+export interface DeveloperValidationReworkResult {
+  readonly taskId: string;
+  readonly lifecycleState: "REWORK_REQUIRED";
+  readonly revision: string;
+  readonly evidenceRefs: readonly string[];
 }
 
 export interface DeveloperValidationCheckResult {
@@ -137,6 +155,66 @@ export interface DeveloperValidationResult {
  */
 export class DeveloperValidationGate {
   constructor(private readonly dependencies: DeveloperValidationDependencies) {}
+
+  /** Preserve the failed validator records; never fabricate a review judgment or reset state. */
+  enterRework(request: DeveloperValidationReworkRequest): DeveloperValidationReworkResult {
+    validateRequest(request);
+    if (!request.failedRunId?.trim() || request.failedRunId !== request.failedRunId.trim() || !this.dependencies.reworkLock) {
+      throw new DeveloperValidationError("INVALID_REQUEST", "Validation rework requires the original failed run and a configured task lock.", false);
+    }
+    return this.dependencies.reworkLock.withLock(request.taskId, () => {
+      const task = this.dependencies.registry.get(request.taskId);
+      if (!task) throw new DeveloperValidationError("TASK_NOT_FOUND", "The rework task is not registered.", false);
+      this.dependencies.branchLifecycle.assertCurrentTaskBranch(task);
+      const revision = this.dependencies.branchLifecycle.currentRevision();
+      const record = this.dependencies.stateStore.get(task.taskId);
+      const last = record?.history.at(-1);
+      const replay = record?.currentState === "REWORK_REQUIRED" && last?.runId === request.runId && last.actorId === request.actorId;
+      if (!record || (record.currentState !== "DEV_VALIDATION_FAILED" && !replay)) {
+        throw new DeveloperValidationError("TASK_STATE_NOT_VALIDATABLE", "Validation rework requires the original DEV_VALIDATION_FAILED transition.");
+      }
+      const failure = replay ? record.history.at(-2) : last;
+      if (!failure || failure.toState !== "DEV_VALIDATION_FAILED" || failure.revisionIdentity !== revision ||
+          failure.runId !== request.failedRunId || failure.actorId !== request.actorId ||
+          (replay && (last?.revisionIdentity !== revision || last.evidenceRef !== failure.evidenceRef))) {
+        throw new DeveloperValidationError("EVIDENCE_REJECTED", "The failed validator event is not bound to this source, actor and attempt.");
+      }
+      const refs = failure.evidenceRef.split(",");
+      const validators = this.dependencies.validatorResolver.resolve(task, revision);
+      // The resolver is re-read for the exact revision; require a bijection,
+      // not merely an equal count that could repeat one failed lineage.
+      if(new Set(validators.map(validator=>validator.validatorId)).size!==validators.length)throw new DeveloperValidationError("EVIDENCE_REJECTED","The original validator set cannot contain duplicate identities.");
+      if (!validators.length || refs.length !== validators.length || new Set(refs).size !== refs.length) {
+        throw new DeveloperValidationError("EVIDENCE_REJECTED", "The original complete validator set is required for rework.");
+      }
+      let requiredFailure = false;
+      for (const validator of validators) {
+        const lineage = validationEvidenceLineageId(task.taskId, validator.validatorId);
+        const current = this.dependencies.evidenceStore.checkRevision(lineage, revision);
+        if (current.status !== "CURRENT" || !refs.includes(`${lineage}@${current.record.sequence}`) ||
+            current.record.payload.schemaId !== "ipt.validation-evidence" || current.record.payload.taskId !== task.taskId ||
+            current.record.payload.validatorId !== validator.validatorId) {
+          throw new DeveloperValidationError("EVIDENCE_REJECTED", "Original validator evidence is missing, stale or superseded.");
+        }
+        const outcome = current.record.payload.outcome;
+        if (!["PASS", "FAIL", "BLOCKED"].includes(String(outcome))) throw new DeveloperValidationError("EVIDENCE_REJECTED", "Invalid validator outcome.");
+        if (validator.required && outcome !== "PASS") requiredFailure = true;
+      }
+      if (!requiredFailure) throw new DeveloperValidationError("EVIDENCE_REJECTED", "No required validator failure supports rework.");
+      if (!replay) {
+        const transition = transitionLifecycle(record, {
+          taskId: task.taskId, expectedState: "DEV_VALIDATION_FAILED", toState: "REWORK_REQUIRED",
+          eventId: `validation-rework:${task.taskId}:${request.runId}`, occurredAt: request.occurredAt,
+          reason: "Resume development from the original deterministic validation failure.", evidenceRef: failure.evidenceRef,
+          requiredReviewRoles: task.requiredReviewRoles as readonly ReviewRole[], satisfiedPrerequisites: ["REWORK_FINDINGS_RECORDED"],
+          actorId: request.actorId, runId: request.runId, revisionIdentity: revision,
+        });
+        if (!transition.ok) throw new DeveloperValidationError("LIFECYCLE_REJECTED", transition.rejection.reason);
+        this.dependencies.stateStore.save(transition.record, "DEV_VALIDATION_FAILED");
+      }
+      return Object.freeze({ taskId: task.taskId, lifecycleState: "REWORK_REQUIRED", revision, evidenceRefs: Object.freeze(refs) });
+    });
+  }
 
   async validate(request: DeveloperValidationRequest): Promise<DeveloperValidationResult> {
     validateRequest(request);

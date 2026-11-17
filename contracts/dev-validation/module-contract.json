@@ -2,10 +2,11 @@
   "schemaId": "ipt.module-contract",
   "schemaVersion": "1.1.0",
   "moduleId": "control-plane.dev-validation",
-  "moduleVersion": "1.2.0",
+  "moduleVersion": "1.3.0",
   "structuralContract": {
     "interfaces": [
       "DeveloperValidationGate.validate(request): Promise<DeveloperValidationResult>",
+      "DeveloperValidationGate.enterRework({taskId,actorId,runId,failedRunId,occurredAt}): DeveloperValidationReworkResult",
       "DeveloperValidationRequest { taskId, actorId, runId, occurredAt, assertSource?, commandEnvironment?, routeFirstReview? }",
       "DeveloperValidationStateStore.get/save lifecycle persistence boundary",
       "DeveloperValidationBranchAdapter.assertCurrentTaskBranch/currentRevision boundary",
@@ -44,6 +45,8 @@
     ],
     "invariants": [
       "the gate performs no QA, Architecture, or UAT review",
+      "Validation rework requires the exact failed revision, actor and run, a unique complete current validator set, at least one required non-PASS and the shared configured rework lock; it preserves original evidence and is idempotent",
+      "Configured unattended cancellation or pending external validators prevent new evidence/lifecycle writes; provider infrastructure or grant denial is not converted into a semantic validator failure",
       "the gate creates no pull request and performs no merge-readiness computation",
       "the gate does not invoke an AI provider",
       "the gate never advances lifecycle state from evidence it has not itself just recorded and revision-checked as CURRENT",

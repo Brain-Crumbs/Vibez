@@ -228,3 +228,127 @@ started on the driver stays with its exact compatible artifact and profile.
 Keep that checkout and history available for read-only inspection when
 restoring a previously compatible artifact in a separate checkout. Keep the newest history archived and accessible even if the old reader cannot resume it. Never delete an accepted result, journal or binding to force a
 downgrade. See [Compatibility](COMPATIBILITY.md).
+
+## Approved unattended operations (AUT-003)
+
+The configured `services.operations` service drives a finite approved task set.
+The CLI below delegates to that same service. It does not read an issue and turn
+its prose into execution authority. Register complete, schema-valid definitions
+and requirements first. The trusted host supplies one immutable approved plan:
+
+```ts
+const plan = {
+  schemaId: "vibez.workflow-plan", schemaVersion: "1.0.0",
+  planId: "approved-marker-plan",
+  tasks: [
+    { taskId: "DEMO-001", issueNumber: 101, definitionSha256: firstDefinitionDigest },
+    { taskId: "DEMO-002", issueNumber: 102, definitionSha256: secondDefinitionDigest },
+  ],
+  budgets: { maxPolls: 40, maxRetries: 3, maxReworks: 2,
+    maxRuntimeMs: 1800000, initialDelayMs: 1000, maxDelayMs: 30000 },
+};
+const services = await createProjectServices(location, {
+  ...trustedHost,
+  requirePassingDeveloperResult: true,
+  unattended: {
+    policy, worker: isolatedRuntime, agentLimits: { maxTurns: 1, maxCostMicros: 0 },
+    plans: [plan], runtime: githubTransport, verifyDrained, verifySupervisorStopped,
+  },
+});
+const operation = await services.operations.start(plan.planId, originalOperationUuid);
+```
+
+Definition digests use SHA-256 over canonical JSON (recursively sorted object
+keys, no insignificant whitespace). The grant must match project/config identity,
+repository, integration target, exact task branches/paths, role principals,
+provider/model/tools, validator commands and required checks. The configured
+host automatically composes scoped workers, validators and merge effects; supply
+the underlying isolated worker, without wrapping it a second time. Keep runtime
+and policy directories outside workers' authority. `verifyDrained` checks all
+original external sessions and effects; it does not infer termination from a
+timeout. `verifySupervisorStopped` additionally proves all other workspace
+supervisors stopped before abandoned lock recovery. Recovery of a native run
+lock also requires the existing host `authorizeRecovery` callback to authorize
+that exact `release-run-lock` request. Task reset is never routine recovery.
+
+```text
+orchestrate operation start approved-marker-plan --id <original-uuid> [--once]
+orchestrate operation status|inspect|audit <original-uuid>
+orchestrate operation pause|drain|cancel <original-uuid>
+orchestrate operation resume <original-uuid> [--once]
+```
+
+These commands run through the configured host service's `cli` method. A bare
+CLI lacking the trusted unattended host returns `HOST_REQUIRED`; the CLI cannot
+load worker credentials or executable approval callbacks from an issue or JSON
+request. Preserve the v1 JSON envelope. Inspect `operation.status` as well as
+transport success. `status` also returns the requested control. Pause/drain stop
+subsequent dispatch; cancellation propagates abort to active work. Control replies
+say whether the request has been acknowledged. An active or uncertain writer
+remains quarantined until verified drained. SIGINT/caller abort requests cancel.
+Resume keeps the original operation, sessions, attempts and consumed budgets.
+Acknowledgment binds the exact control sequence; a prior paused state cannot
+acknowledge a new cancel request. If admission failed before any task session or
+allowance was created, cancel and verify the acknowledgment, then start a corrected
+host-approved plan with a new UUID. The rejected record remains available. An
+operation with task work or spent allowance keeps its claim and must use its
+original identity; this exception cannot reset a task budget.
+
+Only the authorized task/dependency closure is eligible. External or pre-native
+prerequisites must already have accepted admission evidence and native task state;
+the supervisor never marks a prerequisite complete. The native start gate creates
+the canonical branch from the integration target. Native validators and separate
+QA, Architecture and UAT roles decide outcomes. Current evidence gates non-force
+publication, draft/ready conversion, exact-head CI and the native merge controller.
+Only that controller records MERGED/DONE. After confirmed merge, a clean
+fast-forward integration update precedes selection of the next approved task.
+
+Validation failure enters rework through `DeveloperValidationGate.enterRework`;
+review failure uses the existing review-rework gate. Each successor preserves its
+original assignment and retains failed evidence. A new commit invalidates old
+approvals. The plan, project and grant each impose rework limits. Infrastructure
+retries retain the original session/run identity. CI polling and transport retries
+use bounded exponential delays, persist counters/next-poll time and stop at their
+allowance. Failed CI, exhausted budget, stale source, revoked scope, ambiguous
+input and unsafe recovery produce durable exceptions with specific remediation.
+
+Operation records live under the ignored configured `operations/driver/operations`
+directory. Immutable audit/control tails are authoritative observations; snapshots
+can lag after interruption. Native journals, provider receipts and GitHub remain
+the authorities for their effects. Every retained journal entry is checked before
+continuation. Rework reservations bind the predecessor, original run and revision;
+dispatch intents and charge receipts bind the exact host decision, so a restart
+cannot borrow another attempt's charge or spend a second cycle on the same effect.
+POSIX writes sync file content and parent
+directory entries before dispatch. Windows provides process-interruption recovery;
+Node directory fsync is unavailable, so do not assume the same power-loss guarantee.
+Do not move live stores to synced/network directories or steal a lock by its age.
+
+To disable unattended execution, stop new admission, request drain, inspect the
+acknowledgment and independently verify the original external sessions. Preserve
+the original package/config, native state/evidence, operation/control/rework
+records and private grant/provider ledgers. For manual coordination, use the
+original configured host with `operations.resume(originalId, true)` or
+`orchestrate operation resume <original-uuid> --once`, then inspect status/audit
+before each subsequent step. This still uses the original isolated provider and
+native gates and may finish the current step. It preserves the assignment,
+failure records and budgets. Legacy clipboard `run`/`resume` commands require a
+manual provider and are not this fallback. Do not replace the recorded provider
+or binding in-place. Re-enable continuous execution through the same operation.
+An earlier reader cannot resume new operation records; use the read-only upgrade
+and backup preflight in [COMPATIBILITY.md](COMPATIBILITY.md) before rollback.
+Never delete records to make a downgrade succeed.
+
+The real-provider supervisor rehearsal runs two dependent tasks through an
+installed candidate, actual isolated local roles, actual command validators and
+the native gates. Pack and install the committed candidate first, then run:
+
+```text
+node scripts/rehearse-workflow-operations.mjs <trusted-assets.json> <installed-package-root> <candidate-directory>/candidate.json
+```
+
+It retains the exact package receipt, grant, plan, provider sessions, native
+records and result report in a new private disposable directory. Remote push,
+PR, CI and merge ports are explicitly simulated. These fixtures establish
+supervisor behavior and provider integration; the feature's own independent
+reviews, actual GitHub PR/CI and controlled completion establish live delivery.

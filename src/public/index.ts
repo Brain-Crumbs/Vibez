@@ -7,6 +7,7 @@ export { createProjectServices, doctorProject, npmValidatorCommands,
   type RetryBudgetGrant } from "../project-services/index.js";
 
 export type ProjectServices = Awaited<ReturnType<typeof import("../project-services/index.js").createProjectServices>>;
+export type { ApprovedWorkflowPlan, WorkflowOperation, OperationStatus, UnattendedHost } from "../workflow-driver/operations.js";
 
 export interface CapabilityRequirements {
   readonly apiVersion?: string;

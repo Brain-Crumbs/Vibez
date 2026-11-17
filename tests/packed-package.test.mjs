@@ -114,6 +114,17 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
   run(process.execPath, [join(project, "consumer.js")], unrelated);
   writeFileSync(module, readFileSync(join(root, "tests/helpers/packed-consumer.mjs"), "utf8"));
   run(process.execPath, [module, packReceipt.version], unrelated);
+  // The generic operation service is exercised against the installed tarball,
+  // using public exports and a disposable consumer rather than source imports.
+  const operationTests=join(project,"operation-consumer.test.mjs");
+  writeFileSync(operationTests,readFileSync(join(root,"tests/workflow-operations.test.mjs"),"utf8")
+    .replaceAll('"../dist/public/index.js"',JSON.stringify(manifest.name))
+    .replaceAll('"../dist/public/config.js"',JSON.stringify(manifest.name+"/config"))
+    .replaceAll('"../dist/public/integration.js"',JSON.stringify(manifest.name+"/integration"))
+    .replaceAll('"../dist/public/diagnostics.js"',JSON.stringify(manifest.name+"/diagnostics")));
+  const operations=spawnSync(process.execPath,["--test",operationTests],{cwd:unrelated,encoding:"utf8",timeout:300000,
+    env:{...process.env,VIBEZ_OPERATIONS_CONFIG:join(installed,"examples/beta/vibez.config.json")}});
+  assert.equal(operations.status,0,operations.stdout+operations.stderr);
 
   const localBin = join(project, "node_modules", ".bin");
   for (const alias of ["agent", "vibez"]) {

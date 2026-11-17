@@ -36,7 +36,7 @@ try {
   const fromSource = relative(realpathSync(root), realpathSync(staging));
   assert.ok(fromSource.startsWith("..") || isAbsolute(fromSource), "Staging must be outside the source checkout.");
   mkdirSync(join(staging, "tests", "helpers"), { recursive: true });
-  for (const path of ["packed-package.test.mjs", "helpers/driver-fixture.mjs", "helpers/packed-consumer.mjs"]) {
+  for (const path of ["packed-package.test.mjs", "workflow-operations.test.mjs", "helpers/driver-fixture.mjs", "helpers/packed-consumer.mjs"]) {
     cpSync(join(root, "tests", path), join(staging, "tests", path));
   }
   cpSync(join(root, "node_modules", "typescript"), join(staging, "compiler"), { recursive: true });

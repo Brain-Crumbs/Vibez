@@ -219,6 +219,19 @@ test("recovery reset and resume keep their intent references, while a no-review 
   assert.equal(inspectEvidenceReferences(taskId, skippedReview, new Map())[0].code, "LIFECYCLE_EVIDENCE_MISSING");
 });
 
+test("validation rework and its successor retain readable original validator evidence",()=>{
+  const revision="a".repeat(40),lineage=`${taskId}::validator::build`,reference=`${lineage}@1`;
+  const failure={eventId:"validation-rework",taskId,fromState:"DEV_VALIDATION_FAILED",toState:"REWORK_REQUIRED",occurredAt:timestamp,reason:"Retry validated change",revisionIdentity:revision,evidenceRef:reference};
+  const successor={...failure,eventId:"validation-successor",fromState:"REWORK_REQUIRED",toState:"IN_DEVELOPMENT"};
+  const payload={schemaId:"ipt.validation-evidence",taskId,revisionIdentity:revision};
+  for(const [event,previous] of [[failure,undefined],[successor,failure]]){
+    assert.equal(inspectEvidenceReferences(taskId,event,new Map(),previous)[0].code,"LIFECYCLE_EVIDENCE_MISSING");
+    assert.equal(inspectEvidenceReferences(taskId,event,new Map([[lineage,[{sequence:1,payload}]]]),previous)[0].code,null);
+    assert.equal(inspectEvidenceReferences(taskId,event,new Map([[lineage,[{sequence:1,payload:{...payload,revisionIdentity:"b".repeat(40)}}]]]),previous)[0].code,"LIFECYCLE_EVIDENCE_MISMATCH");
+    assert.equal(inspectEvidenceReferences(taskId,{...event,evidenceRef:"corrupt"},new Map(),previous)[0].code,"LIFECYCLE_EVIDENCE_REF_INVALID");
+  }
+});
+
 test("an unknown archived assignment version blocks an otherwise quiescent handoff", async t => {
   const { root } = history(t);
   const directory = join(root, layout.state, "assignments/.history");
@@ -290,6 +303,10 @@ test("a digest-pinned native restore retains original provenance and refuses an 
   assert.deepEqual(restored.evidence, sourceAudit.evidence);
   assert.deepEqual(restored.findings, []);
   assert.equal((await check(relocationVersion)).compatible, true);
+  const originalSnapshot=(await check(relocationVersion)).snapshotSha256;
+  const nextReader=await check("0.1.0-rc.4");
+  assert.equal(nextReader.compatible,true,JSON.stringify(nextReader));
+  assert.equal(nextReader.snapshotSha256,originalSnapshot,"Reading with rc.4 cannot rewrite rc.3 relocation history");
   assert.deepEqual((await check("0.1.0-rc.2")).findings, ["PRIOR_READER_REJECTS_RELOCATED_HISTORY"]);
   await assert.rejects(prepareNativeHistoryRelocation({ repositoryRoot: target, quiescence: drain,
     expectedSnapshotSha256: manifest.snapshotSha256 }), /already has/);

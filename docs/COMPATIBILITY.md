@@ -295,3 +295,25 @@ The previous reader cannot resume MIG-006 driver sessions. For a configured
 checkout, call `services.diagnostics.checkUpgrade(request)` with its original
 committed config and trusted host. Retain the reported snapshot, bindings and
 the latest state even when a prior package cannot open that snapshot.
+
+## AUT-003 operation-history boundary
+
+Private candidate **0.1.0-rc.4** adds `vibez.workflow-plan` and
+`vibez.workflow-operation` 1.0.0 plus immutable control and rework observations.
+It reads existing rc.3 relocated histories without changing the original marker,
+receipt hashes or provenance. No lifecycle, evidence or assignment schema changes.
+
+rc.3 and earlier readers do not support these operation records. Preflight reports
+`PRIOR_READER_DOES_NOT_SUPPORT_WORKFLOW_OPERATIONS` even after the operation is
+DONE. Unknown versions, damaged journals or counter resets fail closed. A current
+reader reports `UNSETTLED_WORKFLOW_OPERATION` for a non-DONE operation, pending
+effect or control lock, in addition to native lifecycle/run/writer findings.
+
+Before switching binaries, drain and verify all writers, snapshot all configured
+runtime roots and private grant/provider records, and verify the backup's hashes.
+Run `checkProjectUpgrade` against the exact target version and snapshot. A refused
+downgrade leaves the newest history intact and available through rc.4. Restore the
+previous compatible package only with its own isolated historical checkout/store;
+never copy that older snapshot over the newer store or reset retry/rework limits.
+The package remains private; creating a candidate is not authorization to publish
+a release or alter repository protection.
