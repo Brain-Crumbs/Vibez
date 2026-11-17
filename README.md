@@ -5,6 +5,11 @@ Install the versioned `@brain-crumbs/vibez` tarball through the
 [GitHub Release guide](docs/INSTALL.md), or build from a Vibez checkout.
 See the [verified support matrix](docs/SUPPORT.md).
 
+The configured host can run a finite approved task plan through the shared
+[unattended operation service](docs/WORKFLOW_DRIVER.md#approved-unattended-operations-aut-003),
+using native validation, independent review and controlled integration gates.
+The existing manual workflow remains available.
+
 The [migration record](migration/SEED_EXPORT.md) links the audited source
 snapshot, export decision, scope, validation, and rollback. See the [roadmap](https://github.com/Brain-Crumbs/Vibez/issues/1)
 and [Fantasy Football #74](https://github.com/Brain-Crumbs/IPTFantasyFootball/issues/74)

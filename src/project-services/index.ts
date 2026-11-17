@@ -27,6 +27,8 @@ import { loadTaskRegistry, validateDependencyDag, type TaskRegistry, type TaskLi
 import { UatReviewGate } from "../uat-review/index.js";
 import { WorkflowDiagnostics } from "../workflow-diagnostics/index.js";
 import type { DriverRuntime } from "../workflow-driver/driver.js";
+import { WorkflowOperations, unattendedProfile, type UnattendedHost } from "../workflow-driver/operations.js";
+import { scopedAgentProvider, scopedValidator } from "../host-policy/worker.js";
 import { createProjectContext, trackedFiles } from "./context.js";
 import { createRetryBudget, type RetryBudgetGrant } from "./retry-budget.js";
 import { configuredValidators, type ProjectValidatorCommand } from "./validators.js";
@@ -43,6 +45,7 @@ export interface ProjectIntegration {
 }
 
 export interface ProjectHost {
+  readonly unattended?: UnattendedHost;
   /** Stable ID/version covering adapter implementations and trusted policy. */
   readonly identity: string;
   /** SHA-256 of the installed artifact, if the host independently verified it. */
@@ -85,7 +88,7 @@ function verifyTree(root: string): void {
 }
 
 export type DriverHooks = Pick<OrchestrationDependencies,
-  "prepareAgentInput" | "developerStart" | "developerValidation" | "qaReview" | "architectureReview" |
+  "beforeDispatch" | "prepareAgentInput" | "developerStart" | "developerValidation" | "qaReview" | "architectureReview" |
   "uatReview" | "reviewRework" | "mergeReadiness" | "controlledMerge" | "actorIdFor" | "toolPermissionPolicyFor">;
 
 export async function createProjectServices(location: ProjectLocation, host: ProjectHost) {
@@ -113,8 +116,12 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
       afterExport: ({ taskId, role, runId, actorId, revisionIdentity }) =>
         recordProvenance(auditRoot, digest({ taskId, role, runId, actorId, revisionIdentity }), null, engineProvenance, () => prepareWrite(auditRoot)),
     }) : undefined;
-  const provider = manual ?? host.providers?.get(document.providers.execution);
+  if (host.unattended && (manual || !host.actorIdFor || !host.toolPermissionPolicyFor || host.requirePassingDeveloperResult !== true)) {
+    throw new ConfigError("TOOL_UNAVAILABLE", "Unattended execution requires isolated workers, explicit distinct roles and passing developer results.");
+  }
+  const provider = host.unattended ? scopedAgentProvider(host.unattended.policy,host.unattended.worker,host.unattended.agentLimits) : manual ?? host.providers?.get(document.providers.execution);
   if (provider === undefined) throw new ConfigError("TOOL_UNAVAILABLE", `Execution provider '${document.providers.execution}' is unavailable.`);
+  if (host.unattended&&provider.providerId!==document.providers.execution) throw new ConfigError("IDENTITY_CONFLICT","Worker provider differs from the configured execution provider.");
   const registryFiles = trackedFiles(config, config.revision, document.paths.tasks, ".task.json");
   function registryIdentity(revision: string): string {
     const files = trackedFiles(config, revision, document.paths.tasks, ".task.json");
@@ -296,32 +303,59 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
   const common = { registry, stateStore, branchLifecycle, evidenceStore, evidenceLocation };
   const reviewFramework = new ReviewFramework({ evidenceStore, evidenceLocation });
   const taskLock = new FileQaReviewTaskLock(lifecycleRoot, true);
+  const reworkLock = { withLock: <T>(taskId:string,action:()=>T):T => taskLock.withLock(taskId,()=>{
+    const record=stateStore.get(taskId);
+    const cycles=record?.history.filter(event=>event.toState==="REWORK_REQUIRED").length??0;
+    if(record?.currentState!=="REWORK_REQUIRED"&&cycles>=document.budgets.maxReworkCycles)throw new ConfigError("IDENTITY_CONFLICT","Project rework allowance is exhausted.");
+    return action();
+  }) };
   const review = { ...common, taskLock, reviewFramework };
   const startGate = new DeveloperStartWorkflow({ ...common, lockStore, contextSource: context });
-  const validationGate = new DeveloperValidationGate({ ...common, validatorResolver });
+  let validatorDispatchError: unknown;
+  let validationSignal: AbortSignal | undefined;
+  let validationFence: ((revision:string)=>void) | undefined;
+  let validationInFlight=false;
+  const pendingValidators=new Set<Promise<unknown>>();
+  const validationGate = new DeveloperValidationGate({ ...common, reworkLock, validatorResolver: host.unattended ? {
+    resolve: (task,revision) => validatorResolver.resolve(task,revision).map(spec=>{
+      if(spec.kind!=="command")throw new ConfigError("IDENTITY_CONFLICT","Unattended validators require bound command executors.");
+      const worker=host.unattended!.worker;
+      const scoped=scopedValidator(host.unattended!.policy,{...worker,runValidator:(command,capability)=>worker.runValidator(command,
+        {...capability,signal:validationSignal?AbortSignal.any([validationSignal,capability.signal]):capability.signal})},
+        {...spec,timeoutMs:spec.timeoutMs??120000},task.taskId,revision);
+      return {...scoped,timeoutMs:spec.timeoutMs??120000,execute:async()=>{
+        validationSignal?.throwIfAborted();
+        if(validatorDispatchError)throw validatorDispatchError;
+        validationFence?.(revision);
+        const pending=scoped.execute();pendingValidators.add(pending);
+        try{return await pending;}catch(error){validatorDispatchError=error;throw error;}finally{pendingValidators.delete(pending);}
+      }};
+    }),
+  } : validatorResolver });
   const qa = new QaReviewGate({ ...review, contextSource: new RepositoryQaContextSource(projectRoot, integrationTarget, context.artifactsFor, remote) });
   const architecture = new ArchitectureReviewGate({ ...review, contextSource: new RepositoryArchitectureContextSource(projectRoot, integrationTarget,
     (task, tasks, revision) => context.artifactsFor(task, tasks, revision, true), remote) });
   const uat = new UatReviewGate({ ...review, contextSource: { artifactsFor: (task, tasks, revision, role) =>
     role === "Developer" ? context.artifactsFor(task, tasks, revision) : [] } });
-  const rework = new ReviewReworkGate({ ...common, taskLock: {
-    withLock: (taskId, action) => taskLock.withLock(taskId, () => {
-      const cycles = stateStore.get(taskId)?.history.filter(event => event.toState === "REWORK_REQUIRED").length ?? 0;
-      if (stateStore.get(taskId)?.currentState !== "REWORK_REQUIRED" && cycles >= document.budgets.maxReworkCycles) {
-        throw new ConfigError("IDENTITY_CONFLICT", "Project rework allowance is exhausted.");
-      }
-      return action();
-    }),
-  } });
+  const rework = new ReviewReworkGate({ ...common, taskLock: reworkLock });
   const readiness = new MergeReadinessPolicyEngine({
     registry, branchLifecycle, approvals: rework, evidence: evidenceStore, lifecycleState: stateStore, integrationTarget, requiredCiChecks: requiredChecks,
     pullRequests: host.integration.pullRequests, ciStatus: host.integration.ci,
   });
   const integration = host.integration.merge;
+  const mergeCapabilities=new Map<string,{assertAuthorized:()=>void}>();
+  const unattendedMergeEffect:ControlledMergeDependencies["mergeEffect"]=host.unattended?
+    (task,request,execute)=>host.unattended!.policy.execute({action:"merge",taskId:task.taskId,revision:request.expectedHeadSha,pullRequestNumber:request.number},async capability=>{
+      const key=`${request.number}:${request.expectedHeadSha}`;
+      if(mergeCapabilities.has(key))throw new ConfigError("TOOL_UNAVAILABLE","The original merge effect is still active.");
+      mergeCapabilities.set(key,capability);
+      try{capability.assertAuthorized();return await execute();}finally{mergeCapabilities.delete(key);}
+    }):undefined;
   type MergeIntentGuard = {
     number: number;
     head: string;
     check: (number: number, fresh: boolean) => Promise<void>;
+    assertDispatch?: () => void;
   };
   async function getIntentPullRequest(guard: MergeIntentGuard, number: number) {
     await guard.check(number, false);
@@ -333,7 +367,7 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
   }
   const mergeFor = (guard?: MergeIntentGuard) => new ControlledMergeController({ ...common, lockStore, integrationTarget, mergeReadiness: readiness,
     taskLock: new FileControlledMergeTaskLock(lifecycleRoot, {}, true),
-    ...(host.mergeEffect === undefined ? {} : { mergeEffect: host.mergeEffect }),
+    ...(unattendedMergeEffect ? { mergeEffect: unattendedMergeEffect } : host.mergeEffect === undefined ? {} : { mergeEffect: host.mergeEffect }),
     pullRequests: {
       findPullRequestsByHead: async head => {
         if (!guard) return integration.findPullRequestsByHead(head);
@@ -353,21 +387,27 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
             throw new ConfigError("IDENTITY_CONFLICT", "Merge authority changed before publication.");
           }
         }
+        guard?.assertDispatch?.();
+        if(host.unattended){
+          const capability=mergeCapabilities.get(`${request.number}:${request.expectedHeadSha}`);
+          if(!capability)throw new ConfigError("IDENTITY_CONFLICT","The fresh merge lacks its original scoped capability.");
+          capability.assertAuthorized();
+        }
         return integration.mergePullRequest(request);
       }),
     },
   });
   const publication = host.integration.publication;
-  const publicationFor = (beforeWrite?: (number?: number) => Promise<void>) => new PullRequestLifecycleAdapter({
+  const publicationFor = (beforeWrite?: (number?: number) => Promise<void>, effect?: <T>(action: () => Promise<T>) => Promise<T>) => new PullRequestLifecycleAdapter({
     registry, branchLifecycle, integrationTarget, approvals: rework, pullRequests: {
       findOpenPullRequests: publication.findOpenPullRequests.bind(publication),
       createPullRequest: async params => {
         await beforeWrite?.();
-        return publication.createPullRequest(params);
+        return effect ? effect(() => publication.createPullRequest(params)) : publication.createPullRequest(params);
       },
       updatePullRequest: async params => {
         await beforeWrite?.(params.number);
-        return publication.updatePullRequest(params);
+        return effect ? effect(() => publication.updatePullRequest(params)) : publication.updatePullRequest(params);
       },
     },
   });
@@ -386,7 +426,19 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
     assertRegistryHistory();
     return startGate.start(request);
   }) };
-  const developerValidation = { validate: taskGuarded(validationGate.validate.bind(validationGate)) };
+  const developerValidation = { validate: taskGuarded(async(request:Parameters<typeof validationGate.validate>[0])=>{
+    if(validationInFlight||pendingValidators.size)throw new ConfigError("TOOL_UNAVAILABLE","The original validator invocation is still pending; verify drain before resuming.");
+    validationInFlight=true;
+    validatorDispatchError=undefined;
+    validationSignal=request.signal;
+    validationFence=request.assertSource;
+    try {return await validationGate.validate({...request,assertSource:revision=>{
+      if(pendingValidators.size)throw new ConfigError("TOOL_UNAVAILABLE","Original external validators are still pending; verify drain before resuming.");
+      validationSignal?.throwIfAborted();
+      if(validatorDispatchError)throw validatorDispatchError;request.assertSource?.(revision);
+    }});}finally{validationInFlight=false;}
+  }),
+    enterRework: taskGuarded(validationGate.enterRework.bind(validationGate)) };
   const qaReview = { prepareContext: taskGuarded(qa.prepareContext.bind(qa)), review: taskGuarded(qa.review.bind(qa)) };
   const architectureReview = { prepareContext: taskGuarded(architecture.prepareContext.bind(architecture)), review: taskGuarded(architecture.review.bind(architecture)) };
   const uatReview = { prepareContext: taskGuarded(uat.prepareContext.bind(uat)), review: taskGuarded(uat.review.bind(uat)) };
@@ -437,6 +489,18 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
     }
     return result;
   }
+  function scopedRegistry(taskIds:readonly string[]):TaskRegistry {
+    assertCurrent();
+    const allowed=new Set(taskIds), scoped=new Map<string,NonNullable<ReturnType<TaskRegistry["get"]>>>();
+    const visit=(taskId:string)=>{
+      if(scoped.has(taskId))return;
+      const task=registry.get(taskId);
+      if(!task || (!allowed.has(taskId)&&stateStore.get(taskId)?.currentState!=="DONE"))throw new ConfigError("IDENTITY_CONFLICT","Every unfinished dependency must be authorized in the same plan.");
+      scoped.set(taskId,task);for(const dependency of task.dependencies)visit(dependency);
+    };
+    for(const taskId of taskIds)visit(taskId);
+    return scoped;
+  }
   function runEngine(request: OrchestrationRunRequest, selected: SequentialOrchestrationEngine) {
     assertCurrent();
     assertRegistryHistory();
@@ -482,8 +546,12 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
     return recovery.apply(parsed);
   });
   const readStatus = guarded(status.read.bind(status));
+  const operations: WorkflowOperations | undefined = host.unattended ? new WorkflowOperations(config,
+    unattendedProfile(config, role=>host.actorIdFor!(role,host.unattended!.policy.grant.roles.find(r=>r.role==="Developer")!.principal),host.toolPermissionPolicyFor!),
+    host.unattended,async():Promise<ConfiguredDriverServices>=>(await composeProjectServices(location,host)).driver,executionBinding) : undefined;
   const services = {
     config, catalog, executionBinding, registry: new Map(registry), context: { artifactsFor: guarded(context.artifactsFor) },
+    operations,
     evidence: { getHistory: guarded(fileEvidence.getHistory.bind(fileEvidence)), getCurrent: guarded(fileEvidence.getCurrent.bind(fileEvidence)) },
     validatorResolver,
     developerStart, developerValidation, qaReview, architectureReview, uatReview, reviewRework,
@@ -515,7 +583,7 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
     async cli(args: readonly string[], signal?: AbortSignal, runtime: DriverRuntime = {}) {
       assertCurrent();
       const driverRuntime: DriverRuntime = {
-        ...runtime, config,
+        ...runtime, config, operations,
         services: async () => {
           const current = projectGit(projectRoot, ["rev-parse", "HEAD"]).trim();
           return current === config.revision ? driverServices : (await composeProjectServices(location, host)).driver;
@@ -531,16 +599,23 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
     },
   };
   const driverServices = {
-    config, registry, taskStates, manual, developerStart, developerValidation, qaReview, architectureReview,
+    config, registry, taskStates, scopedRegistry, manual, developerStart, developerValidation, qaReview, architectureReview,
+    startWithin: (taskIds:readonly string[],request:Parameters<typeof startGate.start>[0])=>{
+      assertRegistryHistory();
+      return new DeveloperStartWorkflow({...common,registry:scopedRegistry(taskIds),lockStore,contextSource:context}).start(request);
+    },
     uatReview, reviewRework, mergeReadiness: services.mergeReadiness, controlledMerge, diagnostics: services.diagnostics,
     pullRequests: services.pullRequests, recovery: services.recovery,
     mergeWithIntent: (request: Parameters<typeof merge.merge>[0], guard: NonNullable<Parameters<typeof mergeFor>[0]>) => {
       const controller = mergeFor(guard);
       return taskGuarded(controller.merge.bind(controller))(request);
     },
-    publishWithGuard: (request: Parameters<typeof pr.ensurePullRequest>[0], beforeWrite: (number?: number) => Promise<void>) => {
-      const guardedPublication = publicationFor(beforeWrite);
-      return taskGuarded(guardedPublication.ensurePullRequest.bind(guardedPublication))(request);
+    publishWithGuard: (request: Parameters<typeof pr.ensurePullRequest>[0], beforeWrite: (number?: number) => Promise<void>, effect?: <T>(action: () => Promise<T>) => Promise<T>) => {
+      let boundaryError:unknown;
+      const guardedPublication = publicationFor(beforeWrite, effect ? async action=>{
+        try{return await effect(action);}catch(error){boundaryError=error;throw error;}
+      } : undefined);
+      return taskGuarded(guardedPublication.ensurePullRequest.bind(guardedPublication))(request).catch(error=>{throw boundaryError??error;});
     },
     prepareWrite: () => prepareWrite(paths.operations),
     authorizePublication: (taskId: string, revision: string) => {
@@ -560,7 +635,31 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
   return { services: Object.freeze(services), driver: driverServices };
 }
 
-export type ConfiguredDriverServices = Awaited<ReturnType<typeof composeProjectServices>>["driver"];
+/** Explicit port keeps the operation service and project composition from owning each other's types. */
+export interface ConfiguredDriverServices {
+  readonly config: import("../project-config/index.js").ResolvedProjectConfig;
+  readonly registry: TaskRegistry;
+  taskStates(): Map<string,TaskLifecycleState>;
+  scopedRegistry(taskIds:readonly string[]): TaskRegistry;
+  readonly manual: FileManualAgentProvider | undefined;
+  readonly developerStart: Pick<DeveloperStartWorkflow,"start">;
+  startWithin(taskIds:readonly string[],request:Parameters<DeveloperStartWorkflow["start"]>[0]): ReturnType<DeveloperStartWorkflow["start"]>;
+  readonly developerValidation: Pick<DeveloperValidationGate,"validate"|"enterRework">;
+  readonly qaReview: Pick<QaReviewGate,"prepareContext"|"review">;
+  readonly architectureReview: Pick<ArchitectureReviewGate,"prepareContext"|"review">;
+  readonly uatReview: Pick<UatReviewGate,"prepareContext"|"review">;
+  readonly reviewRework: Pick<ReviewReworkGate,"enterRework"|"resumeDevelopment"|"getApprovalStatus">;
+  readonly mergeReadiness: Pick<MergeReadinessPolicyEngine,"evaluate">;
+  readonly controlledMerge: Pick<ControlledMergeController,"merge">;
+  readonly diagnostics: Pick<WorkflowDiagnostics,"explainTask"|"explainTransition"|"explainValidation"|"explainReviews"|"explainMerge">;
+  readonly pullRequests: Pick<PullRequestLifecycleAdapter,"ensurePullRequest">;
+  readonly recovery: Pick<LocalRecoveryTools,"apply">;
+  mergeWithIntent(request:Parameters<ControlledMergeController["merge"]>[0],guard:{number:number;head:string;check:(number:number,fresh:boolean)=>Promise<void>;assertDispatch?:()=>void}):ReturnType<ControlledMergeController["merge"]>;
+  publishWithGuard(request:Parameters<PullRequestLifecycleAdapter["ensurePullRequest"]>[0],beforeWrite:(number?:number)=>Promise<void>,effect?:<T>(action:()=>Promise<T>)=>Promise<T>):ReturnType<PullRequestLifecycleAdapter["ensurePullRequest"]>;
+  prepareWrite():void;
+  authorizePublication(taskId:string,revision:string):boolean;
+  run(request:OrchestrationRunRequest,hooks:DriverHooks):ReturnType<SequentialOrchestrationEngine["run"]>;
+}
 
 export async function doctorProject(location: ProjectLocation, host: ProjectHost) {
   try {

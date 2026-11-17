@@ -53,6 +53,24 @@ const operation = { action: "agent", taskId: "AUT-001", revision: head,
   principal: "developer", role: "Developer", provider: "runner", tools: ["read"], network: "none", maxTurns: 2, maxCostMicros: 60, timeoutMs: 500 };
 const unused = async () => assert.fail("denied operation invoked an external boundary");
 
+test("only start may begin on the exact granted integration branch",async t=>{
+  const {options,state,onCleanup}=fixture(t), observe=options.observe;
+  let branch="main";
+  const policy=new ScopedHostPolicy({...options,observe:operation=>({...observe(operation),branch})});onCleanup(()=>policy.close());
+  const start={action:"start",taskId:"AUT-001",revision:head};
+  assert.equal(await policy.execute(start,async()=>"selected"),"selected");
+  for(const action of [operation,{action:"validator",taskId:"AUT-001",revision:head,validatorId:"build",commandDigest:commandPolicyDigest(command),timeoutMs:500},
+    {action:"review",taskId:"AUT-001",revision:head,role:"QA",principal:"reviewer"},
+    ...["rework","push","publish","ready","merge"].map(action=>({action,taskId:"AUT-001",revision:head,pullRequestNumber:7}))]) {
+    await assert.rejects(policy.execute(action,unused),{code:"OUT_OF_SCOPE"});
+  }
+  branch="automation/one";assert.equal(await policy.execute(start,async()=>"resumed"),"resumed");
+  branch="another-main";await assert.rejects(policy.execute(start,unused),{code:"OUT_OF_SCOPE"});
+  branch="main";await assert.rejects(policy.execute({...start,taskId:"AUT-003"},unused),{code:"OUT_OF_SCOPE"});
+  await assert.rejects(policy.execute({...start,revision:"d".repeat(40)},unused),{code:"STALE_HEAD"});
+  state.revoked=true;await assert.rejects(policy.execute(start,unused),{code:"INACTIVE_GRANT"});
+});
+
 test("strict grant parser rejects version, duplicate principals and dangerous paths", t => {
   const { grant } = fixture(t);
   assert.ok(Object.isFrozen(parseHostGrant(grant).tasks[0].paths));

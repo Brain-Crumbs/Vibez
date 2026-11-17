@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.0-rc.4 (private candidate)
+
+- Adds one configured operation supervisor for approved dependent tasks, shared
+  by the service and CLI, with scoped roles, native gates, PR/CI coordination,
+  bounded retries/rework, durable controls and uncertain-effect reconciliation.
+- Adds validation-owned rework that retains failed validator evidence and the
+  original assignment. Existing manual workflow commands remain supported.
+- Adds operation-history reader support. rc.3 and earlier cannot read the new
+  operation records; rc.4 retains existing rc.3 relocation support without
+  rewriting historical records. See the compatibility and workflow guides.
+
 ## 0.1.0-rc.2
 
 - Resolves configured validator evidence in the read-only history audit and

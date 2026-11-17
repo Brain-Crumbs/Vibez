@@ -15,12 +15,20 @@ import { createLocalWorkflowDiagnostics } from "../workflow-diagnostics/index.js
 import { loadTaskRegistry, selectNextEligibleTask } from "../task-registry/index.js";
 import { readLocalLifecycleStates } from "../status-reporting/index.js";
 import type { ConfiguredDriverServices } from "../project-services/index.js";
+import type { ScopedOperation } from "../host-policy/index.js";
 import { driverDirectory, stateDirectory, orchestrationDirectory, clean, DriverError, git, hash, now, object, pretty, read, redact, requireValue, safePath, schema, write, writeText } from "./io.js";
 import { diagnostic, loadDriverRegistry, saveSession, sessionPath } from "./intake.js";
 import { successorId } from "./inbox.js";
 import type { DriverProfile, DriverSession } from "./model.js";
 
 export interface DriverRuntime {
+  operations?: import("./operations.js").WorkflowOperations | undefined;
+  /** Trusted configured host only; issue text and manual responses cannot supply these capabilities. */
+  unattended?: {
+    readonly taskIds: readonly string[];
+    readonly check: () => void;
+    readonly effect: <T>(operation: ScopedOperation, action: () => T | Promise<T>) => Promise<T>;
+  };
   remoteHead?: (url: string, ref: string) => string;
   pushBranch?: (url: string, ref: string, revision: string) => void;
   config?: import("../project-config/index.js").ResolvedProjectConfig; services?: () => Promise<ConfiguredDriverServices>; signal?: AbortSignal; fetchImpl?: FetchLike; token?: string; mergeAuthorization?: string; progress?: (message:string)=>void; }
@@ -133,7 +141,7 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
     const journalStore = new FileOrchestrationRunStore(safePath(root, orchestrationDirectory(p)));
     const bound = journalStore.get(s.request.idempotencyKey!);
     if (!bound?.values.start && !s.request.assignmentRunId) {
-      const selection = selectNextEligibleTask(registry, { taskStates: configured?.taskStates() ?? readLocalLifecycleStates(root, registry) });
+      const selection = selectNextEligibleTask(runtime.unattended ? configured!.scopedRegistry(runtime.unattended.taskIds) : registry, { taskStates: configured?.taskStates() ?? readLocalLifecycleStates(root, registry) });
       requireValue(selection.kind === "selected" && selection.taskId === s.taskId, `Authorized task ${s.taskId} is not the next eligible task. Inspect orchestrate next; no assignment was made.`, "TASK_NOT_ELIGIBLE");
       requireValue([p.integrationTarget, task.canonicalBranch].includes(git(root, "branch", "--show-current")), "Start from the integration target or the task's canonical branch.");
     }
@@ -185,6 +193,7 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
       if (input.role !== "Developer") clean(root, input.revisionIdentity);
       else git(root,"merge-base","--is-ancestor",input.revisionIdentity,clean(root));
       requireValue(git(root,"branch","--show-current")===task.canonicalBranch,"Role input is only valid on its canonical branch.");
+      if (runtime.unattended) { requireValue(configured && !configured.manual, "Unattended operation requires a configured isolated provider."); runtime.unattended.check(); return true; }
       const packet = exchange.exportPacket(input);
       roleHandoff(root, p, s, packet);
       if (s.pendingPacket!==packet.packetId) s.diagnosticId=null;
@@ -200,21 +209,30 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
     const guarded = <T>(action: () => T): T => { const before = clean(root); const result = action(); clean(root, before); return result; };
     const reviewGate = <T extends { prepareContext: (input: {taskId:string}) => unknown; review: (input: never) => unknown }>(gate: T): T => ({ ...gate,
       prepareContext: (input: {taskId:string}) => guarded(() => gate.prepareContext(input)), review: (input: never) => guarded(() => gate.review(input)) }) as T;
-    const driverHooks = { developerStart: { start: (input: Parameters<typeof start.start>[0]) => start.start({...input, authorizedTaskId:s.taskId}) },
-      developerValidation: { validate: (input: Parameters<typeof validation.validate>[0]) => { const before=clean(root);requireValue(s.developerPacket&&accepted(s.developerPacket).role==="Developer","Developer validation requires the original accepted response and its source fence.");return validation.validate({...input,routeFirstReview:true,commandEnvironment:validatorEnvironment(),assertSource:revision=>{
+    const effect = <T>(operation: ScopedOperation, action: () => T | Promise<T>): Promise<T> => {
+      runtime.unattended?.check(); return runtime.unattended ? runtime.unattended.effect(operation, action) : Promise.resolve(action());
+    };
+    const driverHooks = { developerStart: { start: (input: Parameters<typeof start.start>[0]) => effect({action:"start",taskId:s.taskId,revision:clean(root)}, () => runtime.unattended ? configured!.startWithin(runtime.unattended.taskIds,{...input,authorizedTaskId:s.taskId}) : start.start({...input, authorizedTaskId:s.taskId})) },
+      developerValidation: { validate: (input: Parameters<typeof validation.validate>[0]) => { runtime.unattended?.check(); const before=clean(root);if(!runtime.unattended)requireValue(s.developerPacket&&accepted(s.developerPacket).role==="Developer","Developer validation requires the original accepted response and its source fence.");return validation.validate({...input,...(runtime.signal?{signal:runtime.signal}:{}),routeFirstReview:true,commandEnvironment:validatorEnvironment(),assertSource:revision=>{
+        runtime.unattended?.check();
         requireValue(revision===before&&git(root,"branch","--show-current")===task.canonicalBranch,"Validation must stay on the exact canonical source.");clean(root,before);
       }}); } },
-      qaReview: reviewGate(qa), architectureReview: reviewGate(architecture), uatReview: reviewGate(uat), reviewRework: rework,
+      qaReview: { ...reviewGate(qa), review: (input: Parameters<typeof qa.review>[0]) => effect({action:"review",taskId:s.taskId,revision:clean(root),role:"QA",principal:p.roleActors.QA},()=>reviewGate(qa).review(input)) },
+      architectureReview: { ...reviewGate(architecture), review: (input: Parameters<typeof architecture.review>[0]) => effect({action:"review",taskId:s.taskId,revision:clean(root),role:"Architect",principal:p.roleActors.Architect},()=>reviewGate(architecture).review(input)) },
+      uatReview: { ...reviewGate(uat), review: (input: Parameters<typeof uat.review>[0]) => effect({action:"review",taskId:s.taskId,revision:clean(root),role:"UAT/Product",principal:p.roleActors["UAT/Product"]},()=>reviewGate(uat).review(input)) },
+      reviewRework: { enterRework: (input: Parameters<typeof rework.enterRework>[0]) => effect({action:"rework",taskId:s.taskId,revision:clean(root)},()=>rework.enterRework(input)) },
       mergeReadiness: { evaluate: async (input: Parameters<typeof readiness.evaluate>[0]) => { clean(root); return readiness.evaluate(input); } },
       controlledMerge: { merge: async (input: Parameters<typeof merge.merge>[0]) => {
         if (!intent) {
           const head = clean(root), ready = await readiness.evaluate({ taskId: s.taskId });
-          requireValue(ready.ready&&ready.pullRequestNumber&&ready.revision===head&&(runtime.mergeAuthorization ?? process.env.IPT_DRIVER_MERGE) === `${p.repository}#${ready.pullRequestNumber}@${head}`, "Exact repository/PR/head host authorization and ready CI are required before controlled merge.", "MERGE_AUTHORIZATION_REQUIRED");
+          runtime.unattended?.check();
+          requireValue(ready.ready&&ready.pullRequestNumber&&ready.revision===head&&(runtime.unattended || (runtime.mergeAuthorization ?? process.env.IPT_DRIVER_MERGE) === `${p.repository}#${ready.pullRequestNumber}@${head}`), "Exact repository/PR/head host authorization and ready CI are required before controlled merge.", "MERGE_AUTHORIZATION_REQUIRED");
           const token=runtime.token??process.env.IPT_GITHUB_TOKEN??process.env.GITHUB_TOKEN;
           requireValue(token,"Host GitHub credentials are required.");
           const response=await g.fetchImpl(`https://api.github.com/repos/${p.repository}/pulls/${ready.pullRequestNumber}`,{method:"GET",headers:{Authorization:`Bearer ${token}`}});
           const pr=await response.json() as GithubPull;
           requireValue(response.ok&&pr.draft===false&&pr.number===ready.pullRequestNumber,"Only the exact ready-for-review PR can receive a merge intent.");
+          runtime.unattended?.check();
           assertPull(pr,p,s,task.canonicalBranch,head);clean(root,head);
           intent={sessionId:s.sessionId,repository:p.repository,issueNumber:s.issueNumber,branch:task.canonicalBranch,number:pr.number,head};
           write(intentPath,intent,true);
@@ -223,6 +241,7 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
         const boundIntent = intent;
         return configured.mergeWithIntent(input, {
           number: boundIntent.number, head: boundIntent.head,
+          assertDispatch: () => runtime.unattended?.check(),
           check: async (number, fresh) => {
             requireValue(number === boundIntent.number, "PR differs from the original merge intent.", "PR_CONFLICT");
             const token = runtime.token ?? process.env.IPT_GITHUB_TOKEN ?? process.env.GITHUB_TOKEN;
@@ -234,6 +253,7 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
               "The original ready PR could not be verified.", "PR_CONFLICT");
             assertPull(pr, p, s, boundIntent.branch, boundIntent.head, !fresh);
             if (fresh) {
+              runtime.unattended?.check();
               clean(root, boundIntent.head);
               requireValue(git(root, "branch", "--show-current") === boundIntent.branch, "The canonical branch changed before merge.");
               const remote = assertRemote(root, p, runtime);
@@ -244,7 +264,7 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
             }
           },
         });
-      } }, prepareAgentInput,
+      } }, prepareAgentInput, beforeDispatch: () => runtime.unattended?.check(),
       retryPolicy:{maxAttempts:p.manual.maxAttempts,delayMs:p.manual.retryDelayMs},timeoutMsFor:()=>p.manual.roleTimeoutMs,
       actorIdFor: (role: AgentRunRequest["role"]) => p.roleActors[role],
       toolPermissionPolicyFor: (role: AgentRunRequest["role"]) => p.rolePolicies[role] };
@@ -261,6 +281,7 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
     }
     observe(root,p,s,"after",git(root,"rev-parse","HEAD"));
   } catch (error) {
+    if (runtime.unattended) throw error;
     if (error instanceof Error && "code" in error && error.code === "WAITING_INPUT") return s;
     if(s.pendingPacket&&existsSync(safePath(root,`${p.paths.exchange}/${s.pendingPacket}.result.json`)))s.pendingPacket=null;
     const code = error instanceof Error && "code" in error ? String(error.code) : "DRIVER_ERROR";
@@ -312,15 +333,21 @@ export async function publish(root: string, p: DriverProfile, s: DriverSession, 
     if(pr.draft===false)return {number:pr.number,revision:head,ready:true,reused:true};
     authorizeWrite();
     const f = githubTransport(runtime);
-    const response = await f("https://api.github.com/graphql", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ query: "mutation($id:ID!){markPullRequestReadyForReview(input:{pullRequestId:$id}){pullRequest{id}}}", variables: { id: pr.node_id } }) });
+    const markReady = () => f("https://api.github.com/graphql", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ query: "mutation($id:ID!){markPullRequestReadyForReview(input:{pullRequestId:$id}){pullRequest{id}}}", variables: { id: pr.node_id } }) });
+    runtime.unattended?.check();
+    const response = await (runtime.unattended ? runtime.unattended.effect({action:"ready",taskId:s.taskId,revision:head,pullRequestNumber:pr.number}, markReady) : markReady());
     const body = await response.json() as {errors?:unknown}; requireValue(response.ok && !body.errors, "Ready conversion failed; inspect GitHub and retry. No merge was attempted.");
     const after=await candidate(head);assertPublished();requireValue(after?.number===pr.number&&after.draft===false,"Remote PR changed during ready conversion; inspect GitHub before resuming.");
     return {number:pr.number,revision:head,ready:true,reused:false};
   }
   assertRemote(root,p,runtime,remote);
   const ref = `refs/heads/${task.canonicalBranch}`;
-  if (runtime.pushBranch) runtime.pushBranch(remote.pushUrl, ref, head);
-  else git(root,"-c","http.followRedirects=false","push","--no-follow-tags","--recurse-submodules=no",remote.pushUrl,`${head}:${ref}`);
+  const push = () => { if (runtime.pushBranch) runtime.pushBranch(remote.pushUrl, ref, head);
+    else git(root,"-c","http.followRedirects=false","push","--no-follow-tags","--recurse-submodules=no",remote.pushUrl,`${head}:${ref}`); };
+  runtime.unattended?.check();
+  if (remoteHead(root,runtime,remote.readUrl,ref)!==head) {
+    if (runtime.unattended) await runtime.unattended.effect({action:"push",taskId:s.taskId,revision:head},push); else push();
+  }
   assertPublished();
   const adapter=configured?.pullRequests ?? await createLocalPullRequestLifecycleAdapter(root,{...g,fetchImpl:async(url,init)=>{
     assertEvidence();
@@ -337,7 +364,7 @@ export async function publish(root: string, p: DriverProfile, s: DriverSession, 
     requireValue(number === undefined ? !pr : pr?.number === number, "Canonical PR changed while preparing publication.", "PR_CONFLICT");
     assertPublished();
     authorizeWrite();
-  }) : await adapter.ensurePullRequest(request);
+  }, runtime.unattended ? action => runtime.unattended!.effect({action:"publish",taskId:s.taskId,revision:head},action) : undefined) : await adapter.ensurePullRequest(request);
   const after=await candidate(head);assertPublished();requireValue(after?.number===result.number,"Canonical PR changed during publication.");
   return result;
 }

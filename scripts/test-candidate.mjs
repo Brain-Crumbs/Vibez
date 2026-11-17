@@ -36,7 +36,7 @@ try {
   const fromSource = relative(realpathSync(root), realpathSync(staging));
   assert.ok(fromSource.startsWith("..") || isAbsolute(fromSource), "Staging must be outside the source checkout.");
   mkdirSync(join(staging, "tests", "helpers"), { recursive: true });
-  for (const path of ["packed-package.test.mjs", "helpers/driver-fixture.mjs", "helpers/packed-consumer.mjs"]) {
+  for (const path of ["packed-package.test.mjs", "workflow-operations.test.mjs", "helpers/driver-fixture.mjs", "helpers/packed-consumer.mjs"]) {
     cpSync(join(root, "tests", path), join(staging, "tests", path));
   }
   cpSync(join(root, "node_modules", "typescript"), join(staging, "compiler"), { recursive: true });
@@ -60,7 +60,7 @@ try {
     GIT_CONFIG_GLOBAL: gitConfig, GIT_TERMINAL_PROMPT: "0", NPM_CONFIG_USERCONFIG: npmConfig,
     NPM_CONFIG_GLOBALCONFIG: npmGlobalConfig });
   execFileSync(process.execPath, ["--test", "tests/packed-package.test.mjs"],
-    { cwd: staging, stdio: "inherit", env, timeout: 15 * 60 * 1000 });
+    { cwd: staging, stdio: "inherit", env, timeout: (process.platform === "win32" ? 30 : 15) * 60 * 1000 });
   console.log(JSON.stringify({ revision: receipt.sourceCommit, version: receipt.version,
     sha256: receipt.sha256, node: process.version, platform: process.platform, osVersion: version(),
     osRelease: release(), arch: process.arch }));

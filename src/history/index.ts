@@ -25,7 +25,8 @@ import {
 
 const priorPackage = "0.1.0-mig005.1";
 const previousPackage = "0.1.0-mig007.0";
-const driverReaderPackages = ["0.1.0-mig006.0", "0.1.0-rc.1", "0.1.0-rc.2", relocationReader];
+const operationReader = "0.1.0-rc.4";
+const driverReaderPackages = ["0.1.0-mig006.0", "0.1.0-rc.1", "0.1.0-rc.2", relocationReader, operationReader];
 const taskPattern = /^[A-Z]+-[0-9]{3,}$/;
 const commitPattern = /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/;
 const settled = new Set(["PLANNED", "READY", "DONE"]);
@@ -45,6 +46,8 @@ export const historyCompatibility = Object.freeze({
   orchestrationJournalVersion: 1,
   manualExchangeVersion: "1.0.0",
   recoveryAuditVersion: "1.0.0",
+  workflowOperationVersion: "1.0.0",
+  workflowOperationReaderPackages: Object.freeze([operationReader]),
   provenanceReceiptVersion: 1,
 });
 
@@ -200,6 +203,7 @@ function scanObservations(history: History, files: readonly HistoryFile[]) {
     keyDigest: string | null; attempts: Record<string, number>; pendingStage: string | null; authority: string }[] = [];
   const agentResults: { taskId: string; subject: unknown; view: Record<string, unknown> }[] = [];
   const exchange = new Map<string, { packets: Set<string>; results: Set<string> }>();
+  const operations=new Map<string,{audits:Map<number,Record<string,unknown>>;controls:Map<number,Record<string,unknown>>;reworks:Map<string,Record<string,unknown>>;charges:Map<string,Record<string,unknown>>;dispatches:Map<string,Map<number,Record<string,unknown>>>;plan:Record<string,unknown>|null;snapshot:Record<string,unknown>|null;controlSnapshot:Record<string,unknown>|null}>();
   for (const file of files) {
     const text = () => historyText(history, file);
     const legacyDefaultExchange = history.config === null && file.area === "state" && file.name.startsWith("manual-exchange/");
@@ -243,6 +247,44 @@ function scanObservations(history: History, files: readonly HistoryFile[]) {
       file.area === "operations" && file.name.startsWith("driver/") ? file.name.slice("driver/".length) : null;
     if (driverPath !== null) {
       if (driverPath === "profile.json") validateDriverRecord(history.root, "driver-profile", JSON.parse(text()));
+      else if(driverPath.startsWith("operations/")) {
+        const match=/^operations\/([a-f0-9-]{36})(\.json|\/(.+))$/.exec(driverPath);
+        if(!match)throw new Error("Unknown workflow operation path.");
+        const operationId=match[1]!, tail=match[2]===".json"?"snapshot":match[3]!;
+        let group=operations.get(operationId);
+        if(!group){group={audits:new Map(),controls:new Map(),reworks:new Map(),charges:new Map(),dispatches:new Map(),plan:null,snapshot:null,controlSnapshot:null};operations.set(operationId,group);}
+        if(tail==="control.lock") {findings.add("UNSETTLED_WORKFLOW_OPERATION");continue;}
+        if(/^recovered-controls\/[a-f0-9]{64}\.archived-lock$/.test(tail))continue;
+        const value:unknown=JSON.parse(text());
+        if(!object(value))throw new Error("Invalid workflow operation record.");
+        const audit=/^audit\/(\d{12})\.json$/.exec(tail), control=/^controls\/(\d{12})\.json$/.exec(tail);
+        if(tail==="snapshot"||audit) {
+          validateDriverRecord(history.root,"workflow-operation",value);
+          if(value.schemaId!=="vibez.workflow-operation"||value.operationId!==operationId)throw new Error("Workflow operation identity mismatch.");
+          if(audit) {if(Number(audit[1])!==value.sequence)throw new Error("Workflow audit sequence mismatch.");group.audits.set(Number(audit[1]),value);}
+          else group.snapshot=value;
+        } else if(tail==="plan.json") {
+          validateDriverRecord(history.root,"workflow-operation",value);
+          if(value.schemaId!=="vibez.workflow-plan")throw new Error("Expected approved plan observation.");group.plan=value;
+        } else if(tail==="control.json"||control) {
+          if(Object.keys(value).sort().join(",")!=="command,sequence"||!Number.isSafeInteger(value.sequence)||Number(value.sequence)<1||!["run","pause","drain","cancel"].includes(String(value.command)))throw new Error("Invalid workflow control.");
+          if(control) {if(Number(control[1])!==value.sequence)throw new Error("Control sequence mismatch.");group.controls.set(Number(control[1]),value);}
+          else group.controlSnapshot=value;
+        } else if(/^reworks\/[a-f0-9-]{36}\.json$/.test(tail)) {
+          if(Object.keys(value).sort().join(",")!=="grantDigest,hostDecisionOffset,predecessor,revision,runId,taskId"||!isSha(value.grantDigest)||!commitPattern.test(String(value.revision))||
+            !Number.isSafeInteger(value.hostDecisionOffset)||Number(value.hostDecisionOffset)<0||!taskPattern.test(String(value.taskId))||typeof value.runId!=="string"||tail!==`reworks/${value.predecessor}.json`)throw new Error("Invalid workflow rework reservation.");
+          group.reworks.set(String(value.predecessor),value);
+        } else if(/^rework-charges\/[a-f0-9-]{36}\.json$/.test(tail)||/^rework-dispatch\/[a-f0-9-]{36}\/\d{12}\.json$/.test(tail)) {
+          const charged=tail.startsWith("rework-charges/");
+          if(Object.keys(value).sort().join(",")!==(charged?"decisionIndex,grantDigest,hostOperationId,predecessor,revision,runId,taskId":"decisionIndex,grantDigest,predecessor,revision,runId,taskId")||
+            !isSha(value.grantDigest)||!commitPattern.test(String(value.revision))||!taskPattern.test(String(value.taskId))||typeof value.runId!=="string"||
+            !Number.isSafeInteger(value.decisionIndex)||Number(value.decisionIndex)<0||!/[a-f0-9-]{36}/.test(String(value.predecessor)))throw new Error("Invalid rework dispatch binding.");
+          if(charged){if(!/^[a-f0-9-]{36}$/.test(String(value.hostOperationId))||tail!==`rework-charges/${value.predecessor}.json`)throw new Error("Invalid rework charge.");group.charges.set(String(value.predecessor),value);}
+          else {if(!tail.startsWith(`rework-dispatch/${value.predecessor}/`))throw new Error("Rework predecessor mismatch.");const number=Number(tail.split("/").at(-1)!.slice(0,12));let dispatches=group.dispatches.get(String(value.predecessor));if(!dispatches){dispatches=new Map();group.dispatches.set(String(value.predecessor),dispatches);}dispatches.set(number,value);}
+        } else if(/^recovered-controls\/[a-f0-9]{64}\.json$/.test(tail)) {
+          if(value.operationId!==operationId||value.confirmedQuiescent!==true||!isSha(value.lockHash)||tail!==`recovered-controls/${value.lockHash}.json`)throw new Error("Invalid control recovery observation.");
+        } else throw new Error("Unsupported workflow operation record.");
+      }
       else if (/^sessions\/[a-f0-9-]{36}\.json$/.test(driverPath)) {
         const session: unknown = JSON.parse(text());
         validateDriverRecord(history.root, "driver-session", session);
@@ -337,6 +379,39 @@ function scanObservations(history: History, files: readonly HistoryFile[]) {
       }
     }
   }
+  for(const group of operations.values()) {
+    const sequence=[...group.audits.keys()].sort((a,b)=>a-b), controls=[...group.controls.keys()].sort((a,b)=>a-b);
+    if(!sequence.length||sequence.some((number,index)=>number!==index+1)||controls.some((number,index)=>number!==index+1))throw new Error("Incomplete workflow operation journal.");
+    const latest=group.audits.get(sequence.at(-1)!)!;
+    for(const value of group.audits.values()) {
+      if(["operationId","planId","planHash","grantDigest","binding","startedAtMs"].some(key=>value[key]!==latest[key]))throw new Error("Workflow operation binding changed.");
+      if(value.current!==null&&!(value.sessions as unknown[]).includes(value.current))throw new Error("Current operation session is missing.");
+      if(Number(value.sequence)>1) {
+        const previous=group.audits.get(Number(value.sequence)-1)!;
+        if(["polls","retries","reworks","controlSequence"].some(key=>Number(value[key])<Number(previous[key]))||["sessions","completed"].some(key=>(previous[key] as unknown[]).some(entry=>!(value[key] as unknown[]).includes(entry))))throw new Error("Workflow operation allowance or history reset.");
+      }
+    }
+    if(group.snapshot&&(Number(group.snapshot.sequence)>Number(latest.sequence)||digest(group.snapshot)!==digest(group.audits.get(Number(group.snapshot.sequence)))))throw new Error("Workflow snapshot differs from immutable journal.");
+    if(group.plan&&(digest(group.plan)!==latest.planHash||group.plan.planId!==latest.planId))throw new Error("Workflow plan binding changed.");
+    if(group.controlSnapshot&&digest(group.controlSnapshot)!==digest(group.controls.get(Number(group.controlSnapshot.sequence))))throw new Error("Control snapshot differs from journal.");
+    if(Number(latest.controlSequence)>controls.length)throw new Error("Acknowledged control is missing from journal.");
+    const planned=group.plan?(group.plan.tasks as {taskId:string}[]).map(task=>task.taskId):[];
+    if((latest.completed as string[]).some(task=>!planned.includes(task)))throw new Error("Completed task escaped approved plan.");
+    if(Number(latest.reworks)>group.reworks.size)throw new Error("Rework reservation history is missing.");
+    if(Number(latest.reworks)<group.reworks.size)findings.add("UNSETTLED_WORKFLOW_OPERATION");
+    for(const [predecessor,reservation] of group.reworks){
+      if(reservation.grantDigest!==latest.grantDigest||!(latest.sessions as unknown[]).includes(predecessor)||!planned.includes(String(reservation.taskId)))throw new Error("Rework reservation escaped operation.");
+      const dispatches=group.dispatches.get(predecessor), indices=dispatches?[...dispatches.keys()].sort((a,b)=>a-b):[];
+      if(indices.some((number,index)=>number!==index+1))throw new Error("Incomplete rework dispatch journal.");
+      let previousIndex=Number(reservation.hostDecisionOffset)-1;
+      for(const index of indices){const dispatch=dispatches!.get(index)!;if(["predecessor","taskId","runId","revision","grantDigest"].some(key=>dispatch[key]!==reservation[key])||Number(dispatch.decisionIndex)<=previousIndex)throw new Error("Rework dispatch binding changed.");previousIndex=Number(dispatch.decisionIndex);}
+      const charge=group.charges.get(predecessor),last=dispatches?.get(indices.at(-1)!);
+      if(charge&&(!last||["predecessor","taskId","runId","revision","grantDigest","decisionIndex"].some(key=>charge[key]!==last[key])))throw new Error("Rework charge lacks original dispatch.");
+    }
+    if([...group.dispatches.keys(),...group.charges.keys()].some(key=>!group.reworks.has(key)))throw new Error("Rework dispatch lacks original reservation.");
+    if(latest.status!=="EXCEPTION"&&!group.plan)throw new Error("Workflow plan observation is missing.");
+    if(latest.status!=="DONE"||latest.pending!==null) findings.add("UNSETTLED_WORKFLOW_OPERATION");
+  }
   return { findings, provenance, mismatched, runs, attempts: [...attempts, ...agentResults] };
 }
 
@@ -429,8 +504,9 @@ async function inspectUpgrade(request: UpgradeCheckRequest, proposed?: NativeHis
     checkoutRevision = history.revision;
     const snapshot = inventory(history.root, history.layout);
     const observations = scanObservations(history, snapshot.files);
-    if (history.relocation !== undefined && target !== relocationReader) findings.add("PRIOR_READER_REJECTS_RELOCATED_HISTORY");
+    if (history.relocation !== undefined && target !== relocationReader && target !== operationReader) findings.add("PRIOR_READER_REJECTS_RELOCATED_HISTORY");
     for (const code of observations.findings) findings.add(code);
+    if(target!==operationReader&&snapshot.files.some(file=>file.area==="driver"&&file.name.startsWith("operations/")||file.area==="operations"&&file.name.startsWith("driver/operations/")))findings.add("PRIOR_READER_DOES_NOT_SUPPORT_WORKFLOW_OPERATIONS");
     if ((target === null || !driverReaderPackages.includes(target)) && snapshot.files.some(file => file.area === "driver" || file.area === "operations" && file.name.startsWith("driver/"))) {
       findings.add("PRIOR_READER_DOES_NOT_SUPPORT_DRIVER_HISTORY");
     }

@@ -101,3 +101,15 @@ Required reachable producer-output ranges:
 ## Windows command execution
 
 On Windows the default resolver runs npm-cli.js with the current Node executable, using npm_execpath when provided or the npm installation beside Node. Arguments are passed without a shell. Missing npm fails closed. The repository test validator allows 15 minutes for the full integration suite; timeout remains an error that blocks validation.
+
+## AUT-003 validation-owned rework
+
+`enterRework` admits only the exact original DEV_VALIDATION_FAILED event at the
+current canonical revision and actor/run identity. Its unique resolved validator
+set must correspond one-for-one with current recorded evidence, including a
+required non-PASS. The shared task lock enforces configured rework allowance.
+The gate retains every failure and transitions through the existing lifecycle
+rule. An exact replay is idempotent. The driver then uses the existing
+`resumeDevelopment` gate for a linked successor with the original assignment.
+No reviewer outcome, administrative reset or fabricated PASS substitutes for
+that deterministic failure path.

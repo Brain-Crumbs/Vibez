@@ -67,16 +67,16 @@ codes 0/2/3/4/70. Successful transport/observation is not semantic PASS.
 
 These are migration-side integration contracts. Fantasy Football #78 is accepted,
 and MIG-006 integrated its manual workflow driver into Vibez. #75 retains
-ownership of planning, publication, application-service and supervisor semantics;
-AUT-003 owns unattended dispatch. Future incompatible proposals must be reconciled
-in a reviewed contract revision. The table distinguishes the installed project
-graph and manual driver from remaining service and supervisor work.
+ownership of planning and approved plan publication. AUT-003 implements the
+shared application-service operation supervisor in the configured project graph;
+future #75 HTTP callers use this same service. There is no separate HTTP or CLI
+supervisor. Incompatible proposals require a reviewed contract revision.
 
 | Consumer | Inputs from Vibez | Consumer owns | Must preserve / integration proof |
 | --- | --- | --- | --- |
 | FF #78 / MIG-006 | Resolved project graph, capability catalog, validator/provider IDs, revision-bound task context, gate/store ports | Reusable operator profile, intake/clarification, atomic registration, inbox/handoff/repair session and watch loop | Profile references this config's path + digest; cannot override identity, validators or role policy. One source of config. Full issue→packet→response→rework→PR/CI→authorized merge journey |
-| FF #75 application service | Same configured graph plus read models and typed outcomes; registry/schema validation for prospective task publication | Planning conversations/versioned plans, exact approval/publication, durable operation supervisor, later HTTP adapter | Planning does not execute; service routes to existing gates without CLI parsing or direct state writes; installed consumer contract tests |
-| AUT-003 | Shared application-service supervisor port where available, graph and stable run identities | Unattended scoped dispatch and policy reconciliation | Reuse supervisor rather than competing journal/lock authority; no HTTP prerequisite |
+| FF #75 application service | Same configured graph plus `services.operations` and typed outcomes | Planning conversations/versioned plans, exact approval/publication, later HTTP adapter | Planning does not execute; approved plans enter the shared operation service; no duplicated scheduler or state machine |
+| AUT-003 | Configured graph, original run identities and `ScopedHostPolicy` | Shared `WorkflowOperations` service, unattended dispatch and reconciliation | CLI and future HTTP delegate to the same implementation and native gates; no HTTP prerequisite |
 
 Profile stores operator preferences and selected config reference/digest. Per-task
 request stores task/owner/run/idempotency identity, exact source and authorized
@@ -86,7 +86,12 @@ writer exclusion. Read models distinguish operation state from task lifecycle,
 include provenance/time/currency, bound artifact reads, and redact secrets.
 Authorization for plan publication, execution, PR publication and exact-head merge
 is distinct; existing grants need no redundant confirmation. HTTP/local security,
-planner implementation and new supervision semantics remain #75's work.
+planner implementation and the HTTP adapter remain #75's work. The installed
+`workflow` export exposes operation types and the supervisor; ordinary hosts use
+`createProjectServices(location, { ...host, unattended })` and call
+`services.operations`. The trusted host supplies approved plans, grant policy,
+isolated worker, integration transport and drain attestations. Issue Markdown and
+CLI callers cannot inject those capabilities. See the workflow guide for controls.
 
 The integration export also provides ScopedHostPolicy, parseHostGrant,
 scopedAgentProvider, scopedValidator, scopedMergeEffect and

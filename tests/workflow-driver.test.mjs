@@ -3,12 +3,21 @@ import {test} from 'node:test';
 import {existsSync,readFileSync,readdirSync,unlinkSync} from 'node:fs';
 import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
-import {fixture,markdown,put,get,git,pause,response,sourceRoot} from './helpers/driver-fixture.mjs';
+import {fixture,markdown,put,get,git,response,sourceRoot} from './helpers/driver-fixture.mjs';
 import {mapMarkdown,loadProfile,loadSession} from '../dist/workflow-driver/intake.js';
 import {scan as scanInbox} from '../dist/workflow-driver/inbox.js';
 
 async function prepared(f,task='DEMO-001',dependencies=[]){put(f.root,'issue.md',markdown(task,dependencies));git(f.root,'add','issue.md');git(f.root,'commit','-m','Selected issue input');const r=await f.cli('prepare','--issue-file','issue.md');assert.equal(r.envelope.ok,true,JSON.stringify(r.envelope));assert.ok(r.envelope.data.sessionId,JSON.stringify(r.envelope));return r.envelope.data.sessionId;}
-async function scan(f,s){await f.cli('watch',s,'--once');await pause();return (await f.cli('watch',s,'--once')).envelope.data.session;}
+async function pollScan(action){
+ let result;
+ for(let attempt=0;attempt<30;attempt++){
+  result=await action();
+  if((result.envelope?.data??result).receipts.length)return result;
+  await new Promise(resolve=>setTimeout(resolve,100));
+ }
+ assert.fail('Inbox did not produce a receipt within bounded polling.');
+}
+async function scan(f,s){return (await pollScan(()=>f.cli('watch',s,'--once'))).envelope.data.session;}
 const packet=(f,s)=>get(f.root,`.agent/driver/exchange/${s.pendingPacket}.packet.json`);
 
 test('CLI setup, stdin/folder intake, clarification, identities and explicit dependency selection',async()=>{
@@ -18,7 +27,7 @@ test('CLI setup, stdin/folder intake, clarification, identities and explicit dep
  assert.equal(stdin.status,0,stdin.stdout);const intake=JSON.parse(stdin.stdout).data;assert.ok(intake.sessionId);
  const original=get(f.root,`.agent/driver/sessions/${intake.sessionId}.json`);
  put(f.root,'.agent/driver/inbox/issues/another.md',markdown('DEMO-002',['DEMO-001']));
- await f.cli('watch','--once');await pause();const folder=await f.cli('watch','--once');assert.ok(folder.envelope.data.receipts.some(r=>r.sessionId));
+ const folder=await pollScan(()=>f.cli('watch','--once'));assert.ok(folder.envelope.data.receipts.some(r=>r.sessionId));
  const second=folder.envelope.data.receipts.find(r=>r.sessionId).sessionId;
  const rejected=(await f.cli('run',second)).envelope.data.session;assert.equal(rejected.status,'WAITING');assert.match(get(f.root,`.agent/driver/outbound/${rejected.diagnosticId}.diagnostic.json`).message,/not the next eligible/);
  let s=(await f.cli('run',intake.sessionId)).envelope.data.session;assert.ok(s.pendingPacket);const p=packet(f,s);
@@ -105,28 +114,28 @@ test('clarification cannot discard explicit dependencies and Windows profile dir
  }
  await f.init();
  const source=markdown('DEMO-001',['MISSING-001']).replace(/## Objective\n[^\n]+\n\n/,'');
- put(f.root,'.agent/driver/inbox/issues/selected.md',source);await f.cli('watch','--once');await pause();await f.cli('watch','--once');
+ put(f.root,'.agent/driver/inbox/issues/selected.md',source);await pollScan(()=>f.cli('watch','--once'));
  const outbound=join(f.root,'.agent/driver/outbound');
  const diagnostic=readdirSync(outbound).filter(x=>x.endsWith('.diagnostic.json')).map(x=>get(outbound,x)).find(x=>x.code==='INTAKE_CLARIFICATION');
  put(f.root,'.agent/driver/inbox/responses/invalid-scope.json',{...diagnostic.responseTemplate,task:mapMarkdown(markdown()).task,issueNumber:101});
- await f.cli('watch','--once');await pause();const observed=await f.cli('watch','--once');
+ const observed=await pollScan(()=>f.cli('watch','--once'));
  assert.equal(observed.envelope.data.receipts.at(-1).status,'REJECTED');assert.equal(existsSync(join(f.root,'tasks/definitions/demo-001.task.json')),false);
 });
 
 test('clarification carries its original issue and permits correction of a rejected task proposal',async()=>{
  const f=fixture();await f.init();
  put(f.root,'.agent/driver/inbox/issues/incomplete.md','# Selected task\nIssue: #101\n## Objective\nDeliver the marker.\n');
- await f.cli('watch','--once');await pause();await f.cli('watch','--once');
+ await pollScan(()=>f.cli('watch','--once'));
  const outbound=join(f.root,'.agent/driver/outbound');
  const name=readdirSync(outbound).find(x=>x.endsWith('.diagnostic.json'));
  const packet=get(outbound,name);assert.equal(packet.code,'INTAKE_CLARIFICATION');
  assert.match(readFileSync(join(outbound,`${name}.md`),'utf8'),/originalIssue/);
  const proposal={...mapMarkdown(markdown()).task,title:'Selected task',objective:'Deliver the marker.'};
  const bad={...packet.responseTemplate,task:{...proposal,dependencies:['MISSING-001']},issueNumber:101};
- put(f.root,'.agent/driver/inbox/responses/reply.json',bad);await f.cli('watch','--once');await pause();const rejected=await f.cli('watch','--once');assert.equal(rejected.envelope.data.receipts.at(-1).status,'REJECTED');
+ put(f.root,'.agent/driver/inbox/responses/reply.json',bad);const rejected=await pollScan(()=>f.cli('watch','--once'));assert.equal(rejected.envelope.data.receipts.at(-1).status,'REJECTED');
  assert.equal(existsSync(join(f.root,'tasks/definitions/demo-001.task.json')),false);
  const good={...bad,task:proposal};put(f.root,'.agent/driver/inbox/responses/reply.json',good);
- await f.cli('watch','--once');await pause();const accepted=await f.cli('watch','--once');assert.equal(accepted.envelope.data.receipts.at(-1).status,'ACCEPTED');
+ const accepted=await pollScan(()=>f.cli('watch','--once'));assert.equal(accepted.envelope.data.receipts.at(-1).status,'ACCEPTED');
  assert.equal(existsSync(join(f.root,'tasks/definitions/demo-001.task.json')),true);
  assert.equal(existsSync(join(f.root,'.agent/state/lifecycle/DEMO-001.lifecycle.json')),false,'intake grants no assignment');
  // Simulate the registration intent having survived, while both the inbox
@@ -148,7 +157,7 @@ test('concurrent scans serialize and a lost receipt is reconstructed from the ca
  put(f.root,'marker.txt','delivered\n');git(f.root,'add','marker.txt');git(f.root,'commit','-m','Deliver marker');
  const responsePath='.agent/driver/inbox/responses/reply.json';put(f.root,responsePath,response(p));
  const profile=loadProfile(f.root),session=loadSession(f.root,profile,sid);
- await scanInbox(f.root,profile,session);await pause();const imported=await scanInbox(f.root,profile,session);
+ const imported=await pollScan(()=>scanInbox(f.root,profile,session));
  assert.equal(imported.receipts.at(-1).status,'ACCEPTED');
  // Model the crash gap between the adapter's atomic result publication and its
  // receipt. The original inbox file need not still exist on restart.

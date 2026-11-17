@@ -14,6 +14,8 @@ export type {
   DeveloperValidationEvidenceStore,
   DeveloperValidationRequest,
   DeveloperValidationResult,
+  DeveloperValidationReworkRequest,
+  DeveloperValidationReworkResult,
   DeveloperValidationStateStore,
   DeveloperValidatorResolver,
 } from "./dev-validation.js";

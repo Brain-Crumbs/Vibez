@@ -140,6 +140,7 @@ function fixture(options = {}) {
     evidenceStore,
     validatorResolver,
     evidenceLocation: join(root, "evidence"),
+    reworkLock: { withLock: (_taskId, action) => action() },
   });
   return { root, stateStore, branchLifecycle, evidenceStore, validatorResolver, gate };
 }
@@ -147,6 +148,35 @@ function fixture(options = {}) {
 function cleanup(value) {
   rmSync(value.root, { recursive: true, force: true });
 }
+
+test("validation rework preserves original failures, binds attempt and revision, and replays idempotently",async()=>{
+  const value=fixture({validators:[failingValidator("required"),passingValidator("other")]});
+  try {
+    await value.gate.validate({taskId:task.taskId,actorId:"developer",runId:"original::dev-validation",occurredAt});
+    const before=value.stateStore.get(task.taskId), original=value.evidenceStore.getHistory(validationEvidenceLineageId(task.taskId,"required"));
+    const request={taskId:task.taskId,actorId:"developer",runId:"original::validation-rework",failedRunId:"original::dev-validation",occurredAt};
+    const validators=value.validatorResolver.validators;
+    value.validatorResolver.validators=[validators[0],validators[0]];
+    assert.throws(()=>value.gate.enterRework(request),/duplicate/);
+    value.validatorResolver.validators=validators;
+    for(const change of [{actorId:"other"},{failedRunId:"another-run"}])assert.throws(()=>value.gate.enterRework({...request,...change}),/not bound/);
+    value.branchLifecycle.revision="b".repeat(40);assert.throws(()=>value.gate.enterRework(request),/not bound/);value.branchLifecycle.revision=revision;
+    const result=value.gate.enterRework(request);assert.equal(result.lifecycleState,"REWORK_REQUIRED");
+    const accepted=value.stateStore.get(task.taskId);assert.deepEqual(accepted.history.slice(0,-1),before.history);
+    assert.deepEqual(value.gate.enterRework(request),result);assert.deepEqual(value.stateStore.get(task.taskId),accepted);
+    assert.deepEqual(value.evidenceStore.getHistory(validationEvidenceLineageId(task.taskId,"required")),original);
+  } finally {cleanup(value);}
+});
+
+test("validation rework fails closed without the original failure or configured lock",async()=>{
+  const value=fixture();try {
+    const request={taskId:task.taskId,actorId:"developer",runId:"rework",failedRunId:"failed",occurredAt};
+    assert.throws(()=>value.gate.enterRework(request),/original DEV_VALIDATION_FAILED/);
+    const gate=new DeveloperValidationGate({registry,stateStore:value.stateStore,branchLifecycle:value.branchLifecycle,
+      evidenceStore:value.evidenceStore,validatorResolver:value.validatorResolver,evidenceLocation:join(value.root,"evidence")});
+    assert.throws(()=>gate.enterRework(request),/configured task lock/);
+  }finally {cleanup(value);}
+});
 
 test("all-pass validation transitions IN_DEVELOPMENT to DEV_VALIDATED and records revision-bound evidence", async () => {
   const value = fixture({ validators: [passingValidator("a"), passingValidator("b")] });

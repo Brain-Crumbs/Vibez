@@ -2,21 +2,28 @@
   "schemaId": "ipt.module-contract",
   "schemaVersion": "1.1.0",
   "moduleId": "control-plane.workflow-driver",
-  "moduleVersion": "1.0.0",
+  "moduleVersion": "1.1.0",
   "structuralContract": {
     "interfaces": [
       "agent orchestrate help | init | prepare | select | run | watch | resume | status | next | publish | ready | rework | recover",
       "Versioned driver profile, intake, session, diagnostic, response and receipt records under .agent/driver",
-      "Unchanged immutable manual packet/result plus a versioned companion handoff"
+      "Unchanged immutable manual packet/result plus a versioned companion handoff",
+      "ProjectServices.operations: WorkflowOperations start/resume/status/inspect/audit/pause/drain/cancel, shared with orchestrate operation",
+      "vibez.workflow-plan and vibez.workflow-operation 1.0.0: host-approved definitions and durable queue observations"
     ]
   },
   "semanticContract": {
-    "capabilities": ["operator-selected-intake", "durable-manual-inbox", "bound-session-continuation", "explicit-publication"],
+    "capabilities": ["operator-selected-intake", "durable-manual-inbox", "bound-session-continuation", "explicit-publication", "approved-plan-supervision", "bounded-unattended-rework", "durable-operation-controls"],
     "behavioralConstraints": [
       "Complete staged task records must pass the registry and dependency/context checks and be present in a committed source before assignment",
       "File readiness requires two stable observations; accepted results and receipts are content bound",
       "Manual waits consume no provider dispatch attempt; semantic results are immutable; successor attempts require legal rework",
-      "GitHub publication is explicit and scope checked; merge requires an exact repository PR and SHA host grant plus native gate acceptance"
+      "GitHub publication is explicit and scope checked; merge requires an exact repository PR and SHA host grant plus native gate acceptance",
+      "One host-approved plan maps to original native sessions; only authorized tasks and satisfied native dependencies enter selection",
+      "Immutable operation/control journals are authoritative observations; mutable snapshots are caches. Interrupted effects reconcile through their existing native owners",
+      "Rework reserves one predecessor cycle before the owning failure transition, preserves original assignment identity and failed evidence, and fences successor resumption with live start authority",
+      "Durable bounded exponential backoff, polls, reworks and wall-clock limits survive resume. Unknown outcomes retain their original identity and workspace claim",
+      "Cancellation requests are distinct from verified external drain. A late external result cannot authorize subsequent dispatch or stale review publication"
     ],
     "invariants": [
       "The driver coordinates and never writes authoritative lifecycle or review evidence directly",
@@ -37,6 +44,13 @@
       "requiredCapabilities": ["operator-selected-intake", "durable-manual-inbox", "bound-session-continuation", "explicit-publication"],
       "acceptedRanges": ["Versioned driver records 1.0.0 and unchanged manual packet/result records 1.0.0"],
       "requiredReachableRanges": ["Prepared, waiting, stopped and DONE with original request identity", "Auditable rejected and reused input receipts"]
+    },
+    {
+      "consumerId": "vibez.history-reader",
+      "expectations": ["Observe operation journals without creating lifecycle authority", "Block unsupported, malformed and unsettled operation histories during upgrade or rollback"],
+      "requiredCapabilities": ["durable-operation-controls"],
+      "acceptedRanges": ["Operation/plan 1.0.0, read by private candidate 0.1.0-rc.4"],
+      "requiredReachableRanges": ["Prior rc.3 readers remain incompatible with operation history", "Existing relocated rc.3 histories remain byte-identical and readable"]
     }
   ]
 }

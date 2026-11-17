@@ -2,7 +2,7 @@
   "schemaId": "ipt.module-contract",
   "schemaVersion": "1.1.0",
   "moduleId": "control-plane.orchestration-engine",
-  "moduleVersion": "2.2.0",
+  "moduleVersion": "2.3.0",
   "structuralContract": {
     "interfaces": [
       "new SequentialOrchestrationEngine(dependencies: OrchestrationDependencies)",
@@ -14,7 +14,8 @@
       "OrchestrationStageId = developer-start | developer-agent | dev-validation | qa-agent | qa-review | architecture-agent | architecture-review | uat-agent | uat-review | review-rework | merge-readiness | controlled-merge",
       "ORCHESTRATION_STAGE_IDS: readonly OrchestrationStageId[], twelve stage identifiers in report order",
       "OrchestrationStageOutcome = PASS | FAIL | BLOCKED",
-      "OrchestrationRetryPolicy { maxAttempts, delayMs }",
+      "OrchestrationRetryPolicy { maxAttempts, delayMs }; delay grows exponentially from delayMs and is capped at 60000ms",
+      "Optional beforeDispatch trusted control fence; start and review ports accept synchronous or asynchronous implementations",
       "OrchestrationErrorCode = INVALID_REQUEST | IDEMPOTENCY_CONFLICT | RECOVERY_REQUIRED | RETRY_EXHAUSTED | CANCELLED | TIMEOUT | WAITING_INPUT",
       "OrchestrationError { code, recoverable }",
       "classifyOrchestrationFailure(error: unknown): OrchestrationFailure",
@@ -63,7 +64,7 @@
       "COMPLETED is returned through ControlledMergeController confirmed DONE only; the engine never performs the merge HTTP call itself",
       "every stage summary and provider invocation uses a stable derived identity ${request.runId}::<stage-id>; retrying a provider stage does not create another role identity",
       "retryPolicy defaults to maxAttempts=3, delayMs=100; maxAttempts must be an integer 1..10 including the first attempt; delayMs must be an integer 0..60000",
-      "provider attempt counts are persisted before invocation per stage/key and survive restarts/resumes; only actual recoverable AgentProviderError TIMEOUT or PROVIDER_ERROR automatically retries with a fixed abortable delay",
+      "provider attempt counts are persisted before invocation per stage/key and survive restarts/resumes; only actual recoverable AgentProviderError TIMEOUT or PROVIDER_ERROR automatically retries with a capped exponential abortable delay",
       "provider CANCELLED, malformed results, unsupported roles, context mismatch, preconditions, and mutating-gate failures are not automatically retried; semantic review/validation FAIL or BLOCKED is never retryable infrastructure",
       "the final failed provider attempt propagates its typed error; a later resume without remaining budget throws RETRY_EXHAUSTED; explicit policy increases remain bounded by 10 total attempts",
       "overall request timeout and caller abort compose a signal passed to AgentRunner; timeoutMsFor(role) independently supplies per-attempt provider timeout; CANCELLED and overall TIMEOUT remain distinct errors",

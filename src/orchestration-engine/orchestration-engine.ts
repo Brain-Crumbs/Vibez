@@ -187,7 +187,11 @@ export class OrchestrationError extends Error {
   }
 }
 
+type AsyncGate<T> = { [K in keyof T]: T[K] extends (...args: infer A) => infer R ? (...args: A) => R | Promise<R> : T[K] };
+
 export interface OrchestrationDependencies {
+  /** Trusted supervisor control check immediately before each dispatch, including retries. */
+  readonly beforeDispatch?: () => void;
   /** Non-dispatching manual preparation. False means waiting, never a provider attempt.
    * The host must retain immutable original inputs and return true only for a bound result. */
   readonly prepareAgentInput?: (request: AgentRunRequest) => boolean;
@@ -199,7 +203,7 @@ export interface OrchestrationDependencies {
   readonly retryPolicy?: OrchestrationRetryPolicy;
   /** Trusted host grant resolver, called under the repository run lock before provider dispatch. */
   readonly maxAttemptsFor?: (journal: OrchestrationRunJournal) => number;
-  readonly developerStart: Pick<DeveloperStartWorkflow, "start">;
+  readonly developerStart: AsyncGate<Pick<DeveloperStartWorkflow, "start">>;
   readonly developerValidation: Pick<DeveloperValidationGate, "validate">;
   /** The same BOOT-011 task registry every wrapped gate already reads its
    * own `task.requiredReviewRoles` from (see e.g. `src/qa-review/qa-
@@ -209,10 +213,10 @@ export interface OrchestrationDependencies {
    * names — never unconditionally invoking QA first — without recomputing
    * or second-guessing any gate's own PASS/FAIL/BLOCKED routing decision. */
   readonly taskRegistry: Pick<TaskRegistry, "get">;
-  readonly qaReview: Pick<QaReviewGate, "prepareContext" | "review">;
-  readonly architectureReview: Pick<ArchitectureReviewGate, "prepareContext" | "review">;
-  readonly uatReview: Pick<UatReviewGate, "prepareContext" | "review">;
-  readonly reviewRework: Pick<ReviewReworkGate, "enterRework">;
+  readonly qaReview: AsyncGate<Pick<QaReviewGate, "prepareContext" | "review">>;
+  readonly architectureReview: AsyncGate<Pick<ArchitectureReviewGate, "prepareContext" | "review">>;
+  readonly uatReview: AsyncGate<Pick<UatReviewGate, "prepareContext" | "review">>;
+  readonly reviewRework: AsyncGate<Pick<ReviewReworkGate, "enterRework">>;
   readonly mergeReadiness: Pick<MergeReadinessPolicyEngine, "evaluate">;
   readonly controlledMerge: Pick<ControlledMergeController, "merge">;
   readonly agentRunner: Pick<AgentRunner, "run">;
@@ -488,7 +492,7 @@ export class SequentialOrchestrationEngine {
       if (state() === spec.failed) return this.routeRework(x, taskId, spec.stage, spec.role);
       if (!roles.has(spec.role) || !(state() === spec.entry || state() === "DEV_VALIDATED")) continue;
       x.check();
-      const prepared = spec.gate.prepareContext({ taskId });
+      const prepared = await spec.gate.prepareContext({ taskId });
       const result = await this.runAgent(x, spec.agent, spec.role, taskId, prepared.revision, prepared.context, actor(spec.role));
       this.addStage(x, spec.agent, spec.role, result.outcome, summarizeAgentResult(spec.role, result), result.evidenceRefs);
       const reviewed = await this.operation(x, spec.stage, () => spec.gate.review({
@@ -589,6 +593,7 @@ export class SequentialOrchestrationEngine {
     };
     while ((x.journal.attempts[stage] ?? 0) < maxAttempts()) {
       x.check();
+      this.dependencies.beforeDispatch?.();
       x.journal.pendingStage = stage;
       x.journal.attempts[stage] = (x.journal.attempts[stage] ?? 0) + 1;
       this.dependencies.runStore.save(x.journal);
@@ -612,7 +617,7 @@ export class SequentialOrchestrationEngine {
         if (!failure.retryable || (x.journal.attempts[stage] ?? 0) >= maxAttempts()) throw error;
         await new Promise<void>((resolve) => {
           const done = () => { clearTimeout(timer); x.signal.removeEventListener("abort", done); resolve(); };
-          const timer = setTimeout(done, policy.delayMs);
+          const timer = setTimeout(done, Math.min(60_000, policy.delayMs * 2 ** Math.min(10, (x.journal.attempts[stage] ?? 1) - 1)));
           x.signal.addEventListener("abort", done, { once: true });
           if (x.signal.aborted) done();
         });

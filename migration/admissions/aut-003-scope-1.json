@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "taskId": "AUT-003",
+  "parentAdmission": "migration/admissions/aut-003.json",
+  "parentRevision": "01e0b2b76395b3f8c0e0b143369c775b8345b22f",
+  "previousDefinitionSha256": "bf0ec9848b3f8ad25531ab1b4f935b2402aa6c2daeade4a2e9cb6cb529c042ec",
+  "definitionSha256": "619ddc3e77099af319b51e0f2d04c47b45ad57dfe98b6c466acc08aa258b9aa5",
+  "addedPaths": [
+    "src/host-policy/index.ts",
+    "migration/admissions/aut-003-scope-1.json"
+  ],
+  "reason": "Permit only the start action from the exact granted integration ref, so the existing native start gate can select the granted canonical branch. All other actions retain canonical-only enforcement.",
+  "independentArchitecture": "Approved scope amendment before implementation; unchanged issue criteria and owner gates.",
+  "originalAssignment": {
+    "ownerId": "aut003-developer",
+    "runId": "aut003-20261117"
+  },
+  "preserved": "Original admission receipt, committed definition and native context remain available at parentRevision. No state or assignment is replaced."
+}

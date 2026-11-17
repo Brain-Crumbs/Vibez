@@ -41,7 +41,7 @@ export async function successor(root: string, p: DriverProfile, s: DriverSession
     lock.canonicalBranch===start.canonicalBranch&&git(root,"branch","--show-current")===start.canonicalBranch&&!isAssignmentLockExpired(lock,now()),"Rework requires the predecessor's exact original active assignment.","ASSIGNMENT_MISMATCH");
   const reworkEntry=[...lifecycle.history].reverse().find(event=>event.toState==="REWORK_REQUIRED");
   requireValue(reworkEntry?.revisionIdentity===head&&reworkEntry.actorId===s.request.ownerId&&
-    (reworkEntry.runId===`${s.request.runId}::review-rework`||(reworkEntry.runId?.startsWith("recovery:")&&reworkEntry.evidenceRef?.startsWith(`${stateDirectory(p)}/recovery/`))),"Rework does not belong to the current failed attempt or an authorized recovery.");
+    ([`${s.request.runId}::review-rework`,`${s.request.runId}::validation-rework`].includes(reworkEntry.runId??"")||(reworkEntry.runId?.startsWith("recovery:")&&reworkEntry.evidenceRef?.startsWith(`${stateDirectory(p)}/recovery/`))),"Rework does not belong to the current failed attempt or an authorized recovery.");
   const nextRun = id();
   const next: DriverSession = existing ?? { ...s, sessionId: nextId, predecessor: s.sessionId, pendingPacket: null, developerPacket:null,diagnosticId: null, result: null, status: "PREPARED",
     request: { ownerId: s.request.ownerId, runId: nextRun, idempotencyKey: nextRun, assignmentRunId: s.request.assignmentRunId ?? s.request.runId, assignmentKey:s.request.assignmentKey??s.request.idempotencyKey!,occurredAt: now() } };
@@ -49,7 +49,11 @@ export async function successor(root: string, p: DriverProfile, s: DriverSession
   // cannot execute until resumeDevelopment has actually entered IN_DEVELOPMENT.
   saveSession(root, p, next);
   const rework = (await host?.services?.())?.reviewRework ?? await createLocalReviewReworkGate(root);
-  rework.resumeDevelopment({ taskId: s.taskId, actorId: p.roleActors.Developer, runId: `${next.request.runId}::resume-rework`, occurredAt: next.request.occurredAt });
+  const resume = () => rework.resumeDevelopment({ taskId: s.taskId, actorId: p.roleActors.Developer, runId: `${next.request.runId}::resume-rework`, occurredAt: next.request.occurredAt });
+  if(host?.unattended) {
+    host.unattended.check();
+    await host.unattended.effect({action:"start",taskId:s.taskId,revision:head},resume);
+  } else resume();
   s.status = "STOPPED"; saveSession(root, p, s);
   return next;
 }

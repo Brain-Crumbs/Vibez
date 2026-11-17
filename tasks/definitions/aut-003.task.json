@@ -1,0 +1,92 @@
+{
+  "schemaId": "ipt.task",
+  "schemaVersion": "1.0.0",
+  "taskId": "AUT-003",
+  "title": "Automate authorized task queues, rework, PR/CI and durable continuation",
+  "objective": "Keep explicitly authorized work progressing end to end through the shared configured workflow, with durable scope, honest interruption and exact-head controlled completion.",
+  "inScope": [
+    "Add the single shared operation supervisor over the existing configured driver and native gates; record #75 ownership of reusable operation semantics and defer planning and HTTP.",
+    "Select only complete schema-valid committed definitions within a trusted host grant; preserve native dependencies, exact inputs and deterministic selection.",
+    "Drive isolated provider sessions, validation, independent reviews, bounded legal rework, non-force publication, canonical PR readiness and policy-controlled merge; continue to the next eligible authorized task.",
+    "Persist operation, grant, source, assignment, attempt and effect bindings before dispatch. Preserve budgets across retries and restarts; reconcile uncertain effects and retain one project writer.",
+    "Expose shared service and CLI inspect, pause/drain, cancel and resume semantics, durable clarification and actionable exceptions; preserve manual compatibility and stopped rollback."
+  ],
+  "outOfScope": [
+    "Distributed scheduling, parallel project writers, arbitrary issue admission, conversational planning or HTTP implementation, unbounded repair, package release, weakening existing protection or broadening worker credential privileges."
+  ],
+  "dependencies": [
+    "AUT-002"
+  ],
+  "canonicalBranch": "automation/aut-003-unattended-supervisor",
+  "allowedPaths": [
+    "src/workflow-driver/**",
+    "src/project-services/**",
+    "src/dev-validation/**",
+    "src/review-rework/**",
+    "src/orchestration-engine/**",
+    "src/cli/**",
+    "src/public/workflow.ts",
+    "src/public/index.ts",
+    "src/public/validation.ts",
+    "src/public/integration.ts",
+    "contracts/workflow-driver/**",
+    "contracts/dev-validation/**",
+    "contracts/orchestration-engine/**",
+    "contracts/review-rework/**",
+    "contracts/cli-shell/**",
+    "tests/**",
+    "scripts/**",
+    "docs/**",
+    "schemas/v1/workflow-operation.schema.json",
+    "package.json",
+    "README.md",
+    "CHANGELOG.md",
+    "migration/admissions/aut-003.json",
+    "tasks/definitions/aut-003.task.json",
+    "requirements/aut-003.requirement.json",
+    "src/host-policy/index.ts",
+    "migration/admissions/aut-003-scope-1.json",
+    "src/history/index.ts",
+    "package-lock.json",
+    "migration/admissions/aut-003-scope-2.json",
+    "migration/admissions/aut-003-validation-plan.json",
+    "src/recovery-tools/evidence-integrity.ts",
+    "migration/admissions/aut-003-scope-3.json"
+  ],
+  "requirements": [
+    "AUT-003-R1"
+  ],
+  "acceptanceCriteria": [
+    "AC-01: A grant covering at least two dependent tasks executes them in order through completion without routine human handoffs or per-task selection.",
+    "AC-02: Real isolated role sessions, validators, reviews, legal rework, PR/CI and controlled merge are driven by the same existing authority owners.",
+    "AC-03: Semantic failure creates an auditable successor attempt when allowed; infrastructure retry preserves identity; budgets survive restart.",
+    "AC-04: Duplicate starts/events and uncertain side effects cannot duplicate assignment, evidence, active provider work, PRs or merge.",
+    "AC-05: Out-of-scope work, exhausted budgets, unsafe recovery and unresolved clarification become durable actionable exceptions.",
+    "AC-06: Cancellation, revocation and pause/drain reflect real external writers and retain a supported resume path.",
+    "AC-07: Service/CLI operation semantics align with #75 and use the installed package; no competing supervisor is introduced."
+  ],
+  "validationPlan": [
+    "Run every README fresh-checkout check, installed package conformance and exact-head GitHub CI; obtain separate QA, Architecture and UAT/Product reviews.",
+    "Exercise authorized queue order, out-of-scope and incomplete inputs, legal validation/review rework, stale/dirty heads, durable budgets, bounded exponential backoff and CI waits/failures.",
+    "Exercise competing starts, duplicate events, restart at effect boundaries and lost push/PR/merge acknowledgements without duplicate assignments, providers, evidence, PRs or merges.",
+    "Demonstrate two dependent tasks through the installed package with real fresh isolated provider role sessions, actual validators and owning native gates through DONE; label remote integration ports as deterministic test doubles. Separately establish actual AUT-003 delivery with independent final reviews, canonical GitHub PR, exact-head CI and native controlled completion. This is feature work, not a new canary requirement.",
+    "Exercise cancellation, revocation, pause/drain, uncertain external writers, supported resume and stopped manual rollback while preserving original operation and native history."
+  ],
+  "affectedContracts": [
+    "control-plane.workflow-driver",
+    "control-plane.dev-validation",
+    "control-plane.review-rework",
+    "control-plane.orchestration-engine",
+    "control-plane.agent-provider",
+    "control-plane.pr-lifecycle",
+    "control-plane.controlled-merge",
+    "control-plane.cli-shell"
+  ],
+  "requiredReviewRoles": [
+    "Developer",
+    "QA",
+    "Architect",
+    "UAT/Product",
+    "MergeController"
+  ]
+}

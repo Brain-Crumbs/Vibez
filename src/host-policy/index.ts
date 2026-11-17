@@ -292,7 +292,8 @@ export class ScopedHostPolicy {
       !grant.validators.every(validator => observation.validators.some(candidate => candidate.id === validator.id &&
         candidate.commandDigest === validator.commandDigest))) return "STALE_BINDING";
     const task = grant.tasks.find(candidate => candidate.taskId === operation.taskId);
-    if (!grant.actions.includes(operation.action) || !task || task.branch !== observation.branch) return "OUT_OF_SCOPE";
+    if (!grant.actions.includes(operation.action) || !task ||
+      (task.branch !== observation.branch && !(operation.action === "start" && observation.branch === grant.integrationRef))) return "OUT_OF_SCOPE";
     if (grant.humanOnly.includes(operation.action)) return "HUMAN_REQUIRED";
     if (!revisionPattern.test(operation.revision) || observation.revision !== operation.revision) return "STALE_HEAD";
     if (operation.action === "agent" || operation.action === "review") {
