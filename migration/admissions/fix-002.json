@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "taskId": "FIX-002",
+  "repository": "Brain-Crumbs/Vibez",
+  "issue": "https://github.com/Brain-Crumbs/Vibez/issues/26",
+  "integrationBase": "95a8be583d276a3866a084c09b8f7f59c46f69b4",
+  "canonicalBranch": "fix/native-history-relocation",
+  "grant": "Owner authorization for a separate relocation PR and protected merge after independent reviews and green CI, followed by verified WSL activation.",
+  "prerequisites": [
+    {
+      "taskId": "MIG-003",
+      "pr": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+      "reviewedHead": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+      "seal": "fdebe9111ce7aa004566c4068a2c15a9a95ab00c",
+      "merge": "16a73b8071f5b9ef390d08504e325b779af291fe",
+      "ci": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876",
+      "mainCi": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42869658896",
+      "receipt": "migration/admissions/mig-003.json"
+    }
+  ],
+  "baselineEvidence": {
+    "acceptance": "https://github.com/Brain-Crumbs/Vibez/pull/25#issuecomment-6925102403",
+    "mainCi": "https://github.com/Brain-Crumbs/Vibez/actions/runs/43927256852",
+    "reader": "https://github.com/Brain-Crumbs/Vibez/releases/tag/v0.1.0-rc.2",
+    "readerSha256": "2c67cc07c866f54eb6768f94dac3f1fdd1be7781e1fd58062fcd3fb4a2ef26bc"
+  },
+  "dependencyProjection": {
+    "historical": [
+      "MIG-003"
+    ],
+    "external": [],
+    "native": []
+  },
+  "issueBodySha256": "4877de245d179c6b53148d8824dcf910c5fff851026ec5fbb23d1f08e843bbc5",
+  "definition": {
+    "path": "tasks/definitions/fix-002.task.json",
+    "sha256": "8f0b9f3004d30fe38c0034f190683a29c6d4a1c43fb595f57c4b24e2c3c0623e"
+  },
+  "requirement": {
+    "path": "requirements/fix-002.requirement.json",
+    "sha256": "f918171cb594371feb86e82fd6e93eaf9156e7fef4b2d57edb6e2cf238379181"
+  }
+}

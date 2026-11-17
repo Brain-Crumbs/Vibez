@@ -1,0 +1,57 @@
+{
+  "schemaId": "ipt.task",
+  "schemaVersion": "1.0.0",
+  "taskId": "FIX-002",
+  "title": "Preserve native history when relocating a stopped Vibez checkout",
+  "objective": "Relocate verified, quiescent and completed native history within the same GitHub project, preserving original runtime and provenance bytes.",
+  "inScope": [
+    "Add trusted native history export and activation anchored to the exact verified source and destination.",
+    "Document the stopped-writer handoff, compatibility checks and rollback.",
+    "Validate the actual WSL migration without committing runtime records."
+  ],
+  "outOfScope": [
+    "Configured storage, active or external sessions, manual exchange, driver history, repeat relocation, cross-project imports, AUT-002 implementation and package release publication."
+  ],
+  "dependencies": [],
+  "canonicalBranch": "fix/native-history-relocation",
+  "allowedPaths": [
+    "src/history/**",
+    "src/public/diagnostics.ts",
+    "src/orchestration-engine/node-runtime.d.ts",
+    "tests/history-compatibility.test.mjs",
+    "docs/COMPATIBILITY.md",
+    "docs/PUBLIC_API.md",
+    "package.json",
+    "package-lock.json",
+    "migration/admissions/fix-002.json",
+    "tasks/definitions/fix-002.task.json",
+    "requirements/fix-002.requirement.json"
+  ],
+  "requirements": [
+    "FIX-002-R1"
+  ],
+  "acceptanceCriteria": [
+    "AC-01: Validate the source snapshot and same-project destination before activation, including owner-confirmed quiescence and explicit snapshot and manifest digests.",
+    "AC-02: Preserve original records and audit provenance byte-for-byte. Validate imported receipts alongside new destination evidence.",
+    "AC-03: Reject foreign, edited, missing, colliding, or unpinned histories and unsupported scopes. Activation is durable and safely repeatable.",
+    "AC-04: Document Windows-to-WSL handoff and rollback limits. No runtime state, credentials, or live transfer manifests are tracked.",
+    "AC-05: Pass fresh independent QA, Architecture, and UAT reviews and exact-head CI, then merge through the protected native controller. Retain validation and operational restore evidence."
+  ],
+  "validationPlan": [
+    "Run full README build, test, schema, provenance, and adversarial checks on WSL 2.",
+    "Exercise exact original and destination digests, bad provenance, same-repository ancestry, interrupted or duplicate activation, and rollback refusal in disposable repositories.",
+    "Inspect a separately installed candidate against the stopped original and the verified offline WSL restore. Obtain independent QA, Architecture and UAT reviews and protected exact-head integration."
+  ],
+  "affectedContracts": [
+    "control-plane.workflow-diagnostics",
+    "control-plane.recovery-tools",
+    "control-plane.evidence-store"
+  ],
+  "requiredReviewRoles": [
+    "Developer",
+    "QA",
+    "Architect",
+    "UAT/Product",
+    "MergeController"
+  ]
+}
