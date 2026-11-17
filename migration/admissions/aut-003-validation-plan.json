@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "taskId": "AUT-003",
+  "parentAdmission": "migration/admissions/aut-003-scope-2.json",
+  "parentRevision": "3dda95bfaf1c48feeec064e5061a20a30e3ae105",
+  "previousDefinitionSha256": "2b96e7a9f8014b4090d0b511a8dcfeb1a459bd8ed11181320f513eb0b7a77923",
+  "definitionSha256": "71c6882cf42c0980bceb05ac552c6dadf05a3afe64d026361dc4e1c1b5999a93",
+  "addedPaths": [
+    "migration/admissions/aut-003-validation-plan.json"
+  ],
+  "originalValidation": "Demonstrate two dependent bounded tasks with real fresh provider role sessions, deterministic validators and actual publication/CI/controlled completion through a separately authorized isolated consumer.",
+  "revisedValidation": "Demonstrate two dependent tasks through the installed package with real fresh isolated provider role sessions, actual validators and owning native gates through DONE; label remote integration ports as deterministic test doubles. Separately establish actual AUT-003 delivery with independent final reviews, canonical GitHub PR, exact-head CI and native controlled completion. This is feature work, not a new canary requirement.",
+  "source": "https://github.com/Brain-Crumbs/Vibez/issues/11",
+  "reason": "Correct derived validation wording that imposed an extra hosted fixture/canary beyond the issue. Independent Architecture and UAT both re-read the full issue and withdrew that stronger interpretation. No acceptance criterion is removed; simulated remote scenarios never supply live feature approval or completion.",
+  "independentReviews": [
+    {
+      "role": "Architect",
+      "agent": "/root/aut003_architecture",
+      "decision": "PASS",
+      "assessment": "No additional hosted fixture PRs or repository administration required. Installed real-provider/native-gate proof and separate actual feature delivery evidence satisfy the specified validation."
+    },
+    {
+      "role": "UAT/Product",
+      "agent": "/root/aut003_uat",
+      "decision": "PASS",
+      "assessment": "Two dependent tasks must complete under one grant with real isolated roles/validators/native owners; deterministic remote ports must be labeled. Final live AUT-003 reviews/PR/CI/native completion remain required."
+    }
+  ],
+  "originalAssignment": {
+    "ownerId": "aut003-developer",
+    "runId": "aut003-20261117"
+  },
+  "preserved": "Original admissions, assignment, context and source histories remain unchanged."
+}

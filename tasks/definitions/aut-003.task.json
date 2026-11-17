@@ -48,7 +48,8 @@
     "migration/admissions/aut-003-scope-1.json",
     "src/history/index.ts",
     "package-lock.json",
-    "migration/admissions/aut-003-scope-2.json"
+    "migration/admissions/aut-003-scope-2.json",
+    "migration/admissions/aut-003-validation-plan.json"
   ],
   "requirements": [
     "AUT-003-R1"
@@ -66,7 +67,7 @@
     "Run every README fresh-checkout check, installed package conformance and exact-head GitHub CI; obtain separate QA, Architecture and UAT/Product reviews.",
     "Exercise authorized queue order, out-of-scope and incomplete inputs, legal validation/review rework, stale/dirty heads, durable budgets, bounded exponential backoff and CI waits/failures.",
     "Exercise competing starts, duplicate events, restart at effect boundaries and lost push/PR/merge acknowledgements without duplicate assignments, providers, evidence, PRs or merges.",
-    "Demonstrate two dependent bounded tasks with real fresh provider role sessions, deterministic validators and actual publication/CI/controlled completion through a separately authorized isolated consumer.",
+    "Demonstrate two dependent tasks through the installed package with real fresh isolated provider role sessions, actual validators and owning native gates through DONE; label remote integration ports as deterministic test doubles. Separately establish actual AUT-003 delivery with independent final reviews, canonical GitHub PR, exact-head CI and native controlled completion. This is feature work, not a new canary requirement.",
     "Exercise cancellation, revocation, pause/drain, uncertain external writers, supported resume and stopped manual rollback while preserving original operation and native history."
   ],
   "affectedContracts": [
