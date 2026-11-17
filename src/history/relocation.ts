@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { closeSync, fsyncSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, rmdirSync, unlinkSync, writeFileSync } from "node:fs";
+import { closeSync, fsyncSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, rmdirSync, statfsSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { canonicalJson } from "../local-agent-adapter/json.js";
 import { digest, projectGit } from "../project-config/index.js";
@@ -107,6 +107,22 @@ export function assertRelocationBinding(root: string, projectIdentity: string, r
   }
   for (const revision of [record.source.revision, record.destinationRevision]) {
     projectGit(root, ["merge-base", "--is-ancestor", revision, "HEAD"]);
+  }
+}
+
+export function assertRelocationStorage(root: string, verified: boolean) {
+  const portable = root.replaceAll("\\", "/");
+  if (verified !== true || portable.startsWith("//") ||
+      portable.split("/").some(part => /^(?:OneDrive(?: - .*)?|Dropbox|iCloudDrive)$/i.test(part)) ||
+      !["linux", "win32"].includes(process.platform)) {
+    throw new Error("Verify supported local storage outside synchronized folders before activation.");
+  }
+  if (process.platform === "linux") {
+    const localFilesystems = [0xef53, 0x794c7630, 0x58465342, 0x9123683e];
+    if ([root, join(root, ".git"), join(root, ".agent", "state")]
+      .some(path => !localFilesystems.includes(statfsSync(path).type))) {
+      throw new Error("The checkout or its runtime is not on supported local storage.");
+    }
   }
 }
 

@@ -228,8 +228,7 @@ configured bindings and repeated relocation are outside this procedure.
    stopped destination only if all imported paths are disjoint. Retain the
    original and both verified backups through acceptance.
 4. Invoke `activateNativeHistoryRelocation` with the destination path,
-   source manifest, separately pinned manifest digest and operator
-   quiescence confirmation. Supply `destinationBaseline` as
+   source manifest, separately pinned manifest digest,\n   storage verification and operator quiescence confirmation. Supply `destinationBaseline` as
    `{ manifest, expectedManifestSha256 }` when needed. The reader verifies
    Git ancestry, the exact restored files and the combined native history,
    then publishes `.git/vibez-native-relocation/history.json`. Retry the
@@ -259,14 +258,15 @@ const source = await prepareNativeHistoryRelocation({
 await activateNativeHistoryRelocation({
   repositoryRoot: destinationRoot,
   sourceManifest: source.manifest,
+  destinationStorageVerified: true,
   expectedSourceManifestSha256: independentlyRecordedManifestSha256,
   quiescence,
 });
 ```
 
 A digest verifies bytes against a trusted observation. A worker, PR or
-runtime file cannot authorize relocation. The destination marker belongs to
-the trusted operator. Diagnostics refuse missing or modified imported files.
+runtime file cannot authorize relocation. Audit and upgrade preflight consult the destination marker. The trusted
+operator owns writer enablement and verifies the package and storage pins. Diagnostics refuse missing or modified imported files.
 Pin the relocation-aware reader for all future operations. Its preflight
 refuses downgrades. An older reader does not understand the Git marker and
 may accept a receiptless snapshot. On Windows, publication verifies and

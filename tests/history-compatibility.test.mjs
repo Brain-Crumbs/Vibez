@@ -266,12 +266,13 @@ test("a digest-pinned native restore retains original provenance and refuses an 
   relocationGit(target, "remote", "set-url", "origin", relocationOrigin);
   mkdirSync(join(target, ".agent"));
   cpSync(join(root, layout.state), join(target, layout.state), { recursive: true });
-  const request = { repositoryRoot: target, quiescence: drain, sourceManifest: manifest,
+  const request = { repositoryRoot: target, quiescence: drain, destinationStorageVerified: true, sourceManifest: manifest,
     expectedSourceManifestSha256: manifestSha256 };
   const check = version => checkProjectUpgrade({ repositoryRoot: target, quiescence: drain, targetPackageVersion: version });
 
   assert.equal((await check(relocationVersion)).compatible, false);
   await assert.rejects(activateNativeHistoryRelocation({ ...request, expectedSourceManifestSha256: "0".repeat(64) }), /pinned digest/);
+  await assert.rejects(activateNativeHistoryRelocation({ ...request, destinationStorageVerified: false }), /supported local storage/);
   await assert.rejects(activateNativeHistoryRelocation({ ...request, quiescence: { ...drain, externalSessionsDrained: false } }), /drained/);
   relocationGit(target, "remote", "set-url", "origin", "https://github.com/example/foreign.git");
   await assert.rejects(activateNativeHistoryRelocation(request), /different checkout/);
@@ -314,7 +315,7 @@ test("relocation verifies the precise union of completed stores and still record
   const source = await relocationExport(root);
   const baseline = await relocationExport(target);
   const repositoryRoot = target;
-  const request = { repositoryRoot, quiescence: drain, sourceManifest: source.manifest,
+  const request = { repositoryRoot, quiescence: drain, destinationStorageVerified: true, sourceManifest: source.manifest,
     expectedSourceManifestSha256: source.manifestSha256 };
   const before = await readProjectAudit({ repositoryRoot }, otherTask);
   cpSync(join(root, layout.state), join(target, layout.state), { recursive: true });

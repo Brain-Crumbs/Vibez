@@ -17,7 +17,7 @@ import { validate as validateDriverRecord } from "../workflow-driver/io.js";
 import { inventory, optionalStat, type HistoryFile } from "./snapshot.js";
 import {
   assertImportedHistory, assertNativeRelocationFiles, assertNoNativeRelocation, assertRelocationBinding,
-  assertRelocationCheckout, confirmNativeRelocationPublication, nativeRelocationRepository, openNativeRelocation,
+  assertRelocationCheckout, assertRelocationStorage, confirmNativeRelocationPublication, nativeRelocationRepository, openNativeRelocation,
   publishNativeRelocation,
   readRelocationManifest, verifyRelocationInventory, relocationReader,
   type NativeHistoryRelocationManifest, type NativeHistoryRelocationRecord,
@@ -428,7 +428,6 @@ async function inspectUpgrade(request: UpgradeCheckRequest, proposed?: NativeHis
     taskBindingsSha256 = history.taskBindingsSha256;
     checkoutRevision = history.revision;
     const snapshot = inventory(history.root, history.layout);
-    if (proposed !== undefined) assertCompletedNativeHistory(history, snapshot.files);
     const observations = scanObservations(history, snapshot.files);
     if (history.relocation !== undefined && target !== relocationReader) findings.add("PRIOR_READER_REJECTS_RELOCATED_HISTORY");
     for (const code of observations.findings) findings.add(code);
@@ -513,6 +512,8 @@ export async function prepareNativeHistoryRelocation(request: NativeHistoryExpor
 export interface NativeHistoryActivationRequest {
   readonly repositoryRoot: string;
   readonly sourceManifest: unknown;
+  /** The trusted operator verified the destination filesystem and mount layout. */
+  readonly destinationStorageVerified: true;
   readonly expectedSourceManifestSha256: string;
   readonly destinationBaseline?: { readonly manifest: unknown; readonly expectedManifestSha256: string };
   readonly quiescence: RelocationQuiescence;
@@ -526,6 +527,7 @@ export async function activateNativeHistoryRelocation(request: NativeHistoryActi
   const baseline = destinationBaseline === undefined ? undefined :
     readRelocationManifest(destinationBaseline.manifest, destinationBaseline.expectedManifestSha256);
   const history = await openHistory({ repositoryRoot });
+  assertRelocationStorage(history.root, request.destinationStorageVerified);
   const destinationBaselineSha256 = destinationBaseline?.expectedManifestSha256 ?? null;
   if (baseline !== undefined && (baseline.projectIdentity !== history.projectIdentity ||
       baseline.repository !== source.repository)) {
@@ -547,6 +549,8 @@ export async function activateNativeHistoryRelocation(request: NativeHistoryActi
   assertRelocationBinding(history.root, history.projectIdentity, record);
   const restored = inventory(history.root, history.layout);
   verifyRelocationInventory(source, baseline, restored.files);
+  assertCompletedNativeHistory(history, source.files);
+  if (baseline !== undefined) assertCompletedNativeHistory(history, baseline.files);
   const expectedSnapshotSha256 = restored.snapshotSha256;
   const report = await inspectUpgrade({ repositoryRoot, quiescence, expectedSnapshotSha256,
     expectedProjectIdentity: history.projectIdentity, expectedBindingSha256: null,
