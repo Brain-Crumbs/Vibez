@@ -228,7 +228,8 @@ configured bindings and repeated relocation are outside this procedure.
    stopped destination only if all imported paths are disjoint. Retain the
    original and both verified backups through acceptance.
 4. Invoke `activateNativeHistoryRelocation` with the destination path,
-   source manifest, separately pinned manifest digest,\n   storage verification and operator quiescence confirmation. Supply `destinationBaseline` as
+   source manifest, separately pinned manifest digest,
+   storage verification and operator quiescence confirmation. Supply `destinationBaseline` as
    `{ manifest, expectedManifestSha256 }` when needed. The reader verifies
    Git ancestry, the exact restored files and the combined native history,
    then publishes `.git/vibez-native-relocation/history.json`. Retry the
