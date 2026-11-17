@@ -103,7 +103,7 @@ const policy = new ScopedHostPolicy({
 });
 const provider = scopedAgentProvider(policy,runtime,{maxTurns:1,maxCostMicros:0});
 const services = await createProjectServices(location,{
-  identity:"offline-llama-proof@2",
+  identity:"offline-llama-proof@2",requirePassingDeveloperResult:true,
   actorIdFor:(role,owner)=>roles.find(entry=>entry.role===role)?.principal ?? owner+"::controller",
   toolPermissionPolicyFor:role=>({allowedTools:roles.find(entry=>entry.role===role)?.tools ?? [],networkAccess:"none"}),
   providers:new Map([[provider.providerId,provider]]),
@@ -127,7 +127,7 @@ try {
   ]);
   const implemented=git("rev-parse","HEAD");
   assert.notEqual(implemented,source);
-  assert.equal(readFileSync(join(root,"marker.txt"),"utf8"),"status=ready\\n");
+  assert.equal(readFileSync(join(root,"marker.txt"),"utf8"),"status=ready\n");
   const sessions=readdirSync(ops).map(attempt=>{
     const dir=join(ops,attempt);
     const intent=JSON.parse(readFileSync(join(dir,"intent.json"),"utf8"));

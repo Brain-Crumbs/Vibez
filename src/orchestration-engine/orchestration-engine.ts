@@ -191,6 +191,8 @@ export interface OrchestrationDependencies {
   /** Non-dispatching manual preparation. False means waiting, never a provider attempt.
    * The host must retain immutable original inputs and return true only for a bound result. */
   readonly prepareAgentInput?: (request: AgentRunRequest) => boolean;
+  /** Trusted opt-in for workflows where a Developer non-PASS must stop before validation. */
+  readonly requirePassingDeveloperResult?: true;
   /** Read-only authoritative lifecycle view; never written by the orchestrator. */
   readonly lifecycleState: { get(taskId: string): LifecycleRecord | null };
   readonly runStore: OrchestrationRunStore;
@@ -462,7 +464,9 @@ export class SequentialOrchestrationEngine {
       }
       const result = await this.runAgent(x, "developer-agent", "Developer", taskId, start.sourceRevision, start.context, actor("Developer"));
       this.addStage(x, "developer-agent", "Developer", result.outcome, summarizeAgentResult("Developer", result), result.evidenceRefs);
-      if (result.outcome !== "PASS") return this.stoppedResult(taskId, request.runId, stages, state(), "developer-agent", result.nonPass!.reason, result.nonPass!.remediation);
+      if ((this.dependencies.prepareAgentInput || this.dependencies.requirePassingDeveloperResult) && result.outcome !== "PASS") {
+        return this.stoppedResult(taskId, request.runId, stages, state(), "developer-agent", result.nonPass!.reason, result.nonPass!.remediation);
+      }
       const validation = await this.operation(x, "dev-validation", () => this.dependencies.developerValidation.validate({
         taskId, actorId: actor("Developer"), runId: stageRunId(request.runId, "dev-validation"), occurredAt: now(),
       }));
