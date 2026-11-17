@@ -29,7 +29,7 @@ async function fixture(t,options={}) {
   git("remote","add","origin","https://github.com/example/operations.git");
   const config=JSON.parse(readFileSync(process.env.VIBEZ_OPERATIONS_CONFIG??new URL("../examples/beta/vibez.config.json",import.meta.url)));
   config.project={id:"operations",repository:"example/operations"};config.providers={execution:"fixture-worker",credentials:[]};
-  config.budgets={maxAttempts:2,retryDelayMs:1,providerTimeoutMs:10000,operationTimeoutMs:60000,maxReworkCycles:2};
+  config.budgets={maxAttempts:2,retryDelayMs:1,providerTimeoutMs:options.providerTimeoutMs??10000,operationTimeoutMs:options.sessionTimeoutMs??60000,maxReworkCycles:2};
   config.validators=["marker",...(options.secondValidator?["marker-second"]:[])].map(id=>({id,executorId:id,required:true}));config.policy.requiredChecks=["fixture-ci"];
   put("vibez.config.json",config);put(".gitignore",".vibez/\n");put("planning/policy.json",{description:"Independent fixture roles"});
   put("planning/contracts/product.json",{moduleId:"consumer.product",moduleVersion:"1.0.0"});mkdirSync(join(root,"planning/requirements"),{recursive:true});
@@ -342,7 +342,7 @@ test("operation deadline quarantines a slow writer and remains spent after drain
   let entered,release;const reached=new Promise(resolve=>{entered=resolve;}),blocked=new Promise(resolve=>{release=resolve;});
   // Give the supported Windows host time to reach the deliberately hung writer.
   const deadlineMs=process.platform==="win32"?120000:5000;
-  const f=await fixture(t,{planBudgets:{maxRuntimeMs:deadlineMs},onAgent:async request=>{if(request.role==="Developer"){f.setDrained(false);entered();await blocked;f.setDrained(true);request.signal.throwIfAborted();}}});
+  const f=await fixture(t,{planBudgets:{maxRuntimeMs:deadlineMs},providerTimeoutMs:Math.max(10000,deadlineMs*1.5),sessionTimeoutMs:Math.max(60000,deadlineMs*2),onAgent:async request=>{if(request.role==="Developer"){f.setDrained(false);entered();await blocked;f.setDrained(true);request.signal.throwIfAborted();}}});
   const operationId=randomUUID(),run=f.services.operations.start(f.plan.planId,operationId,true);
   let result;
   try {

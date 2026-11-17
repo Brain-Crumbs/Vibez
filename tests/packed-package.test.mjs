@@ -138,6 +138,7 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
   assert.equal(Number(/^# pass (\d+)$/m.exec(operations.stdout)?.[1]),installedScenarios.length);
   assert.match(operations.stdout,/^# fail 0$/m);
   assert.match(operations.stdout,/^# cancelled 0$/m);
+  for(const scenario of installedScenarios)assert.ok(operations.stdout.includes(" - "+scenario),"Missing installed scenario: "+scenario);
   assert.doesNotMatch(operations.stderr,/skipping running files/);
   // The consumer damage check removes packaged schemas; run it after operations.
   run(process.execPath, [module, packReceipt.version], unrelated);
