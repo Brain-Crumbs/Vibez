@@ -108,8 +108,8 @@ The versioned intent and exclusive lease are durable before launch.
 Journal mutation is serialized across local host processes. An incomplete
 mutation remains blocked. Preserve those records and inspect the affected
 operation offline after all original writers are stopped.
-The attempt identity and binding cannot change on retry. A terminal
-response is reused from the private journal. An uncertain launch,
+The attempt identity and binding cannot change on retry. The runtime
+reuses a completed response within the caller’s deadline. An uncertain launch,
 termination or workspace effect leaves the original attempt reserved.
 The launcher acknowledgement and process-exit observation establish
 normal termination. If either is unavailable, the runtime retains a
@@ -133,8 +133,9 @@ identities.
 Run `npm run build` and
 `node scripts/rehearse-local-llama.mjs /absolute/path/to/verified-assets.json`.
 The script invokes configured `services.orchestration.run` in a
-disposable consumer. It launches Developer and the three reviewers, then records the resulting developer revision and
-checks actual validation and reviews through the native gates. It ends
+disposable consumer. It launches Developer and the three reviewers and
+records the resulting developer revision. The native gates process the
+actual validation results and reviews. It ends
 at `MERGE_READY` in that disposable checkout with no remote integration.
 It provides real provider evidence for the bounded task. The independent
 feature reviews and actual delivery CI run separately.

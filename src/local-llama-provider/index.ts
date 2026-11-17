@@ -111,6 +111,7 @@ export async function createLocalLlamaRuntime(input: LocalLlamaRuntimeOptions) {
     const binding = digest([attempt, request.actorId, request.revisionIdentity, digest(packet),
       configDigest, scope.branch, role.tools, paths, files, editablePath, request.timeoutMs]);
     const replay = journal.find(attempt, binding);
+    if (expired()) throw stoppedError();
     if (replay !== null) {
       if (replay.result !== undefined) return replay.result;
       throw unavailable("This local attempt is terminal. A new host-authorized invocation is required.");
@@ -165,6 +166,7 @@ export async function createLocalLlamaRuntime(input: LocalLlamaRuntimeOptions) {
         "local-llama:" + attempt, new Date().toISOString());
     } catch (error) {
       journal.finish(attempt, { binding, status: "MALFORMED" });
+      if (expired()) throw stoppedError();
       throw error;
     }
     if (expired()) {
@@ -195,6 +197,7 @@ export async function createLocalLlamaRuntime(input: LocalLlamaRuntimeOptions) {
         assertCurrent();
         if (!clean()) throw unavailable("Workspace rollback did not restore its clean starting state.");
         journal.finish(attempt, { binding, status: "EFFECT_REFUSED" });
+        if (expired()) throw stoppedError();
         throw unavailable("The authorized workspace effect was rolled back.");
       }
       if (effect.status !== "COMMITTED" || effect.revision !== git("rev-parse", "HEAD").trim() ||
@@ -213,6 +216,7 @@ export async function createLocalLlamaRuntime(input: LocalLlamaRuntimeOptions) {
     }
     journal.finish(attempt, { binding, status: "COMPLETED", result: parsed.result,
       ...(workspaceRevision === undefined ? {} : { workspaceRevision }) });
+    if (expired()) throw stoppedError();
     return parsed.result;
   };
   const runtime: ScopedWorkerRuntime = {

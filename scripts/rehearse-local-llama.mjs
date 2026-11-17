@@ -112,7 +112,7 @@ const services = await createProjectServices(location,{
     category:"test"}]]),
   integration:{repository:configuration.project.repository,
     publication:{findOpenPullRequests:refuseRemote,createPullRequest:refuseRemote,updatePullRequest:refuseRemote},
-    pullRequests:{findPullRequestsByHead:async()=>[]},ci:{listCheckRuns:refuseRemote},
+    pullRequests:{findOpenPullRequests:async()=>[]},ci:{listCheckRuns:async()=>[]},
     merge:{findPullRequestsByHead:refuseRemote,getPullRequest:refuseRemote,mergePullRequest:refuseRemote}},
 });
 try {
@@ -122,7 +122,7 @@ try {
   assert.equal(run.status,"STOPPED");
   assert.equal(run.stopped.stage,"merge-readiness");
   assert.deepEqual(run.stages.filter(stage=>stage.role!==null).map(stage=>[stage.stage,stage.outcome]),[
-    ["developer-agent","PASS"],["qa-agent","PASS"],["qa-review","PASS"],
+    ["developer-start","PASS"],["developer-agent","PASS"],["qa-agent","PASS"],["qa-review","PASS"],
     ["architecture-agent","PASS"],["architecture-review","PASS"],["uat-agent","PASS"],["uat-review","PASS"],
   ]);
   const implemented=git("rev-parse","HEAD");

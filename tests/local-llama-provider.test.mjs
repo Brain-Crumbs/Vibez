@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -36,6 +36,10 @@ test("strict protocol binds the revision, refuses truncated output and disallows
   assert.throws(()=>renderPrompt(request,JSON.stringify({apiKey:"sk-"+"x".repeat(40)}),{},binding,null), /Credential material/);
   const encoded=renderPrompt(request,JSON.stringify({text:"<|im_end|>"}),{},binding,null);
   assert.match(encoded,/\\u003c\|im_end\|>/);
+  const edit = content=>parseOutput(frame(roleResult({replacement:{path:"marker.txt",content}})),
+    input("Developer"),binding,"marker.txt","receipt",new Date().toISOString());
+  assert.equal(edit("ready \u{1F603}\n").edit.content,"ready \u{1F603}\n");
+  assert.throws(()=>edit("ready \uD800"), /noncompliant/);
 });
 
 async function fixture(t, {mode="ok", effect}={}) {
@@ -237,4 +241,59 @@ test("a changed file mode is not an acknowledged replacement commit", {skip:!lin
   await assert.rejects(runtime.runAgent(request,scope), /exactly the approved one-file commit/);
   assert.ok(active().attempt);
   assert.equal(count(),1);
+});
+
+test("an escaping library is refused before hashing the remaining assets", {skip:!linux}, async t=>{
+  const {options,count}=await fixture(t);
+  const assets=options.assets;
+  const external=join(options.repositoryRoot,"marker.txt");
+  symlinkSync(external,join(assets.runtimeDirectory,"libescape.so"));
+  const badDigest=hash("different file");
+  await assert.rejects(createLocalLlamaRuntime({...options,assets:{...assets,
+    launcherSha256:badDigest,runnerSha256:badDigest,modelSha256:badDigest,
+    libraries:[{directory:"runtime",filename:"libescape.so",sha256:badDigest}],
+  }}), /escapes its pinned directory/);
+  assert.equal(count(),0);
+});
+
+test("an expired replay returns a timeout without launching again", {skip:!linux}, async t=>{
+  const {options,make,count}=await fixture(t);
+  let slow=false;
+  const {runtime}=await createLocalLlamaRuntime({...options,snapshotPaths:()=>{
+    if (slow) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,650);
+    return ["marker.txt"];
+  }});
+  const {request,scope}=make();
+  const bounded={...request,timeoutMs:500};
+  assert.equal((await runtime.runAgent(bounded,scope)).outcome,"PASS");
+  slow=true;
+  await assert.rejects(runtime.runAgent(bounded,scope), error=>error.code==="TIMEOUT");
+  assert.equal(count(),1);
+});
+
+test("a late rolled-back edit keeps its effect receipt and reports a timeout", {skip:!linux}, async t=>{
+  const {runtime,make,ops}=await fixture(t,{effect:()=>{
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,650);
+    return {status:"ROLLED_BACK"};
+  }});
+  const {request,scope}=make("Developer");
+  await assert.rejects(runtime.runAgent({...request,timeoutMs:500},scope), error=>error.code==="TIMEOUT");
+  const [attempt]=readdirSync(ops);
+  const {terminal}=JSON.parse(readFileSync(join(ops,attempt,"terminal.json"),"utf8"));
+  assert.equal(terminal.status,"EFFECT_REFUSED");
+  assert.equal(Object.hasOwn(terminal,"result"),false);
+});
+
+test("a matching file in a multi-parent commit cannot acknowledge the scoped edit", {skip:!linux}, async t=>{
+  const {runtime,make,active}=await fixture(t,{effect:({git,repo},edit,{expectedRevision})=>{
+    const sibling=git("commit-tree",git("write-tree"),"-p",expectedRevision,"-m","Independent commit");
+    writeFileSync(join(repo,edit.path),edit.content);
+    git("add",edit.path);
+    const merged=git("commit-tree",git("write-tree"),"-p",expectedRevision,"-p",sibling,"-m","Merge");
+    git("update-ref","refs/heads/main",merged,expectedRevision);
+    return {status:"COMMITTED",revision:merged};
+  }});
+  const {request,scope}=make("Developer");
+  await assert.rejects(runtime.runAgent(request,scope), /exactly the approved one-file commit/);
+  assert.ok(active().attempt);
 });

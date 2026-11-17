@@ -10,6 +10,7 @@ export interface LocalLlamaEdit {
 }
 
 const credential = /(?:-----BEGIN [A-Z ]*PRIVATE KEY-----|(?:gh[pousr]_|github_pat_|sk-(?:proj-)?)[A-Za-z0-9_-]{18,}|Bearer [A-Za-z0-9_.-]{18,})/i;
+const unpairedSurrogate = /[\uD800-\uDFFF]/u;
 const modelControlToken = /<\|[^|\r\n]{1,80}\|>/g;
 function escapeControls(text: string) {
   return text.replace(modelControlToken, value => value.replace(/</g, "\\u003c"));
@@ -65,7 +66,8 @@ function malformed(): never {
 }
 
 function boundedText(value: unknown, maximum: number): value is string {
-  return typeof value === "string" && value.length <= maximum && value.trim().length !== 0 && !credential.test(value);
+  return typeof value === "string" && value.length <= maximum && value.trim().length !== 0 &&
+    !unpairedSurrogate.test(value) && !credential.test(value);
 }
 
 function observations(value: unknown): value is string[] {
@@ -90,7 +92,8 @@ export function parseOutput(output: string, request: AgentRunRequest, binding: s
     if (!object(replacement) || Object.keys(replacement).length !== 2 || request.role !== "Developer" ||
         outcome !== "PASS" || editablePath === null || replacement.path !== editablePath ||
         typeof replacement.content !== "string" || replacement.content.length > 24_576 ||
-        replacement.content.includes("\0") || credential.test(replacement.content)) return malformed();
+        replacement.content.includes("\0") || unpairedSurrogate.test(replacement.content) ||
+        credential.test(replacement.content)) return malformed();
     edit = { path: editablePath, content: replacement.content };
   }
   let details: Readonly<Record<string, unknown>>;

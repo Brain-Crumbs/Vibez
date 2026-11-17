@@ -55,11 +55,12 @@ export async function verifyAssets(assets: LocalLlamaAssets) {
     ![assets.runtimeVersion, assets.model].every(value => /^[A-Za-z0-9][A-Za-z0-9._:-]{0,100}$/.test(value))) {
     throw invalid("Local inference requires canonical paths and a pinned Linux toolchain.");
   }
+  const libraries = libraryPaths(assets);
   await Promise.all([
     verifyFile(assets.launcherPath, assets.launcherSha256),
     verifyFile(join(assets.runtimeDirectory, "llama-completion"), assets.runnerSha256),
     verifyFile(assets.modelPath, assets.modelSha256),
-    ...libraryPaths(assets).map(library => verifyFile(library.source, library.sha256)),
+    ...libraries.map(library => verifyFile(library.source, library.sha256)),
   ]);
 }
 
