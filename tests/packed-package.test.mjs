@@ -124,9 +124,20 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
   const operationEnvironment={...process.env,VIBEZ_OPERATIONS_CONFIG:join(installed,"examples/beta/vibez.config.json")};
   // A nested runner otherwise exits successfully without running any files.
   delete operationEnvironment.NODE_TEST_CONTEXT;
-  const operations=spawnSync(process.execPath,["--test","--test-reporter=tap",operationTests],{cwd:unrelated,encoding:"utf8",timeout:600000,env:operationEnvironment});
+  // Full fault coverage runs once in npm test, including the Windows source job.
+  // The four installed matrix cells prove public API, dependency and control
+  // behavior without repeating the entire native fixture suite in each cell.
+  const installedScenarios=[
+    "one approved plan drives two dependent native tasks with one PR and merge per task",
+    "active caller cancellation quarantines a hung worker and preserves the workspace claim",
+    "concurrent validation cannot replace the active signal or launch a second validator after cancellation",
+  ];
+  const operations=spawnSync(process.execPath,["--test","--test-reporter=tap","--test-name-pattern=^("+installedScenarios.join("|")+")$",operationTests],{cwd:unrelated,encoding:"utf8",timeout:process.platform==="win32"?15*60*1000:600000,env:operationEnvironment});
   assert.equal(operations.status,0,operations.stdout+operations.stderr);
   assert.match(operations.stdout,/# tests [1-9][0-9]*/);
+  assert.equal(Number(/^# pass (\d+)$/m.exec(operations.stdout)?.[1]),installedScenarios.length);
+  assert.match(operations.stdout,/^# fail 0$/m);
+  assert.match(operations.stdout,/^# cancelled 0$/m);
   assert.doesNotMatch(operations.stderr,/skipping running files/);
   // The consumer damage check removes packaged schemas; run it after operations.
   run(process.execPath, [module, packReceipt.version], unrelated);

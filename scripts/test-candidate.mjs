@@ -60,7 +60,7 @@ try {
     GIT_CONFIG_GLOBAL: gitConfig, GIT_TERMINAL_PROMPT: "0", NPM_CONFIG_USERCONFIG: npmConfig,
     NPM_CONFIG_GLOBALCONFIG: npmGlobalConfig });
   execFileSync(process.execPath, ["--test", "tests/packed-package.test.mjs"],
-    { cwd: staging, stdio: "inherit", env, timeout: 15 * 60 * 1000 });
+    { cwd: staging, stdio: "inherit", env, timeout: (process.platform === "win32" ? 30 : 15) * 60 * 1000 });
   console.log(JSON.stringify({ revision: receipt.sourceCommit, version: receipt.version,
     sha256: receipt.sha256, node: process.version, platform: process.platform, osVersion: version(),
     osRelease: release(), arch: process.arch }));

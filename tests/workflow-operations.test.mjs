@@ -18,6 +18,8 @@ const evidenceBytes=root=>{
   if(existsSync(directory))visit(directory);return files;
 };
 
+// Test watchdogs include native Git/filesystem setup; production budgets are unchanged.
+const fixtureWatchdogMs=process.platform==="win32"?10*60*1000:30000;
 const roles=["Developer","QA","Architect","UAT/Product"];
 async function fixture(t,options={}) {
   const lab=mkdtempSync(join(tmpdir(),"vibez operations ")), root=join(lab,"consumer");mkdirSync(root);
@@ -282,7 +284,7 @@ test("failed CI remains actionable across restart without spending poll allowanc
   assert.deepEqual([f.counts.agent.length,f.counts.create,f.counts.merge],[4,1,0]);
 });
 
-test("competing same-ID callers cannot duplicate an active assignment or provider",{timeout:30000},async t=>{
+test("competing same-ID callers cannot duplicate an active assignment or provider",{timeout:fixtureWatchdogMs},async t=>{
   let entered,release;const reached=new Promise(resolve=>{entered=resolve;}),blocked=new Promise(resolve=>{release=resolve;});
   const options={pendingCi:true,onAgent:async request=>{if(request.role==="Developer"){f.setDrained(false);entered();await blocked;f.setDrained(true);}}};
   const f=await fixture(t,options),operationId=randomUUID(),run=f.services.operations.start(f.plan.planId,operationId,true);
@@ -309,7 +311,7 @@ test("revocation between reviewed work and publication prevents the next effect"
   assert.equal(f.counts.agent.length,4);assert.equal(f.counts.push,0);
 });
 
-test("cancelled uncertain publication stays quarantined until its original callback drains",{timeout:30000},async t=>{
+test("cancelled uncertain publication stays quarantined until its original callback drains",{timeout:fixtureWatchdogMs},async t=>{
   let entered,release,finished;
   const reached=new Promise(resolve=>{entered=resolve;}),blocked=new Promise(resolve=>{release=resolve;}),drained=new Promise(resolve=>{finished=resolve;});
   const options={pendingCi:true,onCreate:async()=>{options.onCreate=undefined;f.setDrained(false);entered();await blocked;f.setDrained(true);finished();}};
@@ -336,9 +338,11 @@ test("cancelled uncertain publication stays quarantined until its original callb
   assert.deepEqual([f.counts.agent.length,f.counts.push,f.counts.create,f.counts.merge],[4,1,1,0]);
 });
 
-test("operation deadline quarantines a slow writer and remains spent after drain",{timeout:30000},async t=>{
+test("operation deadline quarantines a slow writer and remains spent after drain",{timeout:fixtureWatchdogMs},async t=>{
   let entered,release;const reached=new Promise(resolve=>{entered=resolve;}),blocked=new Promise(resolve=>{release=resolve;});
-  const f=await fixture(t,{planBudgets:{maxRuntimeMs:5000},onAgent:async request=>{if(request.role==="Developer"){f.setDrained(false);entered();await blocked;f.setDrained(true);request.signal.throwIfAborted();}}});
+  // Give the supported Windows host time to reach the deliberately hung writer.
+  const deadlineMs=process.platform==="win32"?120000:5000;
+  const f=await fixture(t,{planBudgets:{maxRuntimeMs:deadlineMs},onAgent:async request=>{if(request.role==="Developer"){f.setDrained(false);entered();await blocked;f.setDrained(true);request.signal.throwIfAborted();}}});
   const operationId=randomUUID(),run=f.services.operations.start(f.plan.planId,operationId,true);
   let result;
   try {
@@ -346,7 +350,7 @@ test("operation deadline quarantines a slow writer and remains spent after drain
     assert.equal(result.status,"QUARANTINED",JSON.stringify(result));assert.equal(result.exception.code,"WRITER_PENDING");
     await assert.rejects(f.services.operations.resume(operationId,true),{code:"WRITER_PENDING"});
   } finally {release();}
-  await new Promise(resolve=>setTimeout(resolve,100));f.advance(5001);
+  await new Promise(resolve=>setTimeout(resolve,100));f.advance(deadlineMs+1);
   const resumed=await f.services.operations.resume(operationId,true);
   assert.equal(resumed.status,"EXCEPTION",JSON.stringify(resumed));assert.equal(resumed.exception.code,"BUDGET_EXHAUSTED");
   assert.deepEqual(resumed.sessions,result.sessions);assert.equal(f.counts.agent.length,1);assert.equal(f.counts.validators,0);
@@ -385,7 +389,7 @@ test("zero rework allowance preserves the failed attempt across resume",async t=
   assert.equal(f.services.status.read(new Date().toISOString()).tasks.find(task=>task.taskId==="DEMO-001").state,"DEV_VALIDATION_FAILED");
 });
 
-test("concurrent validation cannot replace the active signal or launch a second validator after cancellation",{timeout:30000},async t=>{
+test("concurrent validation cannot replace the active signal or launch a second validator after cancellation",{timeout:fixtureWatchdogMs},async t=>{
   let entered,release,activeSignal;
   const reached=new Promise(resolve=>{entered=resolve;}),blocked=new Promise(resolve=>{release=resolve;}),launched=[];
   const f=await fixture(t,{secondValidator:true,validatorTimeoutMs:10000,onValidator:async(command,capability)=>{
@@ -440,7 +444,7 @@ test("an unfinished operation under another grant still owns the workspace",asyn
 
 
 test("cancellation during pre-merge reads never dispatches a fresh merge",async t=>{
-  for(const stage of ["intent","fresh"])await t.test(stage,{timeout:30000},async t=>{
+  for(const stage of ["intent","fresh"])await t.test(stage,{timeout:fixtureWatchdogMs},async t=>{
     let entered,release;const reached=new Promise(resolve=>{entered=resolve;}),blocked=new Promise(resolve=>{release=resolve;});
     const options={},f=await fixture(t,options),operationId=randomUUID(),controller=new AbortController();
     options.onFetchPull=async()=>{
