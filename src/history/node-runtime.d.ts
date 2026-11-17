@@ -3,3 +3,7 @@ declare module "node:crypto" {
     update(data: Uint8Array): IptHash;
   }
 }
+
+declare module "node:fs" {
+  export function rmdirSync(path: string): void;
+}

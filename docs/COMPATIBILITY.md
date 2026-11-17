@@ -202,6 +202,76 @@ archive without starting tasks, changing bindings, importing results or making
 historical approvals count in the new store. Copying source code to another
 repository never transfers its operating state or approvals.
 
+
+## Move completed native history to another checkout
+
+The relocation API supports moving `.agent/state` from a stopped
+unconfigured checkout to a dedicated checkout of the same GitHub repository.
+It preserves completed native histories and their provenance. Active
+assignments, orchestration journals, manual exchange, driver records,
+configured bindings and repeated relocation are outside this procedure.
+
+1. Stop both checkouts and drain external sessions as described above. Verify
+   both checkouts have the same canonical GitHub `origin` and use supported
+   local storage at the destination. On WSL 2 use the Linux ext4 filesystem.
+   Confirm it with `findmnt -T "$PWD"`. Keep the original checkout stopped
+   and restrict access to the runtime, manifests and destination Git metadata.
+2. Use the relocation reader to run `checkProjectUpgrade` on the source.
+   Require `compatible: true` and record the reported snapshot digest. Pass
+   that digest to `prepareNativeHistoryRelocation`. Separately pin the
+   returned manifest digest. If the destination has completed native
+   history already, prepare and pin its own manifest before copying files.
+3. Restore the source snapshot in an empty private staging directory. Verify
+   it with `verifyHistoryBackup` using `{ state: ".agent/state", driver:
+   ".agent/driver" }` and the recorded digest. Verify a separate backup of
+   the destination baseline if present. Copy the verified source into the
+   stopped destination only if all imported paths are disjoint. Retain the
+   original and both verified backups through acceptance.
+4. Invoke `activateNativeHistoryRelocation` with the destination path,
+   source manifest, separately pinned manifest digest and operator
+   quiescence confirmation. Supply `destinationBaseline` as
+   `{ manifest, expectedManifestSha256 }` when needed. The reader verifies
+   Git ancestry, the exact restored files and the combined native history,
+   then publishes `.git/vibez-native-relocation/history.json`. Retry the
+   same operation after an uncertain response. Stop on conflicting state.
+5. Require `checkProjectUpgrade` to return `compatible: true` and use
+   `readProjectAudit` to verify the original task histories before enabling
+   the destination writer. New evidence uses the destination identity. The
+   exact imported files retain their original identity. Keep only one writer
+   active and keep the marker and manifests outside version control.
+
+Use the exact built package in a trusted operator program. For example, with
+absolute paths and the independently recorded digests:
+
+```ts
+import { activateNativeHistoryRelocation, prepareNativeHistoryRelocation } from
+  "@brain-crumbs/vibez/diagnostics";
+
+const quiescence = { localWritersDrained: true, externalSessionsDrained: true } as const;
+const source = await prepareNativeHistoryRelocation({
+  repositoryRoot: originalRoot,
+  expectedSnapshotSha256: independentlyRecordedSnapshotSha256,
+  quiescence,
+});
+
+// After restoring the verified backup at the destination.
+await activateNativeHistoryRelocation({
+  repositoryRoot: destinationRoot,
+  sourceManifest: source.manifest,
+  expectedSourceManifestSha256: independentlyRecordedManifestSha256,
+  quiescence,
+});
+```
+
+A digest verifies bytes against a trusted observation. A worker, PR or
+runtime file cannot authorize relocation. The destination marker belongs to
+the trusted operator. Diagnostics refuse missing or modified imported files.
+Older readers refuse a relocated store. Before the first post-relocation
+write, a failed cutover can be abandoned. Retain the verified copies and
+reopen the eligible original checkout under its pinned reader. After the
+first write, keep the latest state and marker together with a compatible
+reader. Restoring a pre-move snapshot would lose new history.
+
 ### MIG-007 acceptance evidence
 
 | Criterion | Regression coverage |
