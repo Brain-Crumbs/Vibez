@@ -43,7 +43,9 @@
     "CHANGELOG.md",
     "migration/admissions/aut-003.json",
     "tasks/definitions/aut-003.task.json",
-    "requirements/aut-003.requirement.json"
+    "requirements/aut-003.requirement.json",
+    "src/host-policy/index.ts",
+    "migration/admissions/aut-003-scope-1.json"
   ],
   "requirements": [
     "AUT-003-R1"
