@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "taskId": "AUT-003",
+  "parentAdmission": "migration/admissions/aut-003-validation-plan.json",
+  "parentRevision": "283a5ab46d3ad779532550b38e9edf9c729ba392",
+  "previousDefinitionSha256": "71c6882cf42c0980bceb05ac552c6dadf05a3afe64d026361dc4e1c1b5999a93",
+  "definitionSha256": "51c8f6035d8433ef51839789b10fafd019bbadd9de6d91245c481863b83f143d",
+  "addedPaths": [
+    "src/recovery-tools/evidence-integrity.ts",
+    "migration/admissions/aut-003-scope-3.json"
+  ],
+  "reason": "Read-only recovery/audit consumer recognizes validation-failure rework and successor evidence references, matching its existing contract to detect missing/mismatched historical evidence. No reset, repair or lifecycle authority is changed.",
+  "independentArchitecture": "Approved by /root/aut003_architecture before implementation. Preserve original native references and administrative recovery handling.",
+  "originalAssignment": {
+    "ownerId": "aut003-developer",
+    "runId": "aut003-20261117"
+  },
+  "preserved": "Original admission, context, assignment and source history remain retained; unrelated candidate work excluded."
+}

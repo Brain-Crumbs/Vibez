@@ -49,7 +49,9 @@
     "src/history/index.ts",
     "package-lock.json",
     "migration/admissions/aut-003-scope-2.json",
-    "migration/admissions/aut-003-validation-plan.json"
+    "migration/admissions/aut-003-validation-plan.json",
+    "src/recovery-tools/evidence-integrity.ts",
+    "migration/admissions/aut-003-scope-3.json"
   ],
   "requirements": [
     "AUT-003-R1"
