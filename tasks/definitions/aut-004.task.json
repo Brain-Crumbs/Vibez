@@ -1,0 +1,76 @@
+{
+  "schemaId": "ipt.task",
+  "schemaVersion": "1.0.0",
+  "taskId": "AUT-004",
+  "title": "Prove and release the fully automated auditable workflow",
+  "objective": "Prove the installed supported unattended workflow with real independent roles and actual controlled GitHub completion, reproducible failure evidence, operator guidance and a pinned release.",
+  "inScope": [
+    "Run the installed acceptance matrix in an independent consumer and migrated Fantasy Football integration; retain exact source, package, configuration, grant, task, session and intervention evidence.",
+    "Demonstrate a representative authorized dependent-task chain through actual isolated provider roles, native validation/review, GitHub publication, exact-head CI and controlled merge/DONE without routine handoffs.",
+    "Exercise restart, legal validation/review rework, duplicate work, provider unavailability, stale source/CI, policy denial/expiry/revocation, durable budgets and uncertain merge; explicitly identify simulated faults.",
+    "Provide redacted audit export and an independently exercised installation, configure, inspect, pause/drain, resume, exception and rollback procedure.",
+    "Publish a versioned immutable GitHub release under the accepted distribution channel after final independent reviews and actual acceptance evidence; preserve the pinned Fantasy Football consumer boundary and cross-link roadmap/extraction/API scope."
+  ],
+  "outOfScope": [
+    "Distributed deployment, new lifecycle authority, embedded consumer engine, arbitrary issue admission, weakened protection or role isolation, fake-only proof, a retired live canary requirement, npm publication, or claiming general autonomy for ambiguous work."
+  ],
+  "dependencies": [
+    "AUT-003"
+  ],
+  "canonicalBranch": "automation/aut-004-unattended-acceptance",
+  "allowedPaths": [
+    "scripts/**",
+    "tests/**",
+    "docs/**",
+    "examples/**",
+    "README.md",
+    "CHANGELOG.md",
+    "package.json",
+    "package-lock.json",
+    ".github/workflows/**",
+    "tasks/definitions/aut-004.task.json",
+    "requirements/aut-004.requirement.json",
+    "migration/admissions/aut-004.json",
+    "src/history/index.ts",
+    "contracts/workflow-driver/**",
+    "migration/admissions/evidence/aut004-prerequisites.json"
+  ],
+  "requirements": [
+    "AUT-004-R1"
+  ],
+  "acceptanceCriteria": [
+    "AC-01: A real authorized dependent-task chain completes through exact-head controlled merge/DONE with zero routine human handoffs after the initial grant.",
+    "AC-02: All required role judgments are independently sourced from fresh role contexts and validated against the final revision.",
+    "AC-03: Restart, rework and uncertain-outcome tests preserve audit history and avoid duplicate effects; failures do not become PASS.",
+    "AC-04: Policy-denied/expired/revoked or over-budget work stops with an actionable durable reason and no unauthorized effects.",
+    "AC-05: A fresh operator can install, configure, inspect audit evidence, pause/drain, resume and safely roll back using docs alone.",
+    "AC-06: Fantasy Football remains a pinned consumer with no embedded engine, and release evidence distinguishes M1 extraction from achieved M2 automation."
+  ],
+  "validationPlan": [
+    "Run all README fresh-checkout checks, installed package conformance, exact-head GitHub CI and independent QA, Architecture and UAT/Product acceptance.",
+    "Pack and inspect the exact committed artifact; record SHA-256/SHA-512 and verify installed bytes before each acceptance scenario.",
+    "Complete a real dependent chain with fresh isolated Developer/QA/Architect/UAT contexts, actual native gates, real remote PR/CI/merge and replay after DONE; count every actual human intervention.",
+    "Exercise bounded faults with explicit real-versus-simulated labels and demonstrate no duplicate effects, hidden reset, fabricated pass or unauthorized action.",
+    "Have a fresh reviewer follow the operator documentation, inspect redacted evidence, exercise controls and rehearse stopped rollback with history hashes.",
+    "Verify migrated Fantasy Football is pinned with no embedded engine; retain migration and automation capability boundaries separately."
+  ],
+  "affectedContracts": [
+    "control-plane.workflow-driver",
+    "control-plane.agent-provider",
+    "control-plane.orchestration-engine",
+    "control-plane.pr-lifecycle",
+    "control-plane.controlled-merge",
+    "control-plane.dev-validation",
+    "control-plane.cli-shell",
+    "control-plane.review-rework",
+    "control-plane.merge-readiness",
+    "control-plane.review-framework"
+  ],
+  "requiredReviewRoles": [
+    "Developer",
+    "QA",
+    "Architect",
+    "UAT/Product",
+    "MergeController"
+  ]
+}
