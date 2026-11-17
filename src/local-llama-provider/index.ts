@@ -177,8 +177,13 @@ export async function createLocalLlamaRuntime(input: LocalLlamaRuntimeOptions) {
     if (edit !== null && edit.content !== snapshots[edit.path]) {
       // The trusted effect observes the exact source ref. Uncertain effects
       // keep the original lease and cannot be acknowledged as a PASS.
-      scope.assertAuthorized();
+      const git = (...args: string[]) => projectGit(options.repositoryRoot, args);
+      const clean = () => git("status", "--porcelain").trim() === "";
+      const modeAt = (revision: string) => git("ls-tree", revision, "--", edit.path).split(" ")[0];
+      const mode = modeAt(request.revisionIdentity);
       assertCurrent();
+      if (!clean()) throw unavailable("The isolated workspace has unresolved changes.");
+      scope.assertAuthorized();
       if (expired()) {
         journal.finish(attempt, { binding, status: "CANCELLED" });
         throw stoppedError();
@@ -188,13 +193,14 @@ export async function createLocalLlamaRuntime(input: LocalLlamaRuntimeOptions) {
       }));
       if (effect.status === "ROLLED_BACK") {
         assertCurrent();
+        if (!clean()) throw unavailable("Workspace rollback did not restore its clean starting state.");
         journal.finish(attempt, { binding, status: "EFFECT_REFUSED" });
         throw unavailable("The authorized workspace effect was rolled back.");
       }
-      const git = (...args: string[]) => projectGit(options.repositoryRoot, args);
       if (effect.status !== "COMMITTED" || effect.revision !== git("rev-parse", "HEAD").trim() ||
           git("branch", "--show-current").trim() !== scope.branch ||
-          git("rev-parse", "HEAD^").trim() !== request.revisionIdentity ||
+          git("show", "-s", "--format=%P", "HEAD").trim() !== request.revisionIdentity ||
+          modeAt("HEAD") !== mode || !clean() ||
           git("diff", "--name-only", "-z", request.revisionIdentity, "HEAD") !== edit.path + "\0" ||
           git("show", "HEAD:" + edit.path) !== edit.content) {
         throw unavailable("The workspace effect did not confirm exactly the approved one-file commit.");

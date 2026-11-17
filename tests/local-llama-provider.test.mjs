@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -222,4 +222,19 @@ test("a settled but late commit is recorded and never reported as Developer PASS
   assert.equal(terminal.status,"CANCELLED");
   assert.match(terminal.workspaceRevision,/^[a-f0-9]{40}$/);
   assert.equal(Object.hasOwn(terminal,"result"),false);
+});
+
+test("a changed file mode is not an acknowledged replacement commit", {skip:!linux}, async t=>{
+  const {runtime,make,active,count}=await fixture(t,{effect:({git,repo},edit)=>{
+    const file=join(repo,edit.path);
+    writeFileSync(file,edit.content);
+    chmodSync(file,0o755);
+    git("add",edit.path);
+    git("commit","-m","Introduce an unapproved mode","--",edit.path);
+    return {status:"COMMITTED",revision:git("rev-parse","HEAD")};
+  }});
+  const {request,scope}=make("Developer");
+  await assert.rejects(runtime.runAgent(request,scope), /exactly the approved one-file commit/);
+  assert.ok(active().attempt);
+  assert.equal(count(),1);
 });

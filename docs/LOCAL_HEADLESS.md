@@ -34,10 +34,12 @@ supported package platforms.
    operation directory must be private, on a supported local filesystem,
    outside the repository, and shared by all incarnations of that project
    host. Register the resulting provider as `local-llama.cpp` with existing
-   configured services. Supply trusted \`actorIdFor\` and
-   \`toolPermissionPolicyFor\` mappings on \`ProjectHost\`. Increment the host
-   identity if the implementation or policy changes. Assign a distinct principal to Developer, QA,
-   Architect and UAT/Product. The native controller retains merge authority.
+   configured services. Supply trusted `actorIdFor` and
+   `toolPermissionPolicyFor` mappings on `ProjectHost`. Set
+   `requirePassingDeveloperResult: true` to stop a headless Developer
+   non-PASS before validation. Increment the host identity if its
+   implementation or policy changes. Use distinct principals for Developer,
+   QA, Architect and UAT/Product. The native controller retains merge authority.
 
 ```ts
 const { runtime } = await createLocalLlamaRuntime({
@@ -59,7 +61,6 @@ The runtime validator port uses the existing trusted isolated executor.
 Configured native validation resolves commands through `ProjectHost.executors`.
 Use isolated launcher commands for validators that run repository code.
 
-
 ## Scope and result binding
 
 Each invocation starts one fresh process with the owning gate's compiled
@@ -70,10 +71,10 @@ The model proposes replacement text through the structured response.
 Only the host's scoped effect can apply it. The runtime rechecks the
 current grant, checkout, branch and revision immediately before the effect.
 The host must use a synchronous, exclusive source-ref fence for that
-one authorized file. Return \`COMMITTED\` with the exact resulting revision,
-or \`ROLLED_BACK\` after settling without a commit. The runtime verifies the
-single parent, changed path and exact bytes on Git HEAD before recording a
-completed edit. A late effect never returns PASS. Reviewers
+one authorized file. Return `COMMITTED` with the exact resulting revision,
+or `ROLLED_BACK` after settling without a commit. The runtime verifies the
+single parent, changed path, unchanged file mode and exact bytes on Git HEAD
+before recording a completed edit. A late effect never returns PASS. Reviewers
 receive no replacement capability. For an invocation that produces a
 commit, use the old revision for the invocation record. Native validation
 and later reviews use fresh contexts for the actual resulting HEAD.
@@ -131,7 +132,7 @@ identities.
 
 Run `npm run build` and
 `node scripts/rehearse-local-llama.mjs /absolute/path/to/verified-assets.json`.
-The script invokes configured \`services.orchestration.run\` in a
+The script invokes configured `services.orchestration.run` in a
 disposable consumer. It launches Developer and the three reviewers, then records the resulting developer revision and
 checks actual validation and reviews through the native gates. It ends
 at `MERGE_READY` in that disposable checkout with no remote integration.
