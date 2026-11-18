@@ -24,7 +24,7 @@ const pack = (runNpm, temp) => conformance
 const installedDocs = ["docs/INSTALL.md", "docs/PUBLIC_API.md", "docs/CLI.md", "docs/COMPATIBILITY.md",
   "docs/CONFIGURED_RUNTIME.md", "docs/UNATTENDED_HOST.md", "docs/LOCAL_HEADLESS.md", "docs/SUPPORT.md", "docs/WORKFLOW_DRIVER.md",
   "docs/MIGRATION_CANDIDATE.md", "docs/UNATTENDED_ACCEPTANCE.md", "CHANGELOG.md"];
-const installedAcceptance = ["scripts/unattended-acceptance.mjs", "scripts/unattended-evidence.mjs",
+const installedAcceptance = ["scripts/unattended-acceptance.mjs", "scripts/unattended-package.mjs", "scripts/unattended-evidence.mjs",
   "scripts/unattended-host.mjs", "scripts/unattended-host-io.mjs", "scripts/unattended-host-control.mjs", "scripts/prepare-unattended-consumer.mjs",
   "examples/unattended/README.md", "examples/unattended/prepare-options.example.json",
   "examples/unattended/token-issuer.example.mjs", "examples/unattended/inference-assets.example.json",
@@ -168,6 +168,20 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
   assert.equal(global.status, 0, global.error?.message || global.stderr);
   assert.equal(JSON.parse(global.stdout).data.cliVersion, packReceipt.version);
   assert.deepEqual(readdirSync(unrelated), []);
+  // Exercise the actual installed CLI's dynamic setup import. Loading the real
+  // host must reach the setup callback before any credentials or effects.
+  const setup = join(temp, "acceptance-entrypoint-probe.mjs");
+  writeFileSync(setup, `import { openAcceptance as realHost } from ${JSON.stringify(pathToFileURL(join(installed, "scripts/unattended-host.mjs")).href)};
+export async function openAcceptance({ command }) {
+  if (typeof realHost !== "function" || command !== "start") throw new Error("Wrong setup import");
+  throw Object.assign(new Error("Fixture stopped before effects"), { code: "PROTECTION_REQUIRED" });
+}
+`);
+  const acceptance = spawnSync(process.execPath, [join(installed, "scripts/unattended-acceptance.mjs"), setup, "start"],
+    { cwd: unrelated, encoding: "utf8", timeout: 90_000 });
+  assert.equal(acceptance.status, 2, acceptance.stderr || acceptance.error?.message);
+  assert.equal(JSON.parse(acceptance.stderr).code, "PROTECTION_REQUIRED");
+  assert.equal(acceptance.stdout, "");
 });
 
 test("installed manual driver uses committed consumer inputs and recovers the bound packet", async t => {

@@ -6,10 +6,10 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createHash, randomUUID } from "node:crypto";
-import { appendHostJournal, hostDrained, markerValidatorCode, readHostJournal, pushAfterObservation } from "../scripts/unattended-host.mjs";
+import { appendHostJournal, hostDrained, markerValidatorCode, readHostJournal, pushAfterObservation, readAcceptanceChecks } from "../scripts/unattended-host.mjs";
 import { consumerFiles, prepare, protectionRequests } from "../scripts/prepare-unattended-consumer.mjs";
 import { digest, json, sha256, validateCredential, validateSettings } from "../scripts/unattended-host-io.mjs";
-import { verifyGitHubProtection } from "../dist/public/integration.js";
+import { GitHubCiStatusOperations, verifyGitHubProtection } from "../dist/public/integration.js";
 import { controlClient, publishControlRecord } from "../scripts/unattended-host-control.mjs";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -201,6 +201,29 @@ test("revocation or expiry during a synchronous protection observation denies th
     }, () => { pushes++; }), error => error.code === "INACTIVE_GRANT");
     assert.equal(pushes, 0);
   }
+});
+
+test("GitHub missing-commit CI response permits only the scoped unpublished head to proceed to publication", async () => {
+  const revision = "a".repeat(40), check = "Unattended acceptance";
+  const options = { owner: "example", repo: "acceptance", token: "fixture-token" };
+  const githubCi = (status, data) => new GitHubCiStatusOperations({ ...options, fetchImpl: async (url, init) => {
+    assert.equal(new URL(url).pathname, `/repos/example/acceptance/commits/${revision}/check-runs`);
+    assert.equal(new URL(url).searchParams.get("check_name"), check);
+    assert.equal(init.method, "GET");
+    return { status, ok: status === 200, json: async () => data };
+  } });
+  const missing = githubCi(422, { message: "No commit found for SHA: " + revision });
+  assert.deepEqual(await readAcceptanceChecks(missing, revision, check, (ref, name) => ref === revision && name === check), []);
+  await assert.rejects(readAcceptanceChecks(missing, revision, check, () => false), { status: 422 });
+  await assert.rejects(readAcceptanceChecks(missing, revision, check, () => { throw new Error("Remote lookup failed"); }), { status: 422 });
+  for (const status of [401, 403, 404, 429, 500, 422]) {
+    const wrong = githubCi(status, { message: "No commit found for SHA: " + "b".repeat(40) });
+    await assert.rejects(readAcceptanceChecks(wrong, revision, check, () => true), { status });
+  }
+  const actual = githubCi(200, { check_runs: [{ name: check, status: "completed", conclusion: "success",
+    started_at: "2026-11-18T00:00:00Z" }] });
+  const checks = await readAcceptanceChecks(actual, revision, check, () => { throw new Error("Unexpected prepublication probe"); });
+  assert.equal(checks[0].conclusion, "success");
 });
 
 test("pinned validator treats repository content as data and rejects changed or injected markers", () => {

@@ -4,7 +4,7 @@ import { closeSync, existsSync, fsyncSync, lstatSync, mkdirSync, mkdtempSync, op
   realpathSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { verifyCandidate } from "./unattended-acceptance.mjs";
+import { verifyCandidate } from "./unattended-package.mjs";
 import { controlClient, ownControlChannel } from "./unattended-host-control.mjs";
 import { below, digest, git, githubObservation, json, pinnedFile, regular, safeEnvironment, sha256,
   validateCredential, validateSettings } from "./unattended-host-io.mjs";
@@ -13,6 +13,22 @@ export function pushAfterObservation(observe, authorize, push) {
   observe();
   authorize();
   return push();
+}
+/** GitHub cannot list checks for a commit it has not received. Keep that
+ * known prepublication state distinct from a hosted CI transport failure. */
+export async function readAcceptanceChecks(ci, ref, checkName, isUnpublishedHead) {
+  const confirmsUnpublishedHead = (revision, check) => {
+    try { return isUnpublishedHead(revision, check) === true; }
+    catch { return false; } // A failed independent observation preserves the original CI error.
+  };
+  try { return await ci.listCheckRuns(ref, checkName); }
+  catch (error) {
+    if (error?.name !== "CiStatusProviderError" || error.code !== "PROVIDER_ERROR" ||
+        error.status !== 422 || !/^[a-f0-9]{40}$/.test(ref) ||
+        error.message !== "GitHub check-runs request failed (422): No commit found for SHA: " + ref ||
+        !confirmsUnpublishedHead(ref, checkName)) throw error;
+    return Object.freeze([]); // Missing evidence never satisfies merge readiness.
+  }
 }
 export const markerValidatorCode = "const fs=require('node:fs');const x=JSON.parse(fs.readFileSync(0,'utf8'));if(x.content!=='status=ready\\n')process.exit(1);process.stdout.write('Exact marker content PASS\\n');";
 const roleNames = ["Developer", "QA", "Architect", "UAT/Product"];
@@ -337,6 +353,26 @@ export async function openAcceptance(settingsFile, { command: requestedCommand =
     };
     const publisherOptions = { owner, repo, token: token("publisher"), fetchImpl: fetchFor("publisher") };
     const controllerOptions = { owner, repo, token: token("controller"), fetchImpl: fetchFor("controller") };
+    const githubCi = new GitHubCiStatusOperations(publisherOptions);
+    const isUnpublishedHead = (ref, checkName) => {
+      if (!settings.requiredChecks.some(check => check.name === checkName)) return false;
+      const branch = git(projectRoot, ["branch", "--show-current"]);
+      const task = tasks.find(task => task.canonicalBranch === branch);
+      if (!task || git(projectRoot, ["rev-parse", "HEAD"]) !== ref ||
+          git(projectRoot, ["status", "--porcelain"]) !== "") return false;
+      const remoteRef = "refs/heads/" + branch;
+      const history = readHostJournal(effectDirectory, settings.operationId, policy.grantDigest);
+      if (!history.some(({ record }) => record.kind === "commit" &&
+          record.details.taskId === task.taskId && record.details.revision === ref) ||
+          history.some(({ record }) => record.kind === "push-intent" && record.details.ref === remoteRef) ||
+          readdirSync(pendingDirectory).length !== 0) return false;
+      assert.equal(git(projectRoot, ["remote", "get-url", "--all", document.policy.remote]), remoteUrl);
+      const remote = git(projectRoot, ["ls-remote", "--refs", remoteUrl, remoteRef], { token: token("publisher") });
+      if (remote !== "" || git(projectRoot, ["branch", "--show-current"]) !== branch ||
+          git(projectRoot, ["rev-parse", "HEAD"]) !== ref || git(projectRoot, ["status", "--porcelain"]) !== "") return false;
+      recordEffect("ci-not-published", { taskId: task.taskId, branch, revision: ref, check: checkName });
+      return true;
+    };
     const host = { identity: "vibez-unattended-acceptance@1:" + sha256(readFileSync(new URL(import.meta.url))),
       verifiedArtifactSha256: receipt.candidate.sha256, requirePassingDeveloperResult: true,
       actorIdFor: (role, ownerId) => grant.roles.find(r => r.role === role)?.principal ?? ownerId + "::native-controller",
@@ -345,7 +381,7 @@ export async function openAcceptance(settingsFile, { command: requestedCommand =
       authorizePublication: request => request.repository === settings.repository && tasks.some(t => t.taskId === request.taskId),
       authorizeMerge: request => request.repository === settings.repository && Number.isSafeInteger(request.number) && /^[a-f0-9]{40}$/.test(request.expectedHeadSha),
       integration: { repository: settings.repository, publication: new GitHubPullRequestOperations(publisherOptions),
-        pullRequests: new GitHubMergeReadinessPullRequestOperations(publisherOptions), ci: new GitHubCiStatusOperations(publisherOptions),
+        pullRequests: new GitHubMergeReadinessPullRequestOperations(publisherOptions), ci: { listCheckRuns: (ref, name) => readAcceptanceChecks(githubCi, ref, name, isUnpublishedHead) },
         merge: new GitHubControlledMergePullRequestOperations(controllerOptions) },
       unattended: { policy, plans: [plan], agentLimits: { maxTurns: 1, maxCostMicros: 0 }, verifyDrained,
         worker: { provider: runtime.provider, runValidator, async runAgent(request, capability) {

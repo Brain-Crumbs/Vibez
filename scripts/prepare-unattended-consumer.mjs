@@ -8,7 +8,7 @@ import { randomUUID } from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { markerValidatorCode } from "./unattended-host.mjs";
 import { digest, git, json, pinnedFile, regular, safeEnvironment, sha256 } from "./unattended-host-io.mjs";
-import { verifyCandidate } from "./unattended-acceptance.mjs";
+import { verifyCandidate } from "./unattended-package.mjs";
 
 export function protectionRequests(repository, integrationRef, requiredChecks, controllerAppId) {
   assert.match(repository, /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/);
