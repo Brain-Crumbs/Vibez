@@ -1,0 +1,37 @@
+{
+  "schemaId": "ipt.task",
+  "schemaVersion": "1.0.0",
+  "taskId": "PROOF-001",
+  "title": "Make acceptance marker 1 ready",
+  "objective": "Replace marker-1.txt with exactly status=ready followed by one LF. Change no other path.",
+  "inScope": [
+    "Rewrite marker-1.txt only."
+  ],
+  "outOfScope": [
+    "All other files, policy, configuration and remote operations."
+  ],
+  "dependencies": [],
+  "canonicalBranch": "acceptance/aut004-task-1",
+  "allowedPaths": [
+    "marker-1.txt"
+  ],
+  "requirements": [
+    "PROOF-001-R1"
+  ],
+  "acceptanceCriteria": [
+    "marker-1.txt is exactly status=ready followed by one LF."
+  ],
+  "validationPlan": [
+    "Run the pinned marker validator and inspect the exact committed marker."
+  ],
+  "affectedContracts": [
+    "consumer.marker"
+  ],
+  "requiredReviewRoles": [
+    "Developer",
+    "QA",
+    "Architect",
+    "UAT/Product",
+    "MergeController"
+  ]
+}
