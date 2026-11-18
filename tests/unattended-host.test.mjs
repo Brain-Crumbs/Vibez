@@ -6,10 +6,10 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createHash, randomUUID } from "node:crypto";
-import { appendHostJournal, hostDrained, markerValidatorCode, readHostJournal, pushAfterObservation, readAcceptanceChecks } from "../scripts/unattended-host.mjs";
+import { appendHostJournal, hostDrained, markerValidatorCode, readHostJournal, pushAfterObservation, readAcceptanceChecks, draftPublicationFetch } from "../scripts/unattended-host.mjs";
 import { consumerFiles, prepare, protectionRequests } from "../scripts/prepare-unattended-consumer.mjs";
 import { digest, json, sha256, validateCredential, validateSettings } from "../scripts/unattended-host-io.mjs";
-import { GitHubCiStatusOperations, verifyGitHubProtection } from "../dist/public/integration.js";
+import { GitHubCiStatusOperations, GitHubPullRequestOperations, verifyGitHubProtection } from "../dist/public/integration.js";
 import { controlClient, publishControlRecord } from "../scripts/unattended-host-control.mjs";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -201,6 +201,31 @@ test("revocation or expiry during a synchronous protection observation denies th
     }, () => { pushes++; }), error => error.code === "INACTIVE_GRANT");
     assert.equal(pushes, 0);
   }
+});
+
+test("configured native PR adapter creates a draft before the acceptance publisher sends it", async () => {
+  const repository = "example/acceptance", api = "https://api.github.com/repos/" + repository + "/pulls";
+  const head = "acceptance/aut004-task-1", base = "acceptance/aut004-base", revision = "a".repeat(40);
+  const title = "PROOF-001: marker", body = "Closes #101";
+  const calls = [];
+  const transport = draftPublicationFetch(repository, async (url, init) => {
+    calls.push({ url, init });
+    return { ok: true, status: 201, json: async () => ({
+      number: 101, state: "open", html_url: "https://github.com/" + repository + "/pull/101",
+      title, body, head: { ref: head, sha: revision }, base: { ref: base }
+    }) };
+  });
+  const port = new GitHubPullRequestOperations({ owner: "example", repo: "acceptance", token: "fixture-token", fetchImpl: transport });
+  const pr = await port.createPullRequest({ title, body, head, base });
+  assert.equal(pr.headSha, revision);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, api);
+  assert.deepEqual(JSON.parse(calls[0].init.body), { title, body, head, base, draft: true });
+  assert.throws(() => transport(api, { method: "POST", body: JSON.stringify({ draft: false }) }), /cannot create a ready PR/);
+  assert.equal(calls.length, 1);
+  const patch = { method: "PATCH", body: JSON.stringify({ title, body }) };
+  await transport(api + "/101", patch);
+  assert.strictEqual(calls[1].init, patch);
 });
 
 test("GitHub missing-commit CI response permits only the scoped unpublished head to proceed to publication", async () => {

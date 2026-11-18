@@ -30,6 +30,18 @@ export async function readAcceptanceChecks(ci, ref, checkName, isUnpublishedHead
     return Object.freeze([]); // Missing evidence never satisfies merge readiness.
   }
 }
+/** Keep draft creation in the acceptance transport; the shared PR adapter
+ * intentionally leaves readiness policy to its caller. */
+export function draftPublicationFetch(repository, send) {
+  const createUrl = "https://api.github.com/repos/" + repository + "/pulls";
+  return (url, init = {}) => {
+    if (init.method !== "POST" || url !== createUrl) return send(url, init);
+    const body = JSON.parse(init.body);
+    assert.ok(body && typeof body === "object" && !Array.isArray(body), "Invalid PR creation body.");
+    assert.ok(body.draft === undefined || body.draft === true, "Acceptance cannot create a ready PR.");
+    return send(url, { ...init, body: JSON.stringify({ ...body, draft: true }) });
+  };
+}
 export const markerValidatorCode = "const fs=require('node:fs');const x=JSON.parse(fs.readFileSync(0,'utf8'));if(x.content!=='status=ready\\n')process.exit(1);process.stdout.write('Exact marker content PASS\\n');";
 const roleNames = ["Developer", "QA", "Architect", "UAT/Product"];
 export function hostDrained(providerDirectory, hostDirectory, activeCount = 0) {
@@ -380,7 +392,8 @@ export async function openAcceptance(settingsFile, { command: requestedCommand =
       executors: new Map([["marker", { command: command.command, args: command.args, category: command.category, timeoutMs: command.timeoutMs }]]),
       authorizePublication: request => request.repository === settings.repository && tasks.some(t => t.taskId === request.taskId),
       authorizeMerge: request => request.repository === settings.repository && Number.isSafeInteger(request.number) && /^[a-f0-9]{40}$/.test(request.expectedHeadSha),
-      integration: { repository: settings.repository, publication: new GitHubPullRequestOperations(publisherOptions),
+      integration: { repository: settings.repository, publication: new GitHubPullRequestOperations({
+          ...publisherOptions, fetchImpl: draftPublicationFetch(settings.repository, publisherOptions.fetchImpl) }),
         pullRequests: new GitHubMergeReadinessPullRequestOperations(publisherOptions), ci: { listCheckRuns: (ref, name) => readAcceptanceChecks(githubCi, ref, name, isUnpublishedHead) },
         merge: new GitHubControlledMergePullRequestOperations(controllerOptions) },
       unattended: { policy, plans: [plan], agentLimits: { maxTurns: 1, maxCostMicros: 0 }, verifyDrained,
