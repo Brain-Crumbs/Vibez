@@ -1,0 +1,12 @@
+{
+  "moduleId": "consumer.marker",
+  "moduleVersion": "1.0.0",
+  "knownConsumers": [
+    {
+      "consumerId": "operator",
+      "expects": [
+        "Each marker contains exactly status=ready followed by one LF after its task."
+      ]
+    }
+  ]
+}

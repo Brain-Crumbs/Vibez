@@ -1,0 +1,18 @@
+{
+  "candidate": {
+    "package": "@brain-crumbs/vibez",
+    "version": "0.1.0-rc.5",
+    "file": "brain-crumbs-vibez-0.1.0-rc.5.tgz",
+    "sourceCommit": "3e776bca8412e9a38936e0c1e4d342d22bad3d81",
+    "sha256": "01ec5e398d17183145564b5f27e9e3a9c865651a853cd7b23734eefb87adead6",
+    "integrity": "sha512-zuPQhTVLDaqGY07RuSmGgeYu3YQ7b1TtKpPmEnJfwJ3RuZ/iOLumvfA08YipLg/IVbJwQ5GdD80Qoy/N2isNzA==",
+    "node": "v22.23.4",
+    "npm": "10.9.9"
+  },
+  "artifact": {
+    "repository": "Brain-Crumbs/Vibez",
+    "runId": 44391335597,
+    "artifactId": 14467374969,
+    "name": "vibez-candidate-3e776bca8412e9a38936e0c1e4d342d22bad3d81"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "schemaId": "vibez.project-config",
+  "schemaVersion": "1.0.0",
+  "project": {
+    "id": "aut004-independent-3e776bca",
+    "repository": "Brain-Crumbs/Vibez"
+  },
+  "worktree": {
+    "id": "primary"
+  },
+  "paths": {
+    "tasks": "work/tasks",
+    "requirements": "work/requirements",
+    "contracts": "work/contracts",
+    "contextPolicy": "work/policy.json",
+    "state": ".vibez/state",
+    "evidence": ".vibez/evidence",
+    "exchange": ".vibez/exchange",
+    "intake": ".vibez/inbox/issues",
+    "responses": ".vibez/inbox/responses",
+    "outbox": ".vibez/outbox",
+    "operations": ".vibez/operations"
+  },
+  "validators": [
+    {
+      "id": "marker",
+      "executorId": "marker",
+      "required": true
+    }
+  ],
+  "policy": {
+    "integrationTarget": "acceptance/aut004-publication-base",
+    "remote": "origin",
+    "requiredChecks": [
+      "Unattended acceptance"
+    ],
+    "reviewRoles": [
+      "QA",
+      "Architect",
+      "UAT/Product"
+    ],
+    "publication": "host-authorized",
+    "merge": "exact-pr-head-host-authorized"
+  },
+  "providers": {
+    "execution": "local-llama.cpp",
+    "credentials": []
+  },
+  "budgets": {
+    "maxAttempts": 2,
+    "retryDelayMs": 100,
+    "providerTimeoutMs": 180000,
+    "operationTimeoutMs": 2700000,
+    "maxReworkCycles": 2
+  }
+}

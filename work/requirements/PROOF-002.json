@@ -1,0 +1,13 @@
+{
+  "schemaId": "ipt.requirement",
+  "schemaVersion": "1.0.0",
+  "requirementId": "PROOF-002-R1",
+  "taskId": "PROOF-002",
+  "statement": "Replace marker-2.txt with exactly status=ready followed by one LF. Change no other path.",
+  "acceptanceCriteria": [
+    "marker-2.txt is exactly status=ready followed by one LF."
+  ],
+  "sourceRefs": [
+    "https://github.com/Brain-Crumbs/Vibez/issues/36"
+  ]
+}
