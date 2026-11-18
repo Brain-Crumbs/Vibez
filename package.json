@@ -1,0 +1,9 @@
+{
+  "name": "aut004-independent-efaef574",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@brain-crumbs/vibez": "file:.vibez-artifact/brain-crumbs-vibez-0.1.0-rc.5.tgz"
+  }
+}

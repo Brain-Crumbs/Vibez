@@ -1,0 +1,37 @@
+name: Unattended acceptance
+
+on:
+  pull_request:
+    branches: ["acceptance/aut004-retry-base"]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  acceptance:
+    name: Unattended acceptance
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: 14466242692
+          run-id: 44387162984
+          repository: Brain-Crumbs/Vibez
+          github-token: ${{ github.token }}
+          path: .vibez-artifact
+          merge-multiple: true
+      - run: node scripts/verify-acceptance.mjs artifact
+      - run: npm ci --offline --ignore-scripts --no-audit --no-fund
+      - run: node scripts/verify-acceptance.mjs
+        env:
+          ACCEPTANCE_BRANCH: ${{ github.event.pull_request.head.ref }}
+          ACCEPTANCE_HEAD: ${{ github.event.pull_request.head.sha }}

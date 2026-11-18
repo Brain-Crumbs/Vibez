@@ -1,0 +1,3 @@
+{
+  "description": "Independent installed acceptance consumer. Judge only the supplied task marker and its exact requirement. Earlier task markers are prerequisites, never editable scope."
+}
