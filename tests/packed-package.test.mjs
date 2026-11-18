@@ -183,10 +183,10 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   put(tools, "package.json", { private: true });
   runNpm(["install", "--offline", "--no-audit", "--no-fund", archive], tools);
   const executable = join(tools, "node_modules", manifest.name, "dist", "cli", "cli.js");
-  const call = (args, input) => {
+  const call = (args, input, timeoutMs) => {
     const result = spawnSync(process.execPath, [executable, "--json", "orchestrate", ...args,
       "--project", project, "--config", "workflow.json", "--npm-cli", npm, "--local-ntfs"],
-      { cwd: tools, input, encoding: "utf8" });
+      { cwd: tools, input, encoding: "utf8", timeout: timeoutMs });
     assert.equal(result.status, 0, result.stdout || result.stderr || result.error?.message);
     return JSON.parse(result.stdout).data;
   };
@@ -286,13 +286,18 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   // historical-evidence assertions below. A rejected result cannot be repaired
   // by polling because its original immutable receipt remains authoritative.
   const observations = [], responseReceipts = [];
-  const deadline = Date.now() + 10_000;
+  const scanTimeoutMs = process.platform === "win32" ? 120_000 : 30_000;
+  const deadline = Date.now() + (process.platform === "win32" ? 300_000 : 30_000);
   for (let attempt = 0; attempt < 12; attempt++) {
-    const scan = call(["watch", sessionId, "--once"]);
+    const scan = call(["watch", sessionId, "--once"], undefined, scanTimeoutMs);
     stage = scan.session;
     observations.push({ pendingPacket: stage.pendingPacket, status: stage.status, diagnosticId: stage.diagnosticId });
     responseReceipts.push(...(scan.receipts ?? []));
-    if (stage.pendingPacket !== newDeveloper.packetId || Date.now() >= deadline) break;
+    if (stage.pendingPacket !== newDeveloper.packetId) break;
+    // A slow first CLI invocation can consume the elapsed budget before its
+    // first observation has settled. Always permit the second stability scan.
+    // The per-command timeout and finite scan count still bound the wait.
+    if (attempt >= 1 && Date.now() >= deadline) break;
     await pause();
   }
   const lastDiagnostic = stage.diagnosticId ? get(project, ".vibez/outbox/" + stage.diagnosticId + ".diagnostic.json") : null;
