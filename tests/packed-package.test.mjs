@@ -23,7 +23,11 @@ const pack = (runNpm, temp) => conformance
     })();
 const installedDocs = ["docs/INSTALL.md", "docs/PUBLIC_API.md", "docs/CLI.md", "docs/COMPATIBILITY.md",
   "docs/CONFIGURED_RUNTIME.md", "docs/UNATTENDED_HOST.md", "docs/LOCAL_HEADLESS.md", "docs/SUPPORT.md", "docs/WORKFLOW_DRIVER.md",
-  "docs/MIGRATION_CANDIDATE.md", "CHANGELOG.md"];
+  "docs/MIGRATION_CANDIDATE.md", "docs/UNATTENDED_ACCEPTANCE.md", "CHANGELOG.md"];
+const installedAcceptance = ["scripts/unattended-acceptance.mjs", "scripts/unattended-evidence.mjs",
+  "scripts/unattended-host.mjs", "scripts/unattended-host-io.mjs", "scripts/unattended-host-control.mjs", "scripts/prepare-unattended-consumer.mjs",
+  "examples/unattended/README.md", "examples/unattended/prepare-options.example.json",
+  "examples/unattended/token-issuer.example.mjs"];
 
 const publicApi = {
   "": "createProjectServices",
@@ -71,7 +75,7 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
       .map(entry => "contracts/" + entry.name + "/module-contract.json"),
     "docs/specs/project-config.schema.json", "examples/alpha/vibez.config.json", "examples/beta/vibez.config.json",
   ];
-  const included = new Set([...assets, "package.json", "NOTICE.md", "README.md", ...installedDocs]);
+  const included = new Set([...assets, "package.json", "NOTICE.md", "README.md", ...installedDocs, ...installedAcceptance]);
   for (const path of included) assert.ok(paths.has(path), path);
   for (const path of paths) assert.ok(included.has(path) || /^dist\/.+\.(js|d\.ts)$/.test(path), "Unexpected packaged file " + path);
   assert.deepEqual(Object.keys(manifest.exports), Object.keys(publicApi).map(path => "." + path));

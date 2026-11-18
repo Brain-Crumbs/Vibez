@@ -15,7 +15,7 @@ platforms. Publication and acceptance still require exact-artifact evidence.
 | OS | Ubuntu 24.04 local ext4 and Windows Server 2025 local NTFS, x64, each on Node 22/24 | Owner approved this verified matrix. Local Windows 10/Node 24 is additional observational evidence only. Windows 11, other Windows versions, macOS and ARM are not supported by this candidate |
 | Filesystem | Single host, local disk, atomic same-directory publication, file fsync; POSIX directory fsync where available | MIG-004/007/008 test interruptions. Windows lacks directory fsync; no power-loss directory-entry durability guarantee. Network shares, cloud-sync directories and distributed writers unsupported for authoritative runtime stores |
 | Source history | Allowlisted exact-revision snapshot with per-path Git blob/SHA-256 and immutable source links | MIG-003 reproduces export independently; full history and old issues remain in Fantasy Football |
-| Rollback window | Seven days and one accepted ordinary task, whichever later | MIG-009 records dates/evidence, then MIG-010 may remove only inventoried dormant copies; see compatibility contract |
+| M1 cleanup | Accepted MIG-010 cleanup; no elapsed-time or ordinary-feature waiting gate | [Issue #82 revision](https://github.com/Brain-Crumbs/IPTFantasyFootball/issues/82) superseded those proposed gates on 2026-11-16; parity, review, rollback and preserved-history requirements remained |
 
 ## MIG-003 source export decision
 
@@ -50,3 +50,10 @@ results, accepted source deltas, rights/license decision and independent reviews
 No install hook may grant permissions, start workflows, create remote resources
 or overwrite project files. Example initialization in MIG-005 must be explicit,
 non-destructive and conflict-aware.
+
+AUT-004's headless proof is separately limited to Ubuntu 24.04 x64 (including
+WSL 2 on local ext4), Bubblewrap and the exact local llama.cpp/Qwen3 pins in
+[LOCAL_HEADLESS.md](LOCAL_HEADLESS.md). Native Windows headless support is not
+established by the general package matrix. The immutable release receipt must
+name the installed live-chain/fault reports and independent final reviews;
+[acceptance instructions](UNATTENDED_ACCEPTANCE.md) do not themselves certify a release.

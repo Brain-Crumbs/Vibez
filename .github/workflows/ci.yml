@@ -161,6 +161,12 @@ jobs:
           name: vibez-candidate-receipt-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/vibez candidate/candidate.json
           if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vibez-candidate-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/vibez candidate/
+          if-no-files-found: error
+          retention-days: 30
 
   installed-consumer:
     name: Installed consumer (${{ matrix.os }}, Node ${{ matrix.node }})

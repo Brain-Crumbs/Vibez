@@ -115,7 +115,7 @@
   },
   "acceptanceBoundary": "AUT-003 real-provider rehearsal simulated remote integration. AUT-004 requires actual remote publication/CI/controlled completion for the dependent chain; prior fixture results cannot satisfy that criterion.",
   "observedAt": "2026-11-17T23:51:12.919907+00:00",
-  "admissionStatus": "STAGED_FOR_INDEPENDENT_REVIEW",
+  "admissionStatus": "APPROVED_AND_STARTED",
   "evidenceSnapshot": {
     "path": "migration/admissions/evidence/aut004-prerequisites.json",
     "sha256": "6bb4edbece95f072c0f573f725bf3bb76ff2af112061b4a18902ef5943b6f04e",
@@ -128,5 +128,18 @@
     "state": "DONE",
     "activeAssignments": 0
   },
-  "verifier": "AUT-004 admission with independent Architecture prerequisite inspection"
+  "verifier": "AUT-004 admission with independent Architecture prerequisite inspection",
+  "admissionReview": {
+    "role": "Architect",
+    "reportSha256": "5db7532c193c991fd88bdd96d6ea61f81961850b48bf43d5a36523de67bc41ee",
+    "outcome": "PASS",
+    "scope": "Staged definition, requirement, prerequisite evidence and projection before native start."
+  },
+  "nativeStart": {
+    "registrationCommit": "60f9f843a1f5dc31ed535ff3b8d158db1c6b9750",
+    "ownerId": "aut004-developer",
+    "runId": "aut004-20261117",
+    "state": "IN_DEVELOPMENT",
+    "selection": "The candidate registry was scoped to AUT-004 and its native dependency closure; original lifecycle records selected AUT-004. The dormant unrelated FIX-001 was not admitted or changed."
+  }
 }

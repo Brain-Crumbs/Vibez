@@ -26,7 +26,8 @@ import {
 const priorPackage = "0.1.0-mig005.1";
 const previousPackage = "0.1.0-mig007.0";
 const operationReader = "0.1.0-rc.4";
-const driverReaderPackages = ["0.1.0-mig006.0", "0.1.0-rc.1", "0.1.0-rc.2", relocationReader, operationReader];
+const operationReaders = [operationReader, "0.1.0-rc.5"];
+const driverReaderPackages = ["0.1.0-mig006.0", "0.1.0-rc.1", "0.1.0-rc.2", relocationReader, ...operationReaders];
 const taskPattern = /^[A-Z]+-[0-9]{3,}$/;
 const commitPattern = /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/;
 const settled = new Set(["PLANNED", "READY", "DONE"]);
@@ -47,7 +48,7 @@ export const historyCompatibility = Object.freeze({
   manualExchangeVersion: "1.0.0",
   recoveryAuditVersion: "1.0.0",
   workflowOperationVersion: "1.0.0",
-  workflowOperationReaderPackages: Object.freeze([operationReader]),
+  workflowOperationReaderPackages: Object.freeze([...operationReaders]),
   provenanceReceiptVersion: 1,
 });
 
@@ -504,9 +505,9 @@ async function inspectUpgrade(request: UpgradeCheckRequest, proposed?: NativeHis
     checkoutRevision = history.revision;
     const snapshot = inventory(history.root, history.layout);
     const observations = scanObservations(history, snapshot.files);
-    if (history.relocation !== undefined && target !== relocationReader && target !== operationReader) findings.add("PRIOR_READER_REJECTS_RELOCATED_HISTORY");
+    if (history.relocation !== undefined && target !== relocationReader && !operationReaders.includes(target ?? "")) findings.add("PRIOR_READER_REJECTS_RELOCATED_HISTORY");
     for (const code of observations.findings) findings.add(code);
-    if(target!==operationReader&&snapshot.files.some(file=>file.area==="driver"&&file.name.startsWith("operations/")||file.area==="operations"&&file.name.startsWith("driver/operations/")))findings.add("PRIOR_READER_DOES_NOT_SUPPORT_WORKFLOW_OPERATIONS");
+    if(!operationReaders.includes(target ?? "")&&snapshot.files.some(file=>file.area==="driver"&&file.name.startsWith("operations/")||file.area==="operations"&&file.name.startsWith("driver/operations/")))findings.add("PRIOR_READER_DOES_NOT_SUPPORT_WORKFLOW_OPERATIONS");
     if ((target === null || !driverReaderPackages.includes(target)) && snapshot.files.some(file => file.area === "driver" || file.area === "operations" && file.name.startsWith("driver/"))) {
       findings.add("PRIOR_READER_DOES_NOT_SUPPORT_DRIVER_HISTORY");
     }

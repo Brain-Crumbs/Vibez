@@ -100,3 +100,11 @@ alongside its existing exact-head authorization callback. Their host trust
 and persistence requirements are in [the unattended host guide](UNATTENDED_HOST.md).
 
 Use the [installed manual workflow driver](WORKFLOW_DRIVER.md) for guided setup and manual role handoffs.
+
+## Installed acceptance host
+
+The packaged [AUT-004 host and collector](UNATTENDED_ACCEPTANCE.md) compose these
+public services from an independently installed artifact. They add no domain
+engine or new supported ESM subpath. The preparation script performs local
+setup with controls disabled; remote setup and enabling require the original
+scoped authority. Consumers may continue using the existing manual APIs.

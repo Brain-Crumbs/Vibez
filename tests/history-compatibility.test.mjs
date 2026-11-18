@@ -304,6 +304,9 @@ test("a digest-pinned native restore retains original provenance and refuses an 
   assert.deepEqual(restored.findings, []);
   assert.equal((await check(relocationVersion)).compatible, true);
   const originalSnapshot=(await check(relocationVersion)).snapshotSha256;
+  const acceptanceReader=await check("0.1.0-rc.5");
+  assert.equal(acceptanceReader.compatible,true);
+  assert.equal(acceptanceReader.snapshotSha256,originalSnapshot,"rc.5 must preserve existing relocation history");
   const nextReader=await check("0.1.0-rc.4");
   assert.equal(nextReader.compatible,true,JSON.stringify(nextReader));
   assert.equal(nextReader.snapshotSha256,originalSnapshot,"Reading with rc.4 cannot rewrite rc.3 relocation history");

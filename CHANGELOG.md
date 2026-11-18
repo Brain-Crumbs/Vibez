@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.0-rc.5 (private acceptance candidate)
+
+- Adds an installed host and isolated consumer preparer for the real GitHub
+  dependent-task acceptance proof, with private credentials and disabled-by-default controls.
+- Adds exact-artifact/native/provider/GitHub evidence collection, immutable command
+  and effect journals, operator handoff attestation and replay checks.
+- Adds a separately installed fault-matrix runner and operator setup, audit,
+  drain, recovery and rollback documentation. Simulated fixtures stay labeled.
+- Retains rc.4 operation-history reader compatibility without rewriting history.
+  Fantasy Football remains pinned to its accepted rc.2 manual consumer.
+- Acceptance and release require the original live-chain evidence, independent
+  final reviews and exact-candidate CI; packing alone does not establish M2.
+
 ## 0.1.0-rc.4 (private candidate)
 
 - Adds one configured operation supervisor for approved dependent tasks, shared

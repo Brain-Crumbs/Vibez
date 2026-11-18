@@ -39,11 +39,12 @@ format remains, abort the upgrade without advancing anything.
 
 ## Rollback window and conditions
 
-Proposed bounded window: at least seven calendar days after MIG-009 adoption and
-one accepted ordinary feature task through the installed engine, whichever is
-later. MIG-009's maintainer records the exact start/end and accepted evidence;
-MIG-010 cannot delete the dormant implementation before that gate. This is a
-removal condition, not an authorization to execute an extra task now.
+The earlier proposed seven-day and ordinary-feature waiting conditions were
+superseded by the [MIG-010 requirement revision](https://github.com/Brain-Crumbs/IPTFantasyFootball/issues/82)
+on 2026-11-16. [MIG-010 PR #87](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/87)
+accepted the inventoried cleanup after parity, review, source reconciliation,
+stopped-writer, backup and rollback evidence. Preserve the earlier proposal as
+history; it is not a current cleanup gate. The consumer remains pinned to rc.2.
 
 Rollback stops/drains writers, checks that the previous binary/config supports
 every record written since cutover, and restores the exact prior dependency,
@@ -317,3 +318,14 @@ previous compatible package only with its own isolated historical checkout/store
 never copy that older snapshot over the newer store or reset retry/rework limits.
 The package remains private; creating a candidate is not authorization to publish
 a release or alter repository protection.
+
+## AUT-004 acceptance-reader boundary
+
+rc.5 explicitly retains rc.4 workflow-plan/workflow-operation 1.0.0 reader
+support and all existing history identities. The host collector's shareable
+reports are observations outside runtime authority; they do not import,
+rewrite, approve or complete native state. Known compatible reader support
+never permits changing the engine binding of an unfinished operation. Preserve
+original package, grant, configuration, journals and provider receipts; use the
+same stopped-writer preflight and protected-backup procedure above. See
+[installed operations and rollback](UNATTENDED_ACCEPTANCE.md).

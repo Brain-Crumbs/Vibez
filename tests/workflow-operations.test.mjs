@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID, createHash } from "node:crypto";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { createProjectServices } from "../dist/public/index.js";
 import { resolveProjectConfig } from "../dist/public/config.js";
 import { ScopedHostPolicy, commandPolicyDigest } from "../dist/public/integration.js";
@@ -22,28 +23,35 @@ const evidenceBytes=root=>{
 const fixtureWatchdogMs=process.platform==="win32"?10*60*1000:30000;
 const roles=["Developer","QA","Architect","UAT/Product"];
 async function fixture(t,options={}) {
-  const lab=mkdtempSync(join(tmpdir(),"vibez operations ")), root=join(lab,"consumer");mkdirSync(root);
+  const saved=options.restore;
+  const lab=saved?.lab??options.lab??mkdtempSync(join(tmpdir(),"vibez operations ")), root=join(lab,"consumer");mkdirSync(root,{recursive:true});
   const git=(...args)=>execFileSync("git",args,{cwd:root,encoding:"utf8",stdio:["ignore","pipe","pipe"]}).trim();
   const put=(path,value)=>{mkdirSync(join(root,path,".."),{recursive:true});writeFileSync(join(root,path),typeof value==="string"?value:JSON.stringify(value,null,2)+"\n");};
-  git("init","-b","main");git("config","user.name","Operation fixture");git("config","user.email","fixture@example.test");
-  git("remote","add","origin","https://github.com/example/operations.git");
-  const config=JSON.parse(readFileSync(process.env.VIBEZ_OPERATIONS_CONFIG??new URL("../examples/beta/vibez.config.json",import.meta.url)));
+  if(!saved){
+    git("init","-b","main");git("config","user.name","Operation fixture");git("config","user.email","fixture@example.test");
+    git("remote","add","origin","https://github.com/example/operations.git");
+  }
+  const config=structuredClone(saved?.config??JSON.parse(readFileSync(process.env.VIBEZ_OPERATIONS_CONFIG??new URL("../examples/beta/vibez.config.json",import.meta.url))));
   config.project={id:"operations",repository:"example/operations"};config.providers={execution:"fixture-worker",credentials:[]};
   config.budgets={maxAttempts:2,retryDelayMs:1,providerTimeoutMs:options.providerTimeoutMs??10000,operationTimeoutMs:options.sessionTimeoutMs??60000,maxReworkCycles:2};
   config.validators=["marker",...(options.secondValidator?["marker-second"]:[])].map(id=>({id,executorId:id,required:true}));config.policy.requiredChecks=["fixture-ci"];
-  put("vibez.config.json",config);put(".gitignore",".vibez/\n");put("planning/policy.json",{description:"Independent fixture roles"});
-  put("planning/contracts/product.json",{moduleId:"consumer.product",moduleVersion:"1.0.0"});mkdirSync(join(root,"planning/requirements"),{recursive:true});
-  // A tracked placeholder makes the empty requirement directory durable.
-  put("planning/requirements/.keep","");
+  if(!saved){
+    put("vibez.config.json",config);put(".gitignore",".vibez/\n");put("planning/policy.json",{description:"Independent fixture roles"});
+    put("planning/contracts/product.json",{moduleId:"consumer.product",moduleVersion:"1.0.0"});mkdirSync(join(root,"planning/requirements"),{recursive:true});
+    // A tracked placeholder makes the empty requirement directory durable.
+    put("planning/requirements/.keep","");
+  }
   const tasks=[1,2].map(n=>({schemaId:"ipt.task",schemaVersion:"1.0.0",taskId:`DEMO-00${n}`,title:`Set marker ${n}`,
     objective:`Write ready into marker-${n}.txt`,inScope:[`Set marker ${n}`],outOfScope:["Other changes"],dependencies:n===1?[]:["DEMO-001"],
     canonicalBranch:`feature/marker-${n}`,allowedPaths:[`marker-${n}.txt`],requirements:[],acceptanceCriteria:["Marker is ready"],validationPlan:["Run marker check"],
     affectedContracts:["control-plane.dev-start","consumer.product"],requiredReviewRoles:["Developer",...roles.slice(1),"MergeController"]}));
-  tasks.forEach((task,n)=>put(`planning/tasks/${n+1}.task.json`,task));git("add",".");git("commit","-m","Fixture plan");
+  if(!saved){tasks.forEach((task,n)=>put(`planning/tasks/${n+1}.task.json`,task));git("add",".");git("commit","-m","Fixture plan");}
   const location={projectRoot:root,configPath:"vibez.config.json",verifyLocalStorage:()=>true}, resolved=resolveProjectConfig(location);
   const command={kind:"command",validatorId:"marker",required:true,category:"test",command:process.execPath,args:["--version"],cwd:root,timeoutMs:options.validatorTimeoutMs??1000};
-  let clock=Date.now(), revoked=false, drained=true, failValidator=options.validationFailure??false, lostCreate=options.lostCreate??false, lostMerge=options.lostMerge??false;
-  const pulls=[],remote=new Map(),counts={create:0,merge:0,push:0,agent:[],validators:0}, provider={providerId:"fixture-worker",capabilities:()=>({providerId:"fixture-worker",supportedRoles:[...roles,"MergeController"],supportsCancellation:true,supportsTimeout:true})};
+  let clock=saved?.clock??Date.now(), revoked=saved?.revoked??false, drained=saved?.drained??true,
+    failValidator=saved?.failValidator??options.validationFailure??false,
+    lostCreate=saved?.lostCreate??options.lostCreate??false, lostMerge=saved?.lostMerge??options.lostMerge??false;
+  const pulls=saved?.pulls??[],remote=new Map(saved?.remote??[]),counts=saved?.counts??{create:0,merge:0,push:0,agent:[],validators:0}, provider={providerId:"fixture-worker",capabilities:()=>({providerId:"fixture-worker",supportedRoles:[...roles,"MergeController"],supportsCancellation:true,supportsTimeout:true})};
   const native=pr=>({number:pr.number,htmlUrl:`https://github.com/example/operations/pull/${pr.number}`,headRef:pr.head.ref,headSha:pr.head.sha,baseRef:pr.base.ref,title:pr.title,body:pr.body,state:pr.state,merged:pr.merged??false,mergeCommitSha:pr.mergeCommitSha??null});
   const response=value=>({ok:true,status:200,json:async()=>value});
   const fetchImpl=async(url,init)=>{
@@ -54,22 +62,33 @@ async function fixture(t,options={}) {
     if(number)await options.onFetchPull?.(Number(number));
     return response(number?pulls.find(p=>p.number===Number(number)):pulls.filter(p=>p.state==="open"&&(!u.searchParams.get("head")||u.searchParams.get("head").endsWith(":"+p.head.ref))));
   };
-  const ledger=join(lab,"ledger");mkdirSync(ledger);
-  const grant={schemaId:"vibez.host-grant",schemaVersion:"1.0.0",grantId:"fixture-approved-plan",projectIdentity:resolved.projectIdentity,configDigest:resolved.configDigest,
+  const ledger=join(lab,"ledger");mkdirSync(ledger,{recursive:true});
+  const grant=saved?.grant??{schemaId:"vibez.host-grant",schemaVersion:"1.0.0",grantId:"fixture-approved-plan",projectIdentity:resolved.projectIdentity,configDigest:resolved.configDigest,
     repository:config.project.repository,integrationRef:"main",notBeforeMs:clock-1000,expiresAtMs:clock+1800000,
     tasks:tasks.map(task=>({taskId:task.taskId,branch:task.canonicalBranch,paths:task.allowedPaths})),
     roles:roles.map(role=>({role,principal:role.toLowerCase(),provider:provider.providerId,model:"fixture",tools:[],network:"none"})),
     validators:config.validators.map(({id})=>({id,commandDigest:commandPolicyDigest(command)})),requiredChecks:config.policy.requiredChecks,requiredReviews:roles.slice(1),
     actions:["start","agent","validator","review","rework","push","publish","ready","merge"],humanOnly:[],
-    budgets:{maxConcurrent:1,maxAgentTurns:32,maxCommands:8,maxCostMicros:0,maxRuntimeMs:1000000,maxReworks:2}};
+    budgets:{maxConcurrent:1,maxAgentTurns:32,maxCommands:8,maxCostMicros:0,maxRuntimeMs:1000000,maxReworks:2,...options.grantBudgets},
+    ...(options.grantActions?{actions:options.grantActions}:{})};
   const policyOptions={grant,ledgerDirectory:ledger,worktreeRoot:root,verifyDrained:()=>drained,now:()=>clock,observe:operation=>{
     const pr=pulls.find(p=>p.number===operation.pullRequestNumber);
     return {projectIdentity:resolved.projectIdentity,configDigest:resolved.configDigest,repository:config.project.repository,integrationRef:"main",
       revision:git("rev-parse","HEAD"),branch:git("branch","--show-current"),revoked,enabled:true,checks:grant.requiredChecks,validators:grant.validators,reviews:grant.requiredReviews,
       ...(pr?{pullRequest:{number:pr.number,revision:pr.head.sha,head:pr.head.ref,base:pr.base.ref,open:pr.state==="open",ready:!pr.draft,protectionsVerified:true}}:{})};}};
   let policy=new ScopedHostPolicy(policyOptions);
-  t.after(()=>{policy.close();rmSync(lab,{recursive:true,force:true});});
-  const plan={schemaId:"vibez.workflow-plan",schemaVersion:"1.0.0",planId:"two-markers",tasks:(options.firstTaskPlan?tasks.slice(0,1):tasks).map((task,n)=>({taskId:task.taskId,issueNumber:n+101,definitionSha256:digest(task)})),
+  const policyHistory=[policy];
+  // Opt-in installed acceptance capture runs before cleanup, including failed
+  // attempts and superseded evidence. The collector never determines test PASS.
+  t.after(async()=>{
+    try {
+      if(process.env.VIBEZ_OPERATIONS_CAPTURE_MODULE){
+        const {captureFixture}=await import(process.env.VIBEZ_OPERATIONS_CAPTURE_MODULE);
+        await captureFixture({name:t.fullName??t.name,lab,root,config,resolved,plan,counts,pulls,policyHistory});
+      }
+    } finally {policy.close();rmSync(lab,{recursive:true,force:true});}
+  });
+  const plan=saved?.plan??{schemaId:"vibez.workflow-plan",schemaVersion:"1.0.0",planId:"two-markers",tasks:(options.firstTaskPlan?tasks.slice(0,1):tasks).map((task,n)=>({taskId:task.taskId,issueNumber:n+101,definitionSha256:digest(task)})),
     budgets:{maxPolls:3,maxRetries:2,maxReworks:2,maxRuntimeMs:600000,initialDelayMs:1,maxDelayMs:4,...options.planBudgets}};
   const host={identity:"operations-fixture@1",actorIdFor:role=>role.toLowerCase(),toolPermissionPolicyFor:()=>({allowedTools:[],networkAccess:"none"}),requirePassingDeveloperResult:true,
     executors:new Map(config.validators.map(({id})=>[id,{command:command.command,args:command.args,category:command.category,timeoutMs:command.timeoutMs}])),
@@ -102,9 +121,11 @@ async function fixture(t,options={}) {
         runValidator:async(command,capability)=>{counts.validators++;await options.onValidator?.(command,capability);if(failValidator){failValidator=false;return {status:"FAIL",details:"First marker check fails"};}return {status:"PASS",details:"Marker check passes"};}}}};
   const services=await createProjectServices(location,host);
   return {root,git,host,plan,get policy(){return policy;},counts,pulls,services,location,config,
-    restart:async()=>{policy.close();policy=new ScopedHostPolicy(policyOptions);host.unattended.policy=policy;return createProjectServices(location,host);},
-    switchGrant:async(plan,grantId,taskIds)=>{policy.close();const nextGrant={...grant,grantId,tasks:grant.tasks.filter(task=>taskIds.includes(task.taskId))};const nextLedger=join(lab,grantId);mkdirSync(nextLedger,{recursive:true});policy=new ScopedHostPolicy({...policyOptions,grant:nextGrant,ledgerDirectory:nextLedger});host.unattended.policy=policy;host.unattended.plans=[plan];return createProjectServices(location,host);},
+    restart:async()=>{policy.close();policy=new ScopedHostPolicy(policyOptions);policyHistory.push(policy);host.unattended.policy=policy;return createProjectServices(location,host);},
+    switchGrant:async(plan,grantId,taskIds)=>{policy.close();const nextGrant={...grant,grantId,tasks:grant.tasks.filter(task=>taskIds.includes(task.taskId))};const nextLedger=join(lab,grantId);mkdirSync(nextLedger,{recursive:true});policy=new ScopedHostPolicy({...policyOptions,grant:nextGrant,ledgerDirectory:nextLedger});policyHistory.push(policy);host.unattended.policy=policy;host.unattended.plans=[plan];return createProjectServices(location,host);},
     allTasks:tasks,
+    snapshot:()=>({lab,config,plan,grant,grantDigest:policy.grantDigest,clock,revoked,drained,failValidator,lostCreate,lostMerge,pulls,remote:[...remote],counts,
+      resolved:{projectIdentity:resolved.projectIdentity,configDigest:resolved.configDigest}}),
     advance:(ms=100)=>{clock+=ms;},revoke:()=>{revoked=true;},setDrained:value=>{drained=value;}};
 }
 
@@ -470,4 +491,172 @@ test("revocation during final merge preflight prevents the original authorized e
   assert.equal(injected,true);assert.equal(result.status,"EXCEPTION",JSON.stringify(result));assert.equal(f.counts.merge,0);
   assert.ok(f.policy.decisions().some(decision=>decision.decision==="deny"&&decision.reason==="INACTIVE_GRANT"));
   assert.equal(f.services.status.read(new Date().toISOString()).tasks.find(task=>task.taskId==="DEMO-001").state,"MERGE_READY");
+});
+
+test("unavailable provider stops durably without fabricating a successful role result",async t=>{
+  const f=await fixture(t,{onAgent:()=>{throw Object.assign(new Error("Synthetic provider is unavailable"),{code:"TOOL_UNAVAILABLE"});}}),operationId=randomUUID();
+  const first=await f.services.operations.start(f.plan.planId,operationId,true);
+  assert.equal(first.status,"EXCEPTION",JSON.stringify(first));assert.ok(first.exception.remediation);
+  assert.deepEqual([f.counts.agent.length,f.counts.validators,f.counts.push,f.counts.create,f.counts.merge],[1,0,0,0,0]);
+  const evidence=evidenceBytes(f.root);
+  f.advance();const again=await (await f.restart()).operations.resume(operationId,true);
+  assert.equal(again.status,"EXCEPTION",JSON.stringify(again));assert.deepEqual(again.sessions,first.sessions);
+  assert.deepEqual(evidenceBytes(f.root),evidence);assert.equal(f.counts.agent.length,1);
+  assert.notEqual(f.services.status.read(new Date().toISOString()).tasks.find(task=>task.taskId==="DEMO-001").state,"DONE");
+});
+
+test("expired grant stops before assignment or effects and retains its durable reason",async t=>{
+  const f=await fixture(t),operationId=randomUUID();f.advance(1800001);
+  const first=await f.services.operations.start(f.plan.planId,operationId,true);
+  assert.equal(first.status,"EXCEPTION",JSON.stringify(first));assert.equal(first.exception.code,"INACTIVE_GRANT");assert.ok(first.exception.remediation);
+  const again=await (await f.restart()).operations.resume(operationId,true);
+  assert.equal(again.exception.code,"INACTIVE_GRANT");assert.deepEqual(again.sessions,first.sessions);
+  assert.deepEqual([f.counts.agent.length,f.counts.validators,f.counts.push,f.counts.create,f.counts.merge],[0,0,0,0,0]);
+  assert.ok(f.policy.decisions().some(record=>record.decision==="deny"&&record.reason==="INACTIVE_GRANT"));
+});
+
+test("policy denied publication keeps reviewed evidence and performs no remote write",async t=>{
+  const f=await fixture(t,{grantActions:["start","agent","validator","review","rework","publish","ready","merge"]}),operationId=randomUUID();
+  const first=await f.services.operations.start(f.plan.planId,operationId,true);
+  assert.equal(first.status,"EXCEPTION",JSON.stringify(first));assert.equal(first.exception.code,"OUT_OF_SCOPE");assert.ok(first.exception.remediation);
+  const evidence=evidenceBytes(f.root);
+  f.advance();const again=await (await f.restart()).operations.resume(operationId,true);
+  assert.equal(again.exception.code,"OUT_OF_SCOPE");assert.deepEqual(again.sessions,first.sessions);assert.deepEqual(evidenceBytes(f.root),evidence);
+  assert.deepEqual([f.counts.agent.length,f.counts.push,f.counts.create,f.counts.merge],[4,0,0,0]);
+  assert.ok(f.policy.decisions().some(record=>record.decision==="deny"&&record.action==="push"&&record.reason==="OUT_OF_SCOPE"));
+});
+
+test("host agent budget exhaustion retains denial across restart without another launch",async t=>{
+  const f=await fixture(t,{grantBudgets:{maxAgentTurns:1}}),operationId=randomUUID();
+  const first=await f.services.operations.start(f.plan.planId,operationId,true);
+  assert.equal(first.status,"EXCEPTION",JSON.stringify(first));assert.ok(first.exception.remediation);
+  assert.ok(f.policy.decisions().some(record=>record.decision==="deny"&&record.reason==="BUDGET_EXHAUSTED"));
+  const evidence=evidenceBytes(f.root);
+  f.advance();const again=await (await f.restart()).operations.resume(operationId,true);
+  assert.equal(again.status,"EXCEPTION");assert.deepEqual(again.sessions,first.sessions);assert.deepEqual(evidenceBytes(f.root),evidence);
+  assert.deepEqual([f.counts.agent.length,f.counts.validators,f.counts.push,f.counts.create,f.counts.merge],[1,1,0,0,0]);
+  assert.notEqual(f.services.status.read(new Date().toISOString()).tasks.find(task=>task.taskId==="DEMO-001").state,"DONE");
+});
+
+test("stale remote head cannot consume reviews or authorize a merge",async t=>{
+  const options={onCreate:pr=>{pr.head.sha="e".repeat(40);}},f=await fixture(t,options),operationId=randomUUID();
+  const first=await f.services.operations.start(f.plan.planId,operationId,true);
+  assert.equal(first.status,"EXCEPTION",JSON.stringify(first));assert.ok(first.exception.remediation);
+  const evidence=evidenceBytes(f.root);
+  f.advance();const again=await (await f.restart()).operations.resume(operationId,true);
+  assert.equal(again.status,"EXCEPTION");assert.deepEqual(again.sessions,first.sessions);assert.deepEqual(evidenceBytes(f.root),evidence);
+  assert.deepEqual([f.counts.agent.length,f.counts.push,f.counts.create,f.counts.merge],[4,1,1,0]);
+  assert.equal(f.services.status.read(new Date().toISOString()).tasks.find(task=>task.taskId==="DEMO-001").state,"MERGE_READY");
+});
+
+test("successful CI for a stale revision cannot satisfy current head checks",async t=>{
+  const f=await fixture(t),operationId=randomUUID(),staleRevision=f.git("rev-parse","HEAD");
+  f.counts.ciQueries=[];f.counts.staleCiRevision=staleRevision;
+  f.host.integration.ci.listCheckRuns=async(ref,checkName)=>{
+    f.counts.ciQueries.push({ref,checkName});
+    return ref===staleRevision?[{name:"fixture-ci",status:"completed",conclusion:"success",startedAt:new Date().toISOString()}]:[];
+  };
+  let result=await f.services.operations.start(f.plan.planId,operationId,true);
+  assert.equal(result.status,"WAITING",JSON.stringify(result));
+  for(let n=0;n<4;n++){f.advance();result=await (await f.restart()).operations.resume(operationId,true);}
+  assert.equal(result.status,"EXCEPTION",JSON.stringify(result));assert.equal(result.exception.code,"BUDGET_EXHAUSTED");assert.ok(result.exception.remediation);
+  assert.ok(f.counts.ciQueries.length>0);assert.ok(f.counts.ciQueries.every(query=>query.ref===f.git("rev-parse","HEAD")&&query.ref!==staleRevision));
+  assert.deepEqual([f.counts.agent.length,f.counts.create,f.counts.merge],[4,1,0]);
+});
+
+test("a new supervisor process reconciles a quiescent uncertain merge checkpoint without losing failed history",{timeout:process.platform==="win32"?15*60*1000:120000},async t=>{
+  const lab=mkdtempSync(join(tmpdir(),"vibez process restart ")),stateDirectory=join(lab,"host-state");
+  mkdirSync(stateDirectory);
+  const checkpointPath=join(stateDirectory,"checkpoint.json"),finalPath=join(stateDirectory,"final.json"),worker=join(lab,"supervisor.mjs");
+  const children=[],completions=[];
+  let processObservation;
+  t.after(async()=>{
+    for(const child of children)if(child.exitCode===null&&child.signalCode===null)child.kill("SIGTERM");
+    await Promise.allSettled(completions);
+    try {
+      const selected=existsSync(finalPath)?finalPath:existsSync(checkpointPath)?checkpointPath:null;
+      if(selected&&process.env.VIBEZ_OPERATIONS_CAPTURE_MODULE){
+        const saved=JSON.parse(readFileSync(selected,"utf8")).fixture;
+        const {captureFixture}=await import(process.env.VIBEZ_OPERATIONS_CAPTURE_MODULE);
+        await captureFixture({name:t.fullName??t.name,lab,root:join(lab,"consumer"),config:saved.config,resolved:saved.resolved,
+          plan:saved.plan,counts:{...saved.counts,processRestart:processObservation??{phase:"incomplete"}},pulls:saved.pulls,
+          policyHistory:[{grant:saved.grant,grantDigest:saved.grantDigest}]});
+      }
+    } finally {rmSync(lab,{recursive:true,force:true});}
+  });
+  // Use the same fixture implementation in both actual processes. In an
+  // installed run each implementation URL comes from resolving the package's
+  // public export in this consumer; no source checkout is on its module path.
+  const prefix=readFileSync(fileURLToPath(import.meta.url),"utf8").split(/\r?\ntest\("/)[0]
+    .replace(/from "([^"]+)"/g,(match,specifier)=>specifier.startsWith("node:")?match:"from "+JSON.stringify(import.meta.resolve(specifier)));
+  const childMain=[
+    'const phase=process.argv[2],lab=process.argv[3],directory=join(lab,"host-state");',
+    'const checkpointPath=join(directory,"checkpoint.json"),finalPath=join(directory,"final.json");',
+    'const context={name:"subprocess fixture",after(){}};',
+    'const hasFailure=text=>/"(?:outcome|status)"\\s*:\\s*"(?:FAIL|BLOCKED|ERROR)"/.test(text);',
+    'try {',
+    ' if(phase==="first"){',
+    '  const f=await fixture(context,{lab,validationFailure:true,lostMerge:true}),operationId=randomUUID();',
+    '  let operation=await f.services.operations.start(f.plan.planId,operationId,true);',
+    '  for(let n=0;n<24&&f.counts.merge===0;n++){f.advance();operation=await f.services.operations.resume(operationId,true);}',
+    '  assert.equal(f.counts.merge,1);assert.notEqual(operation.status,"DONE");',
+    '  assert.equal(f.services.status.read(new Date().toISOString()).tasks.find(task=>task.taskId==="DEMO-001").state,"MERGE_READY");',
+    '  const failedRecords=Object.fromEntries(Object.entries(evidenceBytes(f.root)).filter(([,text])=>hasFailure(text)));',
+    '  assert.ok(Object.keys(failedRecords).length>0);',
+    '  // The operation call has returned. Release the idle policy lease before',
+    '  // reporting the checkpoint; the parent then terminates this OS process.',
+    '  f.policy.close();',
+    '  writeFileSync(checkpointPath,JSON.stringify({pid:process.pid,operationId,operation,fixture:f.snapshot(),failedRecords,policyLeaseReleased:true},null,2)+"\\n");',
+    '  console.log(JSON.stringify({checkpoint:true,pid:process.pid}));',
+    '  setInterval(()=>{},1000);',
+    ' } else {',
+    '  const first=JSON.parse(readFileSync(checkpointPath,"utf8")),f=await fixture(context,{restore:first.fixture});',
+    '  assert.equal(f.policy.grantDigest,first.fixture.grantDigest);',
+    '  let operation=await f.services.operations.resume(first.operationId,true);',
+    '  for(let n=0;n<24&&operation.status!=="DONE";n++){f.advance();operation=await f.services.operations.resume(first.operationId,true);}',
+    '  assert.equal(operation.status,"DONE",JSON.stringify(operation));',
+    '  assert.deepEqual(operation.completed,["DEMO-001","DEMO-002"]);',
+    '  assert.deepEqual([f.counts.push,f.counts.create,f.counts.merge],[2,2,2]);',
+    '  for(const id of first.operation.sessions)assert.ok(operation.sessions.includes(id));',
+    '  const after=evidenceBytes(f.root);for(const [path,bytes] of Object.entries(first.failedRecords))assert.equal(after[path],bytes);',
+    '  const replay=await f.services.operations.resume(first.operationId,true);assert.deepEqual(replay,operation);assert.equal(f.counts.merge,2);',
+    '  f.policy.close();',
+    '  writeFileSync(finalPath,JSON.stringify({pid:process.pid,operationId:first.operationId,operation,fixture:f.snapshot(),failedRecords:first.failedRecords,originalFailedRecordsUnchanged:true},null,2)+"\\n");',
+    ' }',
+    '} catch(error){console.error(error);process.exitCode=1;}',
+  ].join("\n");
+  writeFileSync(worker,prefix+"\n"+childMain+"\n");
+  const env={...process.env,VIBEZ_OPERATIONS_CONFIG:process.env.VIBEZ_OPERATIONS_CONFIG??fileURLToPath(new URL("../examples/beta/vibez.config.json",import.meta.url))};
+  delete env.NODE_TEST_CONTEXT;
+  const launch=phase=>{
+    const child=spawn(process.execPath,[worker,phase,lab],{env,stdio:["ignore","pipe","pipe"]});children.push(child);
+    let stdout="",stderr="",checkpoint;
+    const reached=new Promise(resolve=>{checkpoint=resolve;});
+    child.stdout.on("data",chunk=>{stdout+=chunk;if(stdout.split(/\r?\n/).some(line=>line.startsWith('{"checkpoint":true,')))checkpoint();});
+    child.stderr.on("data",chunk=>{stderr+=chunk;});
+    const ended=new Promise((resolve,reject)=>{child.once("error",reject);child.once("close",(code,signal)=>resolve({code,signal,stdout,stderr}));});
+    completions.push(ended);
+    return {child,reached,ended};
+  };
+  const first=launch("first");
+  await Promise.race([first.reached,first.ended.then(result=>{throw new Error("First supervisor exited before checkpoint: "+JSON.stringify(result));})]);
+  const checkpoint=JSON.parse(readFileSync(checkpointPath,"utf8"));
+  assert.equal(checkpoint.policyLeaseReleased,true);assert.equal(checkpoint.fixture.counts.merge,1);
+  assert.equal(first.child.kill("SIGTERM"),true);
+  const interrupted=await first.ended;
+  assert.ok(interrupted.signal==="SIGTERM"||(Number.isInteger(interrupted.code)&&interrupted.code!==0),JSON.stringify(interrupted));
+  const second=launch("second"),completed=await second.ended;
+  assert.equal(completed.code,0,completed.stdout+completed.stderr);
+  const final=JSON.parse(readFileSync(finalPath,"utf8"));
+  assert.notEqual(final.pid,checkpoint.pid);assert.equal(final.operationId,checkpoint.operationId);
+  assert.equal(final.fixture.grantDigest,checkpoint.fixture.grantDigest);
+  assert.deepEqual(final.operation.completed,["DEMO-001","DEMO-002"]);
+  assert.deepEqual([final.fixture.counts.push,final.fixture.counts.create,final.fixture.counts.merge],[2,2,2]);
+  assert.equal(final.originalFailedRecordsUnchanged,true);
+  assert.deepEqual(final.failedRecords,checkpoint.failedRecords);
+  processObservation={firstPid:checkpoint.pid,secondPid:final.pid,termination:{requested:"SIGTERM",code:interrupted.code,signal:interrupted.signal},
+    interruptionBoundary:"quiescent checkpoint after lost merge response; idle policy lease released",checkpointState:checkpoint.operation.status,
+    checkpointMergeEffects:checkpoint.fixture.counts.merge,finalMergeEffects:final.fixture.counts.merge,operationId:final.operationId,
+    originalFailedRecordCount:Object.keys(checkpoint.failedRecords).length,originalFailedRecordsUnchanged:true,secondProcessExitCode:completed.code};
+  writeFileSync(join(stateDirectory,"process-observation.json"),JSON.stringify(processObservation,null,2)+"\n");
 });

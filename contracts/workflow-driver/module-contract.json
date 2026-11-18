@@ -49,7 +49,7 @@
       "consumerId": "vibez.history-reader",
       "expectations": ["Observe operation journals without creating lifecycle authority", "Block unsupported, malformed and unsettled operation histories during upgrade or rollback"],
       "requiredCapabilities": ["durable-operation-controls"],
-      "acceptedRanges": ["Operation/plan 1.0.0, read by private candidate 0.1.0-rc.4"],
+      "acceptedRanges": ["Operation/plan 1.0.0, read by candidates 0.1.0-rc.4 and 0.1.0-rc.5 without data migration"],
       "requiredReachableRanges": ["Prior rc.3 readers remain incompatible with operation history", "Existing relocated rc.3 histories remain byte-identical and readable"]
     }
   ]
