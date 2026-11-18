@@ -27,7 +27,8 @@ const installedDocs = ["docs/INSTALL.md", "docs/PUBLIC_API.md", "docs/CLI.md", "
 const installedAcceptance = ["scripts/unattended-acceptance.mjs", "scripts/unattended-evidence.mjs",
   "scripts/unattended-host.mjs", "scripts/unattended-host-io.mjs", "scripts/unattended-host-control.mjs", "scripts/prepare-unattended-consumer.mjs",
   "examples/unattended/README.md", "examples/unattended/prepare-options.example.json",
-  "examples/unattended/token-issuer.example.mjs"];
+  "examples/unattended/token-issuer.example.mjs", "examples/unattended/inference-assets.example.json",
+  "examples/unattended/credentials.example.json"];
 
 const publicApi = {
   "": "createProjectServices",
@@ -280,9 +281,27 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   put(project, "marker.txt", "done");
   git(project, "commit", "--allow-empty", "-m", "Address the review on a fresh revision");
   put(project, `.vibez/inbox/responses/${newDeveloper.packetId}.json`, response(newDeveloper));
-  call(["watch", sessionId, "--once"]);
-  await pause();
-  stage = call(["watch", sessionId, "--once"]).session;
+  // Inbox readiness is elapsed-time based, not a fixed number of scans.
+  // Wait only for this original packet to advance; keep all role/gate and
+  // historical-evidence assertions below. A rejected result cannot be repaired
+  // by polling because its original immutable receipt remains authoritative.
+  const observations = [], responseReceipts = [];
+  const deadline = Date.now() + 10_000;
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const scan = call(["watch", sessionId, "--once"]);
+    stage = scan.session;
+    observations.push({ pendingPacket: stage.pendingPacket, status: stage.status, diagnosticId: stage.diagnosticId });
+    responseReceipts.push(...(scan.receipts ?? []));
+    if (stage.pendingPacket !== newDeveloper.packetId || Date.now() >= deadline) break;
+    await pause();
+  }
+  const lastDiagnostic = stage.diagnosticId ? get(project, ".vibez/outbox/" + stage.diagnosticId + ".diagnostic.json") : null;
+  assert.notEqual(stage.pendingPacket, newDeveloper.packetId, JSON.stringify({
+    message: "Original rework response did not advance before the bounded deadline.",
+    observations, responseReceipts, diagnostic: lastDiagnostic && {
+      code: lastDiagnostic.code, message: lastDiagnostic.message,
+    },
+  }));
   assert.deepEqual(readFileSync(join(project, config.paths.exchange, rejected.packetId + ".result.json")), rejectedResult);
   for (const role of ["QA", "Architect", "UAT/Product"]) {
     assert.deepEqual(stage.request, rework.request);

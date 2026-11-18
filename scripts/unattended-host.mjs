@@ -127,7 +127,7 @@ export async function openAcceptance(settingsFile, { command: requestedCommand =
   const controlBinding = { operationId: settings.operationId, grantDigest: digest(grant),
     settingsSha256: sha256(readFileSync(settingsFile)), packageSha256: receipt.candidate.sha256 };
   if (["inspect", "pause", "drain", "cancel"].includes(requestedCommand) && existsSync(join(ledger, "host.lease"))) {
-    const client = controlClient({ hostDirectory, binding: controlBinding });
+    const client = await controlClient({ hostDirectory, binding: controlBinding });
     return { controlOnly: true, services: { operations: client.operations }, close: client.close,
       operationId: settings.operationId, plan, projectRoot, config, providerDirectory, outputDirectory, receipt,
       requiredChecks: settings.requiredChecks, setupSha256: controlBinding.settingsSha256,

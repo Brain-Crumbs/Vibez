@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, symlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, symlinkSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
+import { pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
 import { assertLiveChain, verifyCandidate, fileInventory, sha256, canonical, redactOperation } from "../scripts/unattended-acceptance.mjs";
 
@@ -181,4 +182,22 @@ test("runner closes its original host if candidate verification fails", async t 
   const {main}=await import("../scripts/unattended-acceptance.mjs");
   await assert.rejects(main([setup,"inspect"]));
   assert.equal(readFileSync(closed,"utf8"),"closed");
+});
+
+for (const code of ["INACTIVE_GRANT","HUMAN_REQUIRED","OUT_OF_SCOPE","STALE_HEAD","CONTROL_UNACKNOWLEDGED"])
+  test("redaction retains the fixed actionable stop code " + code, () => {
+    const result=redactOperation({operationId:"test",status:"EXCEPTION",exception:{code,message:"PRIVATE_DETAIL"}});
+    assert.equal(result.exception.code,code);assert.doesNotMatch(JSON.stringify(result),/PRIVATE_DETAIL/);
+  });
+
+test("documented private credential adapter reads a private finite-run bundle without issuing credentials", {skip:process.platform==="win32"}, async t => {
+  const root=mkdtempSync(join(tmpdir(),"vibez-private-issuer-"));t.after(()=>rmSync(root,{recursive:true,force:true}));
+  const module=join(root,"issuer.mjs"),path=join(root,"credentials.json");
+  writeFileSync(module,readFileSync(new URL("../examples/unattended/token-issuer.example.mjs",import.meta.url)));
+  const credential={token:"fixture-not-secret",repository:"example/fixture",expiresAt:new Date(Date.now()+300000).toISOString()};
+  writeFileSync(path,JSON.stringify({schemaId:"vibez.private-credential-bundle",schemaVersion:"1.0.0",credentials:{worker:credential}}),{mode:0o600});
+  const issuer=await import(pathToFileURL(module).href);
+  assert.deepEqual(await issuer.issue("worker"),credential);
+  await assert.rejects(issuer.issue("unknown"));
+  chmodSync(path,0o644);await assert.rejects(issuer.issue("worker"),/readable only by its owner/);
 });

@@ -100,7 +100,9 @@ state, evidence, provider receipts, policy decisions and operation journals
 unchanged and must retain the same remote PR/merge identities.
 
 The first DONE observation remains unaccepted while the external operator
-attestation is PENDING. After inspecting the complete original run, the operator
+attestation is PENDING: collection exits 2/BLOCKED, while the native tasks stay
+DONE. Do not call start again. The [exact attestation recipe](../examples/unattended/README.md#attest-the-completed-run)
+uses the command envelope's `.sha256` field, not the JSON file's byte hash. After inspecting the complete original run, the operator
 records a truthful ATTESTED statement bound to the operation, grant and last
 command-journal SHA, with actor, time and initial setup authority. Then use
 `inspect` to collect the proof. Read-only inspection may follow that attested
@@ -123,20 +125,31 @@ node /absolute/installed/vibez/scripts/unattended-acceptance.mjs /private/setup.
 node /absolute/installed/vibez/scripts/unattended-acceptance.mjs /private/setup.mjs cancel
 ```
 
+Run pause/drain/inspect in a second terminal while start owns the live host.
 Pause/drain prevent later dispatch; cancellation requests interruption.
 A request is not proof that an original worker or remote effect stopped.
 Check the control acknowledgment and provider/source-effect reservations.
 An unresolved launcher, mutation lease or source index keeps the operation
 quarantined. After process interruption, inspect original process/session
-identities and side effects before approved abandoned-lock recovery. Never
+identities and side effects before any separately reviewed recovery. Never
 delete a lease merely because it is old.
+
+For an orderly restart, wait for native PAUSED/DRAINED acknowledgment and the
+original start process to exit before invoking resume with the same setup and
+operation UUID. Resume starts the sole owner; it is not a concurrent control
+command. The packaged example does not implement abandoned-writer recovery
+after an abrupt crash: it supplies neither a supervisor-stopped proof nor
+administrative native-lock recovery authorization. Such a crash remains a
+quarantined administrator exception with the original leases, owner pointer,
+provider reservations and pending effects retained. Do not imply that the
+quiescent process-restart test proves arbitrary active-crash recovery.
 
 | Stop | Operator action |
 | --- | --- |
 | Missing or changed grant/config/package | Restore the exact approved binding; retain the rejected operation |
 | Denied, expired or revoked policy | Inspect the original decision; do not issue a new operation to reset limits |
 | Exhausted retry/rework/poll budget | Retain the spent allowance and failed judgments; obtain a scoped decision for any further work |
-| Unavailable/uncertain provider | Reconcile the original attempt and verify drain; do not launch a duplicate writer |
+| Unavailable/uncertain provider | Inspect the original attempt and verify drain; retain uncertain writers for an administrator exception rather than launching a duplicate |
 | Stale source, CI or PR | Inspect actual branch/head/check identity and use the owning rework/publication path |
 | Uncertain merge response | Read the original PR and native completion record; reconcile before any new merge request |
 | Ambiguous task | Keep the durable clarification exception until a reviewed plan resolves it |
@@ -152,8 +165,10 @@ Both understand workflow-operation/plan 1.0.0. rc.3 and earlier readers refuse
 operation history even after DONE. An artifact change is not permission to
 rebind an unfinished run.
 
-Disable new admission, request drain, verify original external writers and
-remote effects, and retain the original package/configuration, full runtime
+Disable new admission. For an unfinished operation, request drain and wait for
+acknowledgment. DONE operations are immutable and reject new controls; for a
+completed operation verify the original host and all external writers have
+already exited. Verify remote effects and retain the original package/configuration, full runtime
 roots, provider receipts, grant/decision ledger and intervention record.
 Hash the stopped snapshot and protected backup. Run the installed
 `services.diagnostics.checkUpgrade` for the exact target reader and snapshot.

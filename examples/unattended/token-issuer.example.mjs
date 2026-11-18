@@ -1,29 +1,28 @@
 /**
- * Interface example only. Copy into a private host directory and implement with
- * a trusted issuer or credential broker, then pin this module's SHA-256.
- * Never put credential values, private keys, or issuer state in a consumer.
- *
- * issue("controller") -> {
- *   token, repository, appId, installationId, expiresAt,
- *   permissions: { metadata: "read", contents: "write", pull_requests: "write" }
- * }
- * issue("worker") -> {
- *   token, repository, appId, installationId, expiresAt,
- *   permissions: { metadata: "read", contents: "read", pull_requests: "read" }
- * }
- * issue("publisher") -> {
- *   token, repository, principal, expiresAt,
- *   permissions: { contents: "write", pull_requests: "write" }
- * }
- *
- * The controller's numeric App ID must match the reviewed branch restriction.
- * Worker token permissions must come from the actual narrowed installation
- * response. All three credentials must be distinct. The publisher may use an
- * explicitly authorized owner CLI credential, captured internally by the issuer.
- * expiresAt is the actual issuer expiry or a shorter broker lease.
- * No credential is mounted or inherited by the local model or validator.
- * Never log or write the returned credential object as audit output.
+ * Finite-run adapter for an administrator-issued credential bundle.
+ * Copy this module to the private host directory beside credentials.json, then
+ * pin this module in prepare options. It never issues or refreshes a token.
  */
-export async function issue(_role) {
-  throw new Error("Configure the trusted host credential issuer before enabling unattended execution.");
+import assert from "node:assert/strict";
+import { lstatSync, readFileSync, realpathSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+export async function issue(role) {
+  assert.ok(["publisher", "controller", "worker"].includes(role), "Unknown credential role.");
+  const directory = realpathSync(dirname(fileURLToPath(import.meta.url)));
+  const path = join(directory, "credentials.json"), stat = lstatSync(path);
+  assert.ok(stat.isFile() && !stat.isSymbolicLink() && stat.nlink === 1 && realpathSync(path) === path,
+    "Credential bundle must be an ordinary private file.");
+  assert.equal(stat.mode & 0o077, 0, "Credential bundle must be readable only by its owner.");
+  const bundle = JSON.parse(readFileSync(path, "utf8"));
+  assert.equal(bundle.schemaId, "vibez.private-credential-bundle");
+  assert.equal(bundle.schemaVersion, "1.0.0");
+  const credential = bundle.credentials?.[role];
+  assert.ok(credential && typeof credential.token === "string", "Missing administrator-issued credential.");
+  assert.ok(Number.isFinite(Date.parse(credential.expiresAt)) && Date.parse(credential.expiresAt) > Date.now() + 30000,
+    "Credential is expired or too close to expiry.");
+  // The host additionally enforces repository, principal, App IDs, narrowed
+  // permissions, distinct tokens, and live protection before effects.
+  return structuredClone(credential);
 }

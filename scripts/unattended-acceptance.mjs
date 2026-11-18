@@ -58,7 +58,8 @@ export function verifyCandidate(candidateFile, installedDirectory, verificationD
 
 const exportedCodes = new Set(["UNSAFE_RECOVERY", "STALE_BINDING", "WRITER_PENDING", "BUDGET_EXHAUSTED",
   "POLICY_DENIED", "CLARIFICATION_REQUIRED", "OPERATION_ACTIVE", "SOURCE_CHANGED", "CI_FAILED",
-  "HOST_REQUIRED", "CONTROL_BUSY", "DRIVER_BUSY", "PROTECTION_REQUIRED", "STORAGE_UNAVAILABLE"]);
+  "HOST_REQUIRED", "CONTROL_BUSY", "DRIVER_BUSY", "PROTECTION_REQUIRED", "STORAGE_UNAVAILABLE",
+  "INACTIVE_GRANT", "HUMAN_REQUIRED", "OUT_OF_SCOPE", "STALE_HEAD", "CONTROL_UNACKNOWLEDGED"]);
 export function redactOperation(operation) {
   const result = Object.fromEntries(["schemaId", "schemaVersion", "operationId", "planId", "planHash", "grantDigest", "binding",
     "status", "startedAtMs", "nextAtMs", "sequence", "controlSequence", "polls", "retries", "reworks", "sessions",

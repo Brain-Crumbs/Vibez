@@ -1,0 +1,23 @@
+{
+  "launcherPath": "/home/operator/inference/launcher",
+  "launcherSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "runtimeDirectory": "/home/operator/inference/llama",
+  "runnerSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "dependencyDirectory": "/home/operator/inference/dependencies",
+  "libraries": [
+    {
+      "directory": "runtime",
+      "filename": "libllama.so",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "directory": "dependencies",
+      "filename": "libstdc++.so.6",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "modelPath": "/home/operator/inference/Qwen3-4B-Q4_K_M.gguf",
+  "modelSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "runtimeVersion": "b12477",
+  "model": "Qwen3-4B-Q4_K_M"
+}

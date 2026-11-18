@@ -1,16 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { execFileSync, spawn } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { closeSync, copyFileSync, existsSync, fsyncSync, linkSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { appendHostJournal, hostDrained, markerValidatorCode, readHostJournal, pushAfterObservation } from "../scripts/unattended-host.mjs";
 import { consumerFiles, prepare, protectionRequests } from "../scripts/prepare-unattended-consumer.mjs";
 import { digest, json, sha256, validateCredential, validateSettings } from "../scripts/unattended-host-io.mjs";
 import { verifyGitHubProtection } from "../dist/public/integration.js";
-import { controlClient } from "../scripts/unattended-host-control.mjs";
+import { controlClient, publishControlRecord } from "../scripts/unattended-host-control.mjs";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const candidate = { package: "@brain-crumbs/vibez", version: "0.1.0-test", file: "fixture.tgz", sourceCommit: "a".repeat(40),
@@ -112,7 +112,7 @@ test("immutable host audit binds commands to original operation and detects a mo
   } finally { rmSync(f.root, { recursive: true, force: true }); }
 });
 
-test("a stale control owner cannot acknowledge drain, steal a lease or dispatch a second runner", async () => {
+test("a stale control owner cannot acknowledge drain, steal a lease or dispatch a second runner", { skip: process.platform !== "linux" }, async () => {
   const f = fixture();
   try {
     const ledger = join(f.host, "ledger"), channel = join(f.host, "control-channel");
@@ -121,7 +121,7 @@ test("a stale control owner cannot acknowledge drain, steal a lease or dispatch 
     const binding = { operationId: "original-operation", grantDigest: "original-grant", settingsSha256: "settings", packageSha256: "package" };
     const owner = { schemaId: "vibez.host-control-owner", schemaVersion: "1.0.0", ...binding, leaseSha256: sha256(readFileSync(lease)) };
     writeFileSync(join(channel, "owner.json"), JSON.stringify({ owner, sha256: digest(owner) }));
-    const client = controlClient({ hostDirectory: f.host, binding, timeoutMs: 100 });
+    const client = await controlClient({ hostDirectory: f.host, binding, timeoutMs: 100 });
     assert.equal(client.operations.start, undefined); assert.equal(client.operations.resume, undefined);
     await assert.rejects(() => client.operations.drain(binding.operationId), error => error.code === "CONTROL_UNACKNOWLEDGED");
     assert.equal(readFileSync(lease, "utf8"), '"original-holder"');
@@ -129,6 +129,68 @@ test("a stale control owner cannot acknowledge drain, steal a lease or dispatch 
     assert.equal(readdirSync(join(channel, "responses")).length, 0);
     await client.close();
   } finally { rmSync(f.root, { recursive: true, force: true }); }
+});
+
+test("control publication is immutable and leaves only complete final bytes", { skip: process.platform !== "linux" }, () => {
+  const f = fixture();
+  try {
+    const path = join(f.host, "receipt.json"), first = { original: "complete", payload: "x".repeat(32000) };
+    publishControlRecord(path, first);
+    assert.deepEqual(json(path), first);
+    assert.throws(() => publishControlRecord(path, { replacement: true }), error => error.code === "EEXIST");
+    assert.deepEqual(json(path), first);
+    assert.deepEqual(readdirSync(f.host), ["receipt.json"]);
+  } finally { rmSync(f.root, { recursive: true, force: true }); }
+});
+
+test("a separate control client waits for a staged response instead of parsing partial linked bytes", { skip: process.platform !== "linux" }, async () => {
+  const f = fixture();
+  let clientProcess, exited;
+  try {
+    const ledger = join(f.host, "ledger"), channel = join(f.host, "control-channel");
+    mkdirSync(ledger); mkdirSync(channel); mkdirSync(join(channel, "requests")); mkdirSync(join(channel, "responses"));
+    const lease = join(ledger, "host.lease"); writeFileSync(lease, '"original-holder"');
+    const binding = { operationId: "original-operation", grantDigest: "original-grant", settingsSha256: "settings", packageSha256: "package" };
+    const owner = { schemaId: "vibez.host-control-owner", schemaVersion: "1.0.0", ...binding, leaseSha256: sha256(readFileSync(lease)) };
+    const envelope = { owner, sha256: digest(owner) }; publishControlRecord(join(channel, "owner.json"), envelope);
+    const output = join(f.host, "client-result.json"), script = join(f.host, "client.mjs");
+    writeFileSync(script, 'import {writeFileSync} from "node:fs";\nimport {controlClient} from ' +
+      JSON.stringify(new URL("../scripts/unattended-host-control.mjs", import.meta.url).href) + ';\n' +
+      'const client=await controlClient(' + JSON.stringify({ hostDirectory: f.host, binding, timeoutMs: 5000 }) + ');\n' +
+      'try {writeFileSync(' + JSON.stringify(output) + ',JSON.stringify(await client.operations.inspect("original-operation")));}' +
+      'finally {await client.close();}\n');
+    clientProcess = spawn(process.execPath, [script], { stdio: ["ignore", "pipe", "pipe"] });
+    let exitCode = null, errors = "";
+    clientProcess.stderr.on("data", chunk => { errors += chunk; });
+    exited = new Promise((accept, reject) => clientProcess.once("close", code => {
+      exitCode = code; code === 0 ? accept() : reject(new Error("Control client failed: " + errors));
+    }));
+    exited.catch(() => {});
+    const deadline = Date.now() + 5000;
+    const finalRequests = () => readdirSync(join(channel, "requests")).filter(name => /^[0-9]+-[a-f0-9-]{36}[.]json$/.test(name));
+    while (!finalRequests().length) {
+      assert.ok(Date.now() < deadline); await new Promise(r => setTimeout(r, 10));
+    }
+    const name = finalRequests()[0], raw = readFileSync(join(channel, "requests", name)), request = JSON.parse(raw);
+    const staged = join(channel, "responses", ".vibez-control-publish-" + randomUUID() + ".tmp");
+    const final = join(channel, "responses", name);
+    writeFileSync(staged, '{"schemaId":'); linkSync(staged, final);
+    await new Promise(r => setTimeout(r, 150));
+    assert.equal(exitCode, null); assert.equal(existsSync(output), false, "No partial response may become an acknowledgement.");
+    const response = { schemaId: "vibez.host-control-response", schemaVersion: "1.0.0", ownerSha256: envelope.sha256,
+      requestSha256: digest(request), requestBytesSha256: sha256(raw), operationId: binding.operationId,
+      acknowledged: true, operation: { operationId: binding.operationId, status: "RUNNING" } };
+    writeFileSync(staged, JSON.stringify(response));
+    const fd = openSync(staged, "r"); try { fsyncSync(fd); } finally { closeSync(fd); }
+    unlinkSync(staged);
+    await exited;
+    assert.equal(json(output).status, "RUNNING");
+    assert.equal(readFileSync(lease, "utf8"), '"original-holder"');
+  } finally {
+    if (clientProcess && clientProcess.exitCode === null) clientProcess.kill("SIGKILL");
+    if (exited) await exited.catch(() => {});
+    rmSync(f.root, { recursive: true, force: true });
+  }
 });
 
 test("revocation or expiry during a synchronous protection observation denies the following push", () => {
@@ -166,7 +228,7 @@ test("local preparation uses the actual packed fixture without remote effects an
     const launchObserved = join(f.host, "provider-launched");
     writeFileSync(launcher, "#!" + process.execPath + "\n" +
       "const fs=require('node:fs');fs.writeSync(3,JSON.stringify({'child-pid':2147483646}));" +
-      "fs.writeFileSync(" + JSON.stringify(launchObserved) + ",'launched');process.stdin.resume();setTimeout(()=>process.exit(77),10000);\n",
+      "fs.writeFileSync(" + JSON.stringify(launchObserved) + ",'launched');process.stdin.resume();setTimeout(()=>process.exit(77),30000);\n",
       { mode: 0o700 });
     writeFileSync(runner, "fixture"); writeFileSync(model, "fixture");
     writeFileSync(assetsPath, JSON.stringify({ model: "fixture-model", runtimeVersion: "fixture-runtime", launcherPath: launcher,
@@ -247,6 +309,23 @@ test("local preparation uses the actual packed fixture without remote effects an
       await waitFor(() => existsSync(ownerReady) && existsSync(launchObserved));
       const leaseFile = join(result.hostDirectory, "ledger", "host.lease"), originalLease = readFileSync(leaseFile, "utf8");
       const issuerCalls = readFileSync(callsPath, "utf8");
+      const channel = join(result.hostDirectory, "control-channel"), channelOwner = json(join(channel, "owner.json"));
+      const stagedRequest = join(channel, "requests", ".vibez-control-publish-" + randomUUID() + ".tmp");
+      const requestId = Date.now() + "-" + randomUUID(), requestName = requestId + ".json";
+      const originalRequest = { schemaId: "vibez.host-control-request", schemaVersion: "1.0.0", requestId,
+        ownerSha256: channelOwner.sha256, operationId: channelOwner.owner.operationId,
+        grantDigest: channelOwner.owner.grantDigest, command: "inspect", requestedAt: new Date().toISOString() };
+      // Widen both partial staging and the final nlink=2 interval across real owner polls.
+      writeFileSync(stagedRequest, '{"schemaId":');
+      await new Promise(r => setTimeout(r, 100));
+      linkSync(stagedRequest, join(channel, "requests", requestName));
+      const malformedName = Date.now() + "-" + randomUUID() + ".json", malformed = "{malformed final request";
+      const malformedStaged = join(channel, "requests", ".vibez-control-publish-" + randomUUID() + ".tmp");
+      writeFileSync(malformedStaged, malformed); linkSync(malformedStaged, join(channel, "requests", malformedName)); unlinkSync(malformedStaged);
+      await waitFor(() => existsSync(join(channel, "responses", malformedName)));
+      const rejected = json(join(channel, "responses", malformedName));
+      assert.equal(rejected.acknowledged, false); assert.equal(rejected.errorCode, "CONTROL_REJECTED");
+      assert.equal(rejected.requestBytesSha256, sha256(malformed));
       for (const command of ["inspect", "pause", "drain"]) {
         const response = client(command);
         assert.equal(response.controlOnly, true); assert.equal(response.hasPolicy, false);
@@ -254,6 +333,11 @@ test("local preparation uses the actual packed fixture without remote effects an
         assert.equal(response.operation.status, "RUNNING", "An active provider is not a confirmed drain.");
         assert.equal(readFileSync(leaseFile, "utf8"), originalLease);
       }
+      writeFileSync(stagedRequest, JSON.stringify(originalRequest) + "\n");
+      const stagedFd = openSync(stagedRequest, "r"); try { fsyncSync(stagedFd); } finally { closeSync(stagedFd); }
+      unlinkSync(stagedRequest);
+      await waitFor(() => existsSync(join(channel, "responses", requestName)));
+      assert.equal(json(join(channel, "responses", requestName)).acknowledged, true);
       const cancelled = client("cancel");
       assert.equal(cancelled.controlOnly, true);
       await waitFor(() => existsSync(ownerResult) && hostDrained(join(result.hostDirectory, "provider"), result.hostDirectory));
@@ -262,8 +346,8 @@ test("local preparation uses the actual packed fixture without remote effects an
       assert.equal(readFileSync(leaseFile, "utf8"), originalLease);
       assert.equal(readFileSync(callsPath, "utf8"), issuerCalls, "Control-only clients never obtain credentials.");
       assert.equal(readdirSync(join(result.hostDirectory, "provider")).length, 1, "Only the original provider attempt exists.");
-      assert.equal(readdirSync(join(result.hostDirectory, "control-channel", "requests")).length, 5);
-      assert.equal(readdirSync(join(result.hostDirectory, "control-channel", "responses")).length, 5);
+      assert.equal(readdirSync(join(result.hostDirectory, "control-channel", "requests")).length, 7);
+      assert.equal(readdirSync(join(result.hostDirectory, "control-channel", "responses")).length, 7);
     } finally { writeFileSync(ownerStop, "stop"); await ownerExit; }
 
     const git = (...args) => execFileSync("git", args, { cwd: result.projectRoot, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
