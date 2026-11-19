@@ -23,7 +23,12 @@ const pack = (runNpm, temp) => conformance
     })();
 const installedDocs = ["docs/INSTALL.md", "docs/PUBLIC_API.md", "docs/CLI.md", "docs/COMPATIBILITY.md",
   "docs/CONFIGURED_RUNTIME.md", "docs/UNATTENDED_HOST.md", "docs/LOCAL_HEADLESS.md", "docs/SUPPORT.md", "docs/WORKFLOW_DRIVER.md",
-  "docs/MIGRATION_CANDIDATE.md", "CHANGELOG.md"];
+  "docs/MIGRATION_CANDIDATE.md", "docs/UNATTENDED_ACCEPTANCE.md", "CHANGELOG.md"];
+const installedAcceptance = ["scripts/unattended-acceptance.mjs", "scripts/unattended-package.mjs", "scripts/unattended-evidence.mjs",
+  "scripts/unattended-host.mjs", "scripts/unattended-host-io.mjs", "scripts/unattended-host-control.mjs", "scripts/prepare-unattended-consumer.mjs",
+  "examples/unattended/README.md", "examples/unattended/prepare-options.example.json",
+  "examples/unattended/token-issuer.example.mjs", "examples/unattended/inference-assets.example.json",
+  "examples/unattended/credentials.example.json"];
 
 const publicApi = {
   "": "createProjectServices",
@@ -71,7 +76,7 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
       .map(entry => "contracts/" + entry.name + "/module-contract.json"),
     "docs/specs/project-config.schema.json", "examples/alpha/vibez.config.json", "examples/beta/vibez.config.json",
   ];
-  const included = new Set([...assets, "package.json", "NOTICE.md", "README.md", ...installedDocs]);
+  const included = new Set([...assets, "package.json", "NOTICE.md", "README.md", ...installedDocs, ...installedAcceptance]);
   for (const path of included) assert.ok(paths.has(path), path);
   for (const path of paths) assert.ok(included.has(path) || /^dist\/.+\.(js|d\.ts)$/.test(path), "Unexpected packaged file " + path);
   assert.deepEqual(Object.keys(manifest.exports), Object.keys(publicApi).map(path => "." + path));
@@ -163,6 +168,20 @@ test("actual npm tarball serves independent JS, TypeScript and standalone CLI co
   assert.equal(global.status, 0, global.error?.message || global.stderr);
   assert.equal(JSON.parse(global.stdout).data.cliVersion, packReceipt.version);
   assert.deepEqual(readdirSync(unrelated), []);
+  // Exercise the actual installed CLI's dynamic setup import. Loading the real
+  // host must reach the setup callback before any credentials or effects.
+  const setup = join(temp, "acceptance-entrypoint-probe.mjs");
+  writeFileSync(setup, `import { openAcceptance as realHost } from ${JSON.stringify(pathToFileURL(join(installed, "scripts/unattended-host.mjs")).href)};
+export async function openAcceptance({ command }) {
+  if (typeof realHost !== "function" || command !== "start") throw new Error("Wrong setup import");
+  throw Object.assign(new Error("Fixture stopped before effects"), { code: "PROTECTION_REQUIRED" });
+}
+`);
+  const acceptance = spawnSync(process.execPath, [join(installed, "scripts/unattended-acceptance.mjs"), setup, "start"],
+    { cwd: unrelated, encoding: "utf8", timeout: 90_000 });
+  assert.equal(acceptance.status, 2, acceptance.stderr || acceptance.error?.message);
+  assert.equal(JSON.parse(acceptance.stderr).code, "PROTECTION_REQUIRED");
+  assert.equal(acceptance.stdout, "");
 });
 
 test("installed manual driver uses committed consumer inputs and recovers the bound packet", async t => {
@@ -178,10 +197,10 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   put(tools, "package.json", { private: true });
   runNpm(["install", "--offline", "--no-audit", "--no-fund", archive], tools);
   const executable = join(tools, "node_modules", manifest.name, "dist", "cli", "cli.js");
-  const call = (args, input) => {
+  const call = (args, input, timeoutMs) => {
     const result = spawnSync(process.execPath, [executable, "--json", "orchestrate", ...args,
       "--project", project, "--config", "workflow.json", "--npm-cli", npm, "--local-ntfs"],
-      { cwd: tools, input, encoding: "utf8" });
+      { cwd: tools, input, encoding: "utf8", timeout: timeoutMs });
     assert.equal(result.status, 0, result.stdout || result.stderr || result.error?.message);
     return JSON.parse(result.stdout).data;
   };
@@ -276,9 +295,32 @@ test("installed manual driver uses committed consumer inputs and recovers the bo
   put(project, "marker.txt", "done");
   git(project, "commit", "--allow-empty", "-m", "Address the review on a fresh revision");
   put(project, `.vibez/inbox/responses/${newDeveloper.packetId}.json`, response(newDeveloper));
-  call(["watch", sessionId, "--once"]);
-  await pause();
-  stage = call(["watch", sessionId, "--once"]).session;
+  // Inbox readiness is elapsed-time based, not a fixed number of scans.
+  // Wait only for this original packet to advance; keep all role/gate and
+  // historical-evidence assertions below. A rejected result cannot be repaired
+  // by polling because its original immutable receipt remains authoritative.
+  const observations = [], responseReceipts = [];
+  const scanTimeoutMs = process.platform === "win32" ? 120_000 : 30_000;
+  const deadline = Date.now() + (process.platform === "win32" ? 300_000 : 30_000);
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const scan = call(["watch", sessionId, "--once"], undefined, scanTimeoutMs);
+    stage = scan.session;
+    observations.push({ pendingPacket: stage.pendingPacket, status: stage.status, diagnosticId: stage.diagnosticId });
+    responseReceipts.push(...(scan.receipts ?? []));
+    if (stage.pendingPacket !== newDeveloper.packetId) break;
+    // A slow first CLI invocation can consume the elapsed budget before its
+    // first observation has settled. Always permit the second stability scan.
+    // The per-command timeout and finite scan count still bound the wait.
+    if (attempt >= 1 && Date.now() >= deadline) break;
+    await pause();
+  }
+  const lastDiagnostic = stage.diagnosticId ? get(project, ".vibez/outbox/" + stage.diagnosticId + ".diagnostic.json") : null;
+  assert.notEqual(stage.pendingPacket, newDeveloper.packetId, JSON.stringify({
+    message: "Original rework response did not advance before the bounded deadline.",
+    observations, responseReceipts, diagnostic: lastDiagnostic && {
+      code: lastDiagnostic.code, message: lastDiagnostic.message,
+    },
+  }));
   assert.deepEqual(readFileSync(join(project, config.paths.exchange, rejected.packetId + ".result.json")), rejectedResult);
   for (const role of ["QA", "Architect", "UAT/Product"]) {
     assert.deepEqual(stage.request, rework.request);

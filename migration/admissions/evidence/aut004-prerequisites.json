@@ -1,0 +1,2322 @@
+{
+  "observedAt": "2026-11-17T23:52:31.574Z",
+  "aut003": {
+    "pr": {
+      "url": "https://api.github.com/repos/Brain-Crumbs/Vibez/pulls/29",
+      "id": 5363983954,
+      "node_id": "PR_kwDOVnYI4M8AAAABP7fmUg",
+      "html_url": "https://github.com/Brain-Crumbs/Vibez/pull/29",
+      "diff_url": "https://github.com/Brain-Crumbs/Vibez/pull/29.diff",
+      "patch_url": "https://github.com/Brain-Crumbs/Vibez/pull/29.patch",
+      "issue_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/issues/29",
+      "commits_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/pulls/29/commits",
+      "review_comments_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/pulls/29/comments",
+      "review_comment_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/pulls/comments{/number}",
+      "comments_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/issues/29/comments",
+      "statuses_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/statuses/58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392",
+      "number": 29,
+      "state": "closed",
+      "locked": false,
+      "title": "AUT-003: Automate approved task queues with durable continuation",
+      "user": {
+        "login": "Brain-Crumbs",
+        "id": 55927359,
+        "node_id": "MDQ6VXNlcjU1OTI3MzU5",
+        "avatar_url": "https://avatars.githubusercontent.com/u/55927359?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/Brain-Crumbs",
+        "html_url": "https://github.com/Brain-Crumbs",
+        "followers_url": "https://api.github.com/users/Brain-Crumbs/followers",
+        "following_url": "https://api.github.com/users/Brain-Crumbs/following{/other_user}",
+        "gists_url": "https://api.github.com/users/Brain-Crumbs/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/Brain-Crumbs/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/Brain-Crumbs/subscriptions",
+        "organizations_url": "https://api.github.com/users/Brain-Crumbs/orgs",
+        "repos_url": "https://api.github.com/users/Brain-Crumbs/repos",
+        "events_url": "https://api.github.com/users/Brain-Crumbs/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/Brain-Crumbs/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "body": "Closes #11. Part of #1 and [the extraction epic](https://github.com/Brain-Crumbs/IPTFantasyFootball/issues/74).\n\nAn approved queue previously required coordination between tasks, roles, rework and GitHub stages. AUT-003 adds one configured operation service and CLI over the existing supervisor: it executes the authorized dependency order, retains identities and budgets across interruption, reconciles publication and merge effects, and continues after native controlled completion.\n\nReviewed candidate: `58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392`, based on main at `38dea54d2940027ebb93619bbc70d9a5b5a91343`, on `automation/aut-003-unattended-supervisor`. Admission verifies accepted [AUT-002 PR #28](https://github.com/Brain-Crumbs/Vibez/pull/28) and the [MIG-003 seed PR #15](https://github.com/Brain-Crumbs/Vibez/pull/15); historical prerequisites remain evidence-backed admission edges.\n\n| Acceptance criterion | Implementation and evidence |\n| --- | --- |\n| AC-01: dependent queue | One approved plan completes two dependent tasks in order; replay adds no work. |\n| AC-02: existing owners | Isolated roles, validators, independent native review gates, legal rework, PR/CI and controlled merge retain their existing authorities. |\n| AC-03: attempts and budgets | Semantic rework records successors; infrastructure retry retains identity; immutable charges and bounded polling/retry/rework counters survive restart. |\n| AC-04: no duplicated effects | Workspace ownership, original sessions, dispatch fences and reconciliation cover competing starts and uncertain push/PR/merge responses. |\n| AC-05: actionable exceptions | Scope/plan/grant mismatch, drift, clarification, exhausted budgets and unsafe recovery stop with durable reasons. |\n| AC-06: truthful controls | Control acknowledgments bind their exact request; cancellation, deadline and revocation fence subsequent effects; uncertain writers require verified drain before resume. |\n| AC-07: shared installed service | The CLI delegates to the configured public service; installed JS, TypeScript, CLI, manual and non-npm consumers pass. Ownership aligns with IPTFantasyFootball #75. |\n\nAll nine local checks pass: native build/test (950 Node tests), schema fixtures, 53 repository contract/task records, nine Python tests, seed provenance, adversarial guard mutations, and installed conformance, with dependency installation included in the retained command record. Independent QA additionally passed four focused Linux cases and seven installed Windows cases.\n\n[Exact-head CI run](https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629) verifies source tests, schemas/provenance, reproducible candidate bytes, and installed consumers on Ubuntu/Windows with Node 22/24. All eight jobs pass. Linux ran 950 tests with no failures or skips. Windows ran 950 tests: 936 passed, zero failed/cancelled, and 14 existing Linux-only isolated-runtime cases were skipped. Every AUT-003 operation scenario ran on Windows.\n\nExact local commands all exited 0 at the reviewed head:\n\n| Command | Result |\n| --- | --- |\n| `npm ci` | PASS |\n| `python -m pip install -r schemas/requirements.txt` | PASS |\n| `npm run build` | PASS; native build@3 |\n| `npm test` | PASS; native test@3, 950 Node tests |\n| `python schemas/validate_fixtures.py` | PASS |\n| `python schemas/validate_repository_contracts.py` | PASS; 53 records |\n| `python -m unittest discover -s tests -p 'test_*.py'` | PASS; 9 tests |\n| `python scripts/seed_export.py` | PASS |\n| `npm run test:adversarial:mutations` | PASS; both weakened guards detected |\n| `npm run pack:candidate -- <candidate-directory>` | PASS; reproducible bytes |\n| `npm run test:conformance -- <candidate-directory>` | PASS; three top-level suites and three explicitly counted installed operation scenarios |\n\nChecks manifest SHA-256: `4e520ec1102a28f440fc7c8a789e0be8f1e3d33f067c67a35b59b481c339ec49`. Original failed validation/review records were retained through legal native rework.\n\nThe installed real-provider rehearsal completed two native fixture tasks using eight fresh isolated role sessions and two actual validator subprocesses. Remote GitHub ports are explicitly simulated. This PR's actual CI, independent reviews and native controlled completion establish live delivery. Original proof source `764852560b940c21bae18772e28d12acccf67118` is preserved; the final successor only changes tests/harness and produces identical package bytes.\n\nPrivate candidate `0.1.0-rc.4` SHA-256: `553916414a69808088a40da71c6c2e439c0edab1bd8f7f06de8cb80a22a761f8`.\nProof report SHA-256: `7ab5c9708e0717fcaecf89ee18a0c3f7d84477a60cf611f22bbe476db0eeda85`.\nFinal artifact-equivalence record SHA-256: `a8880b9ba481b8bb583699b48dce702b5f7a1d69745e332213f13ef4e7490836`.\n\nFinal independent reviews approve this exact head; native review gates reached MERGE_READY. Prior failures and rejected judgments remain in history.\n\n| Role | Report | Native evidence | Report SHA-256 |\n| --- | --- | --- | --- |\n| QA | [PASS](https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6961039686) | `AUT-003::role::QA@2` | `e8ab690dfa1ff90267f59885fcfa901823d21729cad18046f3b91d898df4b292` |\n| Architecture | [PASS](https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6962756408) | `AUT-003::role::Architect@2` | `91b2f75c1c14732bbcae7754f816c10d06d53b12722c6e4901094229693a4c37` |\n| UAT/Product | [PASS](https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6962938158) | `AUT-003::role::UAT/Product@1` | `9d98410062034178da3ec1b54e69558641a097b3c407cb123a65e8e5b8e37a80` |\n\nCompatibility and rollback are documented in `docs/WORKFLOW_DRIVER.md` and `docs/COMPATIBILITY.md`. rc.4 preserves existing rc.3 histories; older readers refuse new operation records. Disable new admission, drain and verify writers, retain the original package/config/history and budgets, then step the original operation with `resume --once`. Do not reset history to force a downgrade. Windows supports process-interruption recovery; directory durability differs from POSIX. Runtime grants and provider records remain private. No package release or protection change.\n\n\nMerged as `d6f7c3b6ad1d6c0ad1e059485b97d582759c388d` after all final reviews and checks passed. The native controller recorded `AUT-003::merge@1` and `DONE`; #11 is closed. [Controlled completion and post-merge verification](https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6963070063).\n",
+      "labels": [],
+      "milestone": null,
+      "active_lock_reason": null,
+      "created_at": "2026-11-17T19:57:33Z",
+      "updated_at": "2026-11-17T22:39:20Z",
+      "closed_at": "2026-11-17T22:34:40Z",
+      "merged_at": "2026-11-17T22:34:40Z",
+      "merge_commit_sha": "d6f7c3b6ad1d6c0ad1e059485b97d582759c388d",
+      "assignee": null,
+      "assignees": [],
+      "requested_reviewers": [],
+      "requested_teams": [],
+      "head": {
+        "label": "Brain-Crumbs:automation/aut-003-unattended-supervisor",
+        "ref": "automation/aut-003-unattended-supervisor",
+        "repo": {
+          "id": 1450576096,
+          "node_id": "R_kgDOVnYI4A",
+          "name": "Vibez",
+          "full_name": "Brain-Crumbs/Vibez",
+          "owner": {
+            "login": "Brain-Crumbs",
+            "id": 55927359,
+            "node_id": "MDQ6VXNlcjU1OTI3MzU5",
+            "avatar_url": "https://avatars.githubusercontent.com/u/55927359?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Brain-Crumbs",
+            "html_url": "https://github.com/Brain-Crumbs",
+            "followers_url": "https://api.github.com/users/Brain-Crumbs/followers",
+            "following_url": "https://api.github.com/users/Brain-Crumbs/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Brain-Crumbs/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Brain-Crumbs/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Brain-Crumbs/subscriptions",
+            "organizations_url": "https://api.github.com/users/Brain-Crumbs/orgs",
+            "repos_url": "https://api.github.com/users/Brain-Crumbs/repos",
+            "events_url": "https://api.github.com/users/Brain-Crumbs/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Brain-Crumbs/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "private": false,
+          "fork": false,
+          "archived": false,
+          "disabled": false,
+          "description": "Agentic Coding workflow",
+          "homepage": null,
+          "language": "TypeScript",
+          "visibility": "public",
+          "is_template": false,
+          "topics": [],
+          "forks_count": 0,
+          "forks": 0,
+          "stargazers_count": 0,
+          "watchers_count": 0,
+          "watchers": 0,
+          "open_issues_count": 3,
+          "open_issues": 3,
+          "size": 1529,
+          "default_branch": "main",
+          "has_issues": true,
+          "has_projects": true,
+          "has_wiki": true,
+          "has_pages": false,
+          "has_downloads": false,
+          "has_discussions": false,
+          "has_pull_requests": true,
+          "pushed_at": "2026-11-17T22:34:39Z",
+          "created_at": "2026-11-08T19:04:22Z",
+          "updated_at": "2026-11-11T00:34:59Z",
+          "allow_forking": true,
+          "web_commit_signoff_required": false,
+          "pull_request_creation_policy": "all",
+          "license": null,
+          "url": "https://api.github.com/repos/Brain-Crumbs/Vibez",
+          "html_url": "https://github.com/Brain-Crumbs/Vibez",
+          "archive_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/{archive_format}{/ref}",
+          "assignees_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/assignees{/user}",
+          "blobs_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/git/blobs{/sha}",
+          "branches_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/branches{/branch}",
+          "collaborators_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/collaborators{/collaborator}",
+          "comments_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/comments{/number}",
+          "commits_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/commits{/sha}",
+          "compare_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/compare/{base}...{head}",
+          "contents_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/contents/{+path}",
+          "contributors_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/contributors",
+          "deployments_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/deployments",
+          "downloads_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/downloads",
+          "events_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/events",
+          "forks_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/forks",
+          "git_commits_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/git/commits{/sha}",
+          "git_refs_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/git/refs{/sha}",
+          "git_tags_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/git/tags{/sha}",
+          "git_url": "git://github.com/Brain-Crumbs/Vibez.git",
+          "issue_comment_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/issues/comments{/number}",
+          "issue_events_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/issues/events{/number}",
+          "issues_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/issues{/number}",
+          "keys_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/keys{/key_id}",
+          "labels_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/labels{/name}",
+          "languages_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/languages",
+          "merges_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/merges",
+          "milestones_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/milestones{/number}",
+          "notifications_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/notifications{?since,all,participating}",
+          "pulls_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/pulls{/number}",
+          "releases_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/releases{/id}",
+          "ssh_url": "git@github.com:Brain-Crumbs/Vibez.git",
+          "stargazers_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/stargazers",
+          "statuses_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/statuses/{sha}",
+          "subscribers_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/subscribers",
+          "subscription_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/subscription",
+          "tags_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/tags",
+          "teams_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/teams",
+          "trees_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/git/trees{/sha}",
+          "clone_url": "https://github.com/Brain-Crumbs/Vibez.git",
+          "mirror_url": null,
+          "hooks_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/hooks",
+          "svn_url": "https://github.com/Brain-Crumbs/Vibez"
+        },
+        "sha": "58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392",
+        "user": {
+          "login": "Brain-Crumbs",
+          "id": 55927359,
+          "node_id": "MDQ6VXNlcjU1OTI3MzU5",
+          "avatar_url": "https://avatars.githubusercontent.com/u/55927359?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/Brain-Crumbs",
+          "html_url": "https://github.com/Brain-Crumbs",
+          "followers_url": "https://api.github.com/users/Brain-Crumbs/followers",
+          "following_url": "https://api.github.com/users/Brain-Crumbs/following{/other_user}",
+          "gists_url": "https://api.github.com/users/Brain-Crumbs/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/Brain-Crumbs/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/Brain-Crumbs/subscriptions",
+          "organizations_url": "https://api.github.com/users/Brain-Crumbs/orgs",
+          "repos_url": "https://api.github.com/users/Brain-Crumbs/repos",
+          "events_url": "https://api.github.com/users/Brain-Crumbs/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/Brain-Crumbs/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        }
+      },
+      "base": {
+        "label": "Brain-Crumbs:main",
+        "ref": "main",
+        "repo": {
+          "id": 1450576096,
+          "node_id": "R_kgDOVnYI4A",
+          "name": "Vibez",
+          "full_name": "Brain-Crumbs/Vibez",
+          "owner": {
+            "login": "Brain-Crumbs",
+            "id": 55927359,
+            "node_id": "MDQ6VXNlcjU1OTI3MzU5",
+            "avatar_url": "https://avatars.githubusercontent.com/u/55927359?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Brain-Crumbs",
+            "html_url": "https://github.com/Brain-Crumbs",
+            "followers_url": "https://api.github.com/users/Brain-Crumbs/followers",
+            "following_url": "https://api.github.com/users/Brain-Crumbs/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Brain-Crumbs/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Brain-Crumbs/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Brain-Crumbs/subscriptions",
+            "organizations_url": "https://api.github.com/users/Brain-Crumbs/orgs",
+            "repos_url": "https://api.github.com/users/Brain-Crumbs/repos",
+            "events_url": "https://api.github.com/users/Brain-Crumbs/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Brain-Crumbs/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "private": false,
+          "fork": false,
+          "archived": false,
+          "disabled": false,
+          "description": "Agentic Coding workflow",
+          "homepage": null,
+          "language": "TypeScript",
+          "visibility": "public",
+          "is_template": false,
+          "topics": [],
+          "forks_count": 0,
+          "forks": 0,
+          "stargazers_count": 0,
+          "watchers_count": 0,
+          "watchers": 0,
+          "open_issues_count": 3,
+          "open_issues": 3,
+          "size": 1529,
+          "default_branch": "main",
+          "has_issues": true,
+          "has_projects": true,
+          "has_wiki": true,
+          "has_pages": false,
+          "has_downloads": false,
+          "has_discussions": false,
+          "has_pull_requests": true,
+          "pushed_at": "2026-11-17T22:34:39Z",
+          "created_at": "2026-11-08T19:04:22Z",
+          "updated_at": "2026-11-11T00:34:59Z",
+          "allow_forking": true,
+          "web_commit_signoff_required": false,
+          "pull_request_creation_policy": "all",
+          "license": null,
+          "url": "https://api.github.com/repos/Brain-Crumbs/Vibez",
+          "html_url": "https://github.com/Brain-Crumbs/Vibez",
+          "archive_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/{archive_format}{/ref}",
+          "assignees_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/assignees{/user}",
+          "blobs_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/git/blobs{/sha}",
+          "branches_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/branches{/branch}",
+          "collaborators_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/collaborators{/collaborator}",
+          "comments_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/comments{/number}",
+          "commits_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/commits{/sha}",
+          "compare_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/compare/{base}...{head}",
+          "contents_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/contents/{+path}",
+          "contributors_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/contributors",
+          "deployments_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/deployments",
+          "downloads_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/downloads",
+          "events_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/events",
+          "forks_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/forks",
+          "git_commits_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/git/commits{/sha}",
+          "git_refs_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/git/refs{/sha}",
+          "git_tags_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/git/tags{/sha}",
+          "git_url": "git://github.com/Brain-Crumbs/Vibez.git",
+          "issue_comment_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/issues/comments{/number}",
+          "issue_events_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/issues/events{/number}",
+          "issues_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/issues{/number}",
+          "keys_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/keys{/key_id}",
+          "labels_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/labels{/name}",
+          "languages_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/languages",
+          "merges_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/merges",
+          "milestones_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/milestones{/number}",
+          "notifications_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/notifications{?since,all,participating}",
+          "pulls_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/pulls{/number}",
+          "releases_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/releases{/id}",
+          "ssh_url": "git@github.com:Brain-Crumbs/Vibez.git",
+          "stargazers_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/stargazers",
+          "statuses_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/statuses/{sha}",
+          "subscribers_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/subscribers",
+          "subscription_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/subscription",
+          "tags_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/tags",
+          "teams_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/teams",
+          "trees_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/git/trees{/sha}",
+          "clone_url": "https://github.com/Brain-Crumbs/Vibez.git",
+          "mirror_url": null,
+          "hooks_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/hooks",
+          "svn_url": "https://github.com/Brain-Crumbs/Vibez"
+        },
+        "sha": "38dea54d2940027ebb93619bbc70d9a5b5a91343",
+        "user": {
+          "login": "Brain-Crumbs",
+          "id": 55927359,
+          "node_id": "MDQ6VXNlcjU1OTI3MzU5",
+          "avatar_url": "https://avatars.githubusercontent.com/u/55927359?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/Brain-Crumbs",
+          "html_url": "https://github.com/Brain-Crumbs",
+          "followers_url": "https://api.github.com/users/Brain-Crumbs/followers",
+          "following_url": "https://api.github.com/users/Brain-Crumbs/following{/other_user}",
+          "gists_url": "https://api.github.com/users/Brain-Crumbs/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/Brain-Crumbs/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/Brain-Crumbs/subscriptions",
+          "organizations_url": "https://api.github.com/users/Brain-Crumbs/orgs",
+          "repos_url": "https://api.github.com/users/Brain-Crumbs/repos",
+          "events_url": "https://api.github.com/users/Brain-Crumbs/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/Brain-Crumbs/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        }
+      },
+      "_links": {
+        "comments": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/Vibez/issues/29/comments"
+        },
+        "commits": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/Vibez/pulls/29/commits"
+        },
+        "statuses": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/Vibez/statuses/58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392"
+        },
+        "html": {
+          "href": "https://github.com/Brain-Crumbs/Vibez/pull/29"
+        },
+        "issue": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/Vibez/issues/29"
+        },
+        "review_comments": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/Vibez/pulls/29/comments"
+        },
+        "review_comment": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/Vibez/pulls/comments{/number}"
+        },
+        "self": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/Vibez/pulls/29"
+        }
+      },
+      "author_association": "OWNER",
+      "auto_merge": null,
+      "draft": false,
+      "merged": true,
+      "mergeable": null,
+      "rebaseable": null,
+      "mergeable_state": "unknown",
+      "merged_by": {
+        "login": "brain-crumbs-vibez-controller[bot]",
+        "id": 355107251,
+        "node_id": "BOT_kgDOFSqBsw",
+        "avatar_url": "https://avatars.githubusercontent.com/u/55927359?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/brain-crumbs-vibez-controller%5Bbot%5D",
+        "html_url": "https://github.com/apps/brain-crumbs-vibez-controller",
+        "followers_url": "https://api.github.com/users/brain-crumbs-vibez-controller%5Bbot%5D/followers",
+        "following_url": "https://api.github.com/users/brain-crumbs-vibez-controller%5Bbot%5D/following{/other_user}",
+        "gists_url": "https://api.github.com/users/brain-crumbs-vibez-controller%5Bbot%5D/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/brain-crumbs-vibez-controller%5Bbot%5D/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/brain-crumbs-vibez-controller%5Bbot%5D/subscriptions",
+        "organizations_url": "https://api.github.com/users/brain-crumbs-vibez-controller%5Bbot%5D/orgs",
+        "repos_url": "https://api.github.com/users/brain-crumbs-vibez-controller%5Bbot%5D/repos",
+        "events_url": "https://api.github.com/users/brain-crumbs-vibez-controller%5Bbot%5D/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/brain-crumbs-vibez-controller%5Bbot%5D/received_events",
+        "type": "Bot",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "comments": 9,
+      "review_comments": 0,
+      "maintainer_can_modify": false,
+      "commits": 10,
+      "additions": 2294,
+      "deletions": 76,
+      "changed_files": 41
+    },
+    "comments": [
+      {
+        "url": "https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6961039686",
+        "body": "Independent QA review — PASS\n\nReviewer: `/root/aut003_qa`. Reviewed head: `58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392`.\nNative context: `280f373e8d8ebaf57711d085ea13c3780d3de58b8bf1631b4e01bef9f7397e64`.\nReport SHA-256: `e8ab690dfa1ff90267f59885fcfa901823d21729cad18046f3b91d898df4b292`.\n\nAll seven independent Windows probes and four focused Linux cases passed. All nine local checks passed. Hosted Windows CI remains a separate required merge gate. Earlier reviews and failures are retained.\n\n<details><summary>Full independent reviewer report</summary>\n\n```json\n{\n  \"taskId\": \"AUT-003\",\n  \"issue\": \"https://github.com/Brain-Crumbs/Vibez/issues/11\",\n  \"head\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n  \"base\": \"38dea54d2940027ebb93619bbc70d9a5b5a91343\",\n  \"role\": \"QA\",\n  \"agent\": \"/root/aut003_qa\",\n  \"outcome\": \"PASS\",\n  \"contextPackageId\": \"280f373e8d8ebaf57711d085ea13c3780d3de58b8bf1631b4e01bef9f7397e64\",\n  \"contextAcknowledged\": true,\n  \"findings\": [],\n  \"details\": {\n    \"acceptanceCriteriaScenarios\": [\n      \"AC01: Reviewed shared operations service and deterministic two-dependent-task coverage. The actual installed-provider rehearsal completed DEMO-001 then DEMO-002, with both native fixture tasks DONE and replay producing no duplicate work.\",\n      \"AC02: Reviewed role dispatch, native validator and independent-review composition, legal validation/review rework, PR/CI monitoring, and controlled merge delegation. Eight distinct real isolated Developer/QA/Architect/UAT sessions and two actual validator subprocesses passed in the installed rehearsal. Remote GitHub ports were simulated in that fixture; the actual AUT-003 PR, CI, reviews, and native completion remain separate delivery gates.\",\n      \"AC03: Reviewed separate semantic-successor and same-identity infrastructure retry handling, durable budgets, bounded exponential backoff, and restart behavior. Regression coverage verifies no semantic attempt is silently converted to an infrastructure retry, and exhausted budgets remain actionable exceptions.\",\n      \"AC04: Reviewed duplicate start/resume, concurrent same-ID ownership, stale locks, pending publication, immutable journals, uncertain external effects, and replay. In-flight effects block unsafe continuation; duplicate dispatch/evidence/provider/PR/merge is prevented. Final synchronous dispatch checks retain the authorized capability after asynchronous preflight.\",\n      \"AC05: Reviewed scope, grant, plan, source, dirty-worktree/drift, CI failure, incomplete approval, clarification, retry exhaustion, and corruption paths. Unsafe or out-of-scope work is durably quarantined or reported with actionable status rather than admitted as successful.\",\n      \"AC06: Reviewed cancellation, revocation, deadline, pause/drain, resume, and replacement-operation ownership. Acknowledgments bind the exact captured control sequence and matching state. Concurrent validation preserves the cancellation signal; unconfirmed drains and pending effects cannot be reported as completed cancellation. Cancel and grant-revocation checks immediately before merge prevent mutation after authority is lost.\",\n      \"AC07: Shared service/CLI operations, additive package exports/schemas, issue-75 ownership, manual compatibility and installed consumers remain covered. Final local conformance passes all three top-level suites. Installed operations select three exact representative scenarios and assert three passes, zero failures/cancellations, every expected name and positive TAP count with NODE_TEST_CONTEXT cleared. All 28 source operation tests remain in the full suite.\"\n    ],\n    \"regressionNegativeCaseCoverage\": [\n      \"Independently reviewed the entire fff7562-to-58a2c8e diff: only scripts/test-candidate.mjs, tests/packed-package.test.mjs and tests/workflow-operations.test.mjs changed. Production runtime, schemas, contracts, proof script and package bytes are unchanged.\",\n      \"Both Windows installed CI jobs reproduced harness timeouts. The correction removes duplicate exhaustive fault execution from installed matrix cells while retaining the complete source suite, requires three exact installed scenarios, and uses bounded Windows-only watchdogs. Production budgets were not relaxed.\",\n      \"Verified deadline fixture timer ordering: Windows operation 120 seconds, provider 180 seconds, native session 240 seconds, test watchdog 10 minutes. Linux original 5/10/60 seconds and 30-second watchdog remain. Original quarantine, pending-writer rejection, drained resume BUDGET_EXHAUSTED, original session, one-agent and zero-validator assertions remain.\",\n      \"Independent exact-head Linux focused run passed 4/4: dependent two-task/replay/CLI/upgrade-backup, active caller cancellation, operation deadline after drain, and concurrent validator cancellation; zero failures/cancellations/skips.\",\n      \"Independent Windows Node v24.18.0 fixed-NTFS run against a fresh offline installation of the exact final tarball passed 7/7 with zero failures/cancellations/skips. Covered same-ID competition, uncertain publication cancellation/drain, deadline quarantine and exhausted resume, concurrent validator cancellation, and intent/fresh pre-merge cancellation. Copied tests used only public package exports and the installed example configuration; npm integrity and archive SHA256 were checked.\",\n      \"Independently reproduced and confirmed resolution of the control acknowledgment race where an older pause could acknowledge a newer cancel. Captured control tokens and matching-status acknowledgment now preserve truthful state; public-service nested-control regression passes.\",\n      \"Independently reproduced and confirmed resolution of grant revocation during final fresh pre-merge GET. The retained scoped capability is reasserted synchronously before integration mutation; regression observes zero merge calls after revocation.\",\n      \"Independently ran eight focused regression cases on runtime head 764852560b940c21bae18772e28d12acccf67118: completed old grant permits the next approved operation while old-ID mutation is denied; unfinished other-grant history retains ownership; delayed pre-merge cancellation at intent and fresh preflight prevents merge; final preflight revocation prevents merge; idle controls acknowledge and resume correctly; incomplete approval recovery respects replacement ownership. All eight passed.\",\n      \"Reviewed regression assertions for duplicate validator IDs and exact validator identity sets; concurrent two-validator cancellation; expired/revoked grants; dirty source and branch drift; CI failure; same-ID concurrent operation claims; stale-lock recovery; pending receipt publication; immutable early audit records; and control corruption.\",\n      \"Confirmed the previous manual-driver QA-versus-Architect failure was a fixed-sleep test race against the receipt stability interval. The test now polls for a bounded receipt state; production evidence-stability enforcement remains intact.\",\n      \"Confirmed installed test coverage no longer silently disappears when a nested node --test inherits NODE_TEST_CONTEXT. Final ordering executes operations before the helper intentionally removes schemas for its negative consumer check.\",\n      \"Reviewed final adversarial results showing the baseline passes while self-approval and pre-merge-head guard weakening are detected.\"\n    ],\n    \"compatibilityMigrationRollback\": [\n      \"Reviewed the issue, repository instructions, constitution, migration/admission requirements, affected semantic contracts and consumers, operation documentation, and validation-plan clarification.\",\n      \"Supervisor orchestration composes existing assignment, validation, review, PR and controlled-merge authorities. It does not manufacture native lifecycle completion or substitute fixture evidence for AUT-003 approvals.\",\n      \"Historical operations can be read after a grant changes, while mutation and new dispatch require current authority; unfinished history still retains its workspace claim. Existing historical evidence remains immutable.\",\n      \"Documentation covers opt-in bounded admission, control/status and exception handling, disabling further admission, draining active work, retaining operation history, and returning to the existing manual/once driver path.\",\n      \"Native build/test validation and independent context are revision-bound. The final working tree was independently observed clean at the reviewed head.\"\n    ],\n    \"independence\": \"Read-only source/native-state review by /root/aut003_qa. No candidate source or native lifecycle state was changed. Independent Linux tests and Windows tests ran in disposable fixtures; only private diagnostic files and reviewer reports were written.\",\n    \"reviewScope\": \"Implementation QA approval for this exact head and native context. Hosted Windows full-source and Node22/24 installed CI were still running when signed; all eight hosted checks, the remaining independent roles, discussion, protection, mergeability and authorized integration remain strict separate controller gates before merge. The real-provider rehearsal uses simulated remote integration and is not live AUT-003 completion.\"\n  },\n  \"evidence\": [\n    {\n      \"kind\": \"independent-focused-regressions\",\n      \"revision\": \"764852560b940c21bae18772e28d12acccf67118\",\n      \"processId\": 25352,\n      \"command\": \"node --test --test-name-pattern='completed grant|unfinished operation under another|cancellation during pre-merge|revocation during final|idle pause|incomplete approval' tests/workflow-operations.test.mjs\",\n      \"result\": \"Historical 8/8 PASS at runtime head764, exit0. Current production runtime and fault assertions are unchanged; selected Windows test watchdogs changed in58a2 and affected exact-head Linux/Windows tests were rerun separately as recorded below.\"\n    },\n    {\n      \"kind\": \"real-provider-proof\",\n      \"path\": \"/tmp/vibez-real-operations-06K6bC/report.json\",\n      \"retainedPath\": \"/home/justi/.local/state/vibez-aut003/validation/proof-764852560b94/report.json\",\n      \"sha256\": \"7ab5c9708e0717fcaecf89ee18a0c3f7d84477a60cf611f22bbe476db0eeda85\",\n      \"proofScriptSha256\": \"dd1910904d20041fd1917aab05a84939311ca0ae5c17afcc5f6e6b3810b5ea69\",\n      \"installedTreeSha256\": \"97b13ebbf156300a4b82be6a2b81771fefb181ffe535a4970bf16ceaa6486238\",\n      \"result\": \"PASS. Independently verified all eight isolated real-provider session intent/terminal digests and bindings, two real validator exits, two native fixture DONE records, ordered completion, marker bytes, and replay invariants. Simulated remote push/create/ready/merge counts each equal two.\"\n    },\n    {\n      \"kind\": \"native-review-context\",\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/review-context-qa-58a2c8eafa81.json\",\n      \"sha256\": \"e5764f80660f74991efd3a65e4f9b554e7f88ba0e9a4ad5cf879901100c27041\",\n      \"result\": \"Read 12 context artifacts and independently recomputed computeContextPackageId. Exact AUT-003/QA/head58a2 and native build@3/test@3 PASS; unchanged contracts/runtime and complete successor diff reviewed.\"\n    },\n    {\n      \"kind\": \"exact-head-checks\",\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/checks-58a2c8eafa81.json\",\n      \"sha256\": \"4e520ec1102a28f440fc7c8a789e0be8f1e3d33f067c67a35b59b481c339ec49\",\n      \"result\": \"All nine README/task checks exit 0 at exact head, including native build/test, schemas/contracts, Python, seed, adversarial mutations and installed conformance.\"\n    },\n    {\n      \"kind\": \"native-validation\",\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/native-validation-58a2c8eafa81.json\",\n      \"sha256\": \"00dfa666eb18825e98728d13770b73b7815d2387340fa62663bf4b6664346d7e\",\n      \"result\": \"PASS; DEV_VALIDATED at exact head, repository build@3/test@3. Earlier failed validation and review records retained through legal native rework.\"\n    },\n    {\n      \"kind\": \"final-installed-conformance\",\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/conformance-58a2c8eafa81.log\",\n      \"sha256\": \"8a79832d4a402901a9672d9414b1dd291b1d54a11738c20ed3a29895e82452a1\",\n      \"result\": \"Independently read three top-level passes, zero failures/cancellations/skips, exact head and artifact. Includes three enforced installed operations, JS/TypeScript/CLI consumers, manual driver and non-npm consumer.\"\n    },\n    {\n      \"kind\": \"artifact-equivalence\",\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/artifact-equivalence-58a2c8eafa81.json\",\n      \"sha256\": \"a8880b9ba481b8bb583699b48dce702b5f7a1d69745e332213f13ef4e7490836\",\n      \"result\": \"Independently hashed original764 and final58a2 tarballs: identical SHA256553916414a69808088a40da71c6c2e439c0edab1bd8f7f06de8cb80a22a761f8. Rehearsal script unchanged; only tests/harness differ.\"\n    },\n    {\n      \"kind\": \"final-proof-binding\",\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/proof-binding-58a2c8eafa81.json\",\n      \"sha256\": \"67e60e09b670bf5d76cc36e2073aba539039bf5f5a4059a406725daacc047aa8\",\n      \"result\": \"Preserves original proof report and explicitly binds its identical package bytes and unchanged script to final58a2.\"\n    },\n    {\n      \"kind\": \"independent-exact-head-linux\",\n      \"revision\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n      \"processId\": 28248,\n      \"result\": \"4/4 PASS, exit0, 23711.939055ms, zero failures/cancellations/skips. Selected dependent two-task, active caller cancellation, deadline and concurrent validator cancellation.\"\n    },\n    {\n      \"kind\": \"independent-exact-head-installed-windows\",\n      \"path\": \"C:\\\\Projects\\\\Vibez-aut003-inspect\\\\.agent\\\\qa-windows-58a2c8e\\\\windows-result.json\",\n      \"sha256\": \"025f45ee52ff175f74299375563b3d77137df0cc1172525de0905983529d7ebe\",\n      \"tapPath\": \"C:\\\\Projects\\\\Vibez-aut003-inspect\\\\.agent\\\\qa-windows-58a2c8e\\\\windows-focused.tap\",\n      \"tapSha256\": \"8610cce7f0eae7740edf8cb7e860fe82c7869b18da23e4728b9ecb59799917ab\",\n      \"copiedTestSha256\": \"1618cc54b65a474223e9aeadf803d363d41855454f159c547e8c0bf666abff66\",\n      \"processId\": 28000,\n      \"result\": {\n        \"head\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n        \"artifactSha256\": \"553916414a69808088a40da71c6c2e439c0edab1bd8f7f06de8cb80a22a761f8\",\n        \"node\": \"v24.18.0\",\n        \"platform\": \"win32\",\n        \"started\": \"2026-11-17T20:52:56.253Z\",\n        \"finished\": \"2026-11-17T21:00:07.222Z\",\n        \"code\": 0,\n        \"signal\": null,\n        \"error\": null,\n        \"tapSha256\": \"8610cce7f0eae7740edf8cb7e860fe82c7869b18da23e4728b9ecb59799917ab\",\n        \"tests\": 7,\n        \"pass\": 7,\n        \"fail\": 0,\n        \"cancelled\": 0,\n        \"skipped\": 0\n      },\n      \"filesystem\": \"NTFS Fixed\",\n      \"scope\": \"Fresh offline installation; public package imports; disposable test repositories; five top-level selected scenarios include two pre-merge subcases, seven Node test results total.\"\n    }\n  ],\n  \"reviewedAt\": \"2026-11-17T21:06:25.373452+00:00\",\n  \"priorReview\": {\n    \"head\": \"fff756284f027cd910c9d76be1108bd4ed56ffcc\",\n    \"path\": \"C:\\\\Projects\\\\Vibez-aut003-inspect\\\\.agent\\\\reviews\\\\qa.json\",\n    \"sha256\": \"0a054b23272acfc30319d0a670e80461c0d1e488790b8b5a1f3b4975156270ef\",\n    \"retainedUnchanged\": true\n  }\n}\n```\n\n</details>"
+      },
+      {
+        "url": "https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6962756408",
+        "body": "Independent Architecture review — PASS\n\nReviewer: `/root/aut003_architecture`. Reviewed head: `58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392`.\nNative context: `1da3bc8590a5c47e25bd85f49947417a054a6e1e85f73c1c2d9b56230714636d`.\nReport SHA-256: `91b2f75c1c14732bbcae7754f816c10d06d53b12722c6e4901094229693a4c37`.\n\nAll eight exact-head CI jobs passed. The Windows source suite passed all AUT-003 cases; its 14 skips are unchanged Linux-only runtime tests. Prior findings and the earlier BLOCKED review are retained and resolved by this successor.\n\n<details><summary>Full independent reviewer report</summary>\n\n```json\n{\n  \"head\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n  \"base\": \"38dea54d2940027ebb93619bbc70d9a5b5a91343\",\n  \"role\": \"Architect\",\n  \"agent\": \"/root/aut003_architecture\",\n  \"outcome\": \"PASS\",\n  \"contextPackageId\": \"1da3bc8590a5c47e25bd85f49947417a054a6e1e85f73c1c2d9b56230714636d\",\n  \"findings\": [],\n  \"details\": {\n    \"affectedContractsModules\": [\n      \"control-plane.workflow-driver: one WorkflowOperations service coordinates the existing driver and configured native owners; durable plan, operation, control, reservation and charge records are observations, not lifecycle authority.\",\n      \"control-plane.dev-validation: additive enterRework owns the exact failed-validation transition, verifies current unique validator evidence and original actor/run/revision, and preserves the original failure.\",\n      \"control-plane.review-rework: existing enterRework/resumeDevelopment and approval-currency semantics remain authoritative; successors retain assignment lineage and use a new semantic attempt identity.\",\n      \"control-plane.orchestration-engine: existing sequential roles and durable run identity are reused; capped exponential infrastructure retries and optional dispatch fences are documented.\",\n      \"control-plane.agent-provider: neutral role/result/error meanings and isolated session identity are preserved through the configured worker and runner.\",\n      \"control-plane.pr-lifecycle and control-plane.controlled-merge: existing PR identity, current approvals, readiness, exact-head integration and MERGED/DONE owners remain in use.\",\n      \"control-plane.cli-shell: operation commands route to the shared service and preserve the established CLI envelope and manual commands.\",\n      \"Configured project-services, scoped host-policy, history reader, recovery evidence integrity, public exports and package schemas were reviewed within the retained admission amendments.\"\n    ],\n    \"dependencyConsumerSurfaces\": [\n      \"control-plane.local-agent-adapter and orchestration consumers retain neutral provider result, context, role, cancellation and error semantics.\",\n      \"Configured application-service and CLI callers share the same operation IDs, audit, controls and resume behavior; issue #75 can consume this service without a second supervisor.\",\n      \"Manual driver and local-manual-orchestration consumers retain their existing packet/result and explicit continuation paths.\",\n      \"Review-framework consumers receive exact current validator evidence before independent review; semantic failures remain distinct from provider infrastructure failures.\",\n      \"Workflow-diagnostics and recovery-tools remain read-only consumers; validation-rework references are recognized without adding a reset or approval path.\",\n      \"PR/CI and merge-readiness consumers still resolve the canonical PR and current exact-head approvals through their owning services.\",\n      \"Controlled-merge callers retain uncertain-response reconciliation and sole native MERGED/DONE authority; fresh effects additionally recheck the retained scoped capability at synchronous dispatch.\",\n      \"vibez.history-reader observes versioned operation journals, validates their full chains, and rejects unsupported or unsettled histories during upgrade/rollback preflight.\",\n      \"Installed JavaScript, TypeScript, standalone CLI and non-npm consumers passed final Linux and Windows Node 22/24 conformance. Three exact installed-operation scenarios cover dependent completion/replay/history, active worker cancellation and concurrent validator cancellation; the complete 28-case source operation suite remains enabled and all AUT-003 cases passed in the final Windows source job.\"\n    ],\n    \"semanticCompatibilityAssessment\": \"PASS. The changes are additive at existing consumer boundaries, including optional cancellation/dispatch fences and validation-owned rework. Existing manual-provider, review-result, native lifecycle/evidence and assignment meanings remain intact. Completed old-grant operations can be inspected without granting new write/replay authority; all active foreign-grant ownership still blocks replacement admission. The private rc.4 reader preserves existing rc.3 relocated history and provenance, while rc.3 and earlier explicitly reject new operation history, including completed records. The documented rollback retains the original configured host, package, grant, assignment, history and budgets and supports stepwise --once continuation. The final test-only successor uses explicit representative installed-operation scenarios and bounded Windows-only harness budgets while retaining complete source fault coverage, the negative missing-schema check and unchanged production limits. It produces the exact same installed package bytes as the successful authorized real-provider proof. Final Windows Node 22/24 installed jobs and the full Windows source job pass; the fourteen Windows source skips are the unchanged Linux-only local-llama runtime tests, not AUT-003 cases.\",\n    \"invariantDependencyRuleAssessment\": \"PASS. The supervisor selects only exact approved plan definitions and grant scope, using native DONE prerequisites and separately retained evidence-backed external admission edges. It does not create a competing lifecycle or review engine, broaden worker credentials, weaken repository protection, or manufacture observed branch/head state. Only scoped start may observe the exact integration ref before the native start owner switches to the canonical branch; other actions remain canonically fenced. Immutable audit/control tails, full chain validation, single-writer claims, external drain proof, pending-effect fences, monotonic budgets and exact rework dispatch/charge receipts govern continuation. Semantic successors retain predecessor evidence and assignment while obtaining new attempt identity; infrastructure retries retain their original identity. Cancellation/deadline and live-grant authority are rechecked after asynchronous preflight and synchronously immediately before fresh merge mutation, while already-issued effects remain reconcilable through the native owner. Final validation and QA evidence in the inspected Architecture context bind this exact revision.\"\n  },\n  \"reviewScope\": [\n    \"Independent read-only Architecture review; no task source or native state was edited by this reviewer.\",\n    \"Reviewed the full implementation, affected contracts/consumers, admission amendments, history compatibility, legal validation/review rework, one-writer recovery, cancellation, effect reconciliation and rollback.\",\n    \"Final exact head and clean canonical worktree were rechecked after CI. The native Architecture context was independently inspected and acknowledged: all 39 artifacts matched the exact commit/projections/diff or current PASS prerequisites, with a complete manifest and no exclusions. Relative to the prior context, 36 artifacts are unchanged; only the source diff, validator evidence @3 and QA @2 changed. Its content identity was recomputed again before issuing this report.\",\n    \"This is Architecture gate approval for the named revision. Actual feature UAT, hosted PR checks/protection and controlled integration remain the existing delivery owners; fixture role results are not substituted for those approvals.\",\n    \"The prior Windows CI BLOCKED judgment and the earlier local-checks PASS remain preserved. The final successor resolves that acceptance blocker with all eight exact-head hosted CI jobs successful; no native or historical record was replaced by this reviewer.\"\n  ],\n  \"resolvedFindings\": [\n    {\n      \"id\": \"ARCH-AUT003-001\",\n      \"resolution\": \"Historical observation is separated from current-grant mutation authorization. Sequential grants work while old-ID writes and active foreign claims fail closed; focused regressions passed.\"\n    },\n    {\n      \"id\": \"ARCH-AUT003-002\",\n      \"resolution\": \"The orchestration contract now specifies capped exponential delay, the validation request documents optional signal, and policy guidance states the narrow start-only integration-branch exception.\"\n    },\n    {\n      \"id\": \"ARCH-AUT003-003\",\n      \"resolution\": \"Operation control is checked after asynchronous intent discovery and at final fresh merge dispatch. Delayed intent/fresh-preflight cancellation regressions passed with zero merge calls.\"\n    },\n    {\n      \"id\": \"QA final-preflight grant revocation\",\n      \"resolution\": \"The original merge capability is retained through native merge and reasserted synchronously after all asynchronous guards/host callbacks immediately before the integration mutation; the independent focused regression passed.\"\n    },\n    {\n      \"id\": \"Installed operation coverage and consumer ordering\",\n      \"resolution\": \"NODE_TEST_CONTEXT is removed from the nested test environment, a positive TAP count is required, and operation tests run before packed-consumer intentionally removes schemas. Final native test and installed conformance both passed.\"\n    },\n    {\n      \"id\": \"ARCH-AUT003-004\",\n      \"resolution\": \"Windows installed conformance no longer repeats the exhaustive native fault suite in every matrix cell. Three exact representative installed scenarios must pass, with explicit positive count and no failure/cancellation; full source fault coverage remains. Measured Windows-only test watchdogs and fixture timer ordering were corrected without changing production budgets. Both Windows installed jobs and the complete Windows source job now pass at the final exact head.\"\n    }\n  ],\n  \"previousReport\": {\n    \"head\": \"2d4bdbabc6d0254bdb570657edb64b6cf9d2fb63\",\n    \"outcome\": \"FAIL\",\n    \"path\": \"C:\\\\Projects\\\\Vibez-aut003-inspect\\\\.agent\\\\reviews\\\\2d4bdbabc6d0254bdb570657edb64b6cf9d2fb63\\\\architecture.json\",\n    \"sha256\": \"df66d710dcf4f69d50407872a7d5624fef5d32439ce72dcc6bf693aa95aedfe2\",\n    \"preserved\": true\n  },\n  \"evidence\": [\n    {\n      \"kind\": \"native-architecture-context\",\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/review-context-architecture-58a2c8eafa81.json\",\n      \"sha256\": \"bd727a48b3a50b887e595b98ed80c939aab67d4c8abfafe3fafdce5296eb0194\",\n      \"contextPackageId\": \"1da3bc8590a5c47e25bd85f49947417a054a6e1e85f73c1c2d9b56230714636d\",\n      \"result\": \"Independently recomputed ID; 39/39 artifacts matched exact-commit content/projections, exact base-to-head diff, or current PASS prerequisites; included manifest matched, excluded count zero.\",\n      \"diffSha256\": \"62e6ddae72e7e1556c0d08a191d187c4ebc6a18546032dc00a323e72297e10f2\",\n      \"prerequisiteEvidence\": [\n        \"AUT-003::validator::repository:build@3\",\n        \"AUT-003::validator::repository:test@3\",\n        \"AUT-003::role::QA@2\"\n      ]\n    },\n    {\n      \"kind\": \"independent-focused-regressions\",\n      \"head\": \"764852560b940c21bae18772e28d12acccf67118\",\n      \"command\": \"node --test --test-name-pattern='completed grant history|unfinished operation under another grant|cancellation during pre-merge|revocation during final merge' tests/workflow-operations.test.mjs\",\n      \"result\": \"6 tests PASS, zero failures/skips/cancellations, exit 0. Final runtime is byte-identical; only fixture/watchdog budgets and installed-test selection changed subsequently. Final exact-head Windows probes separately confirm the affected timeout/cancellation assertions.\"\n    },\n    {\n      \"kind\": \"final-native-validation\",\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/native-validation-58a2c8eafa81.json\",\n      \"sha256\": \"00dfa666eb18825e98728d13770b73b7815d2387340fa62663bf4b6664346d7e\",\n      \"result\": \"PASS at final head; repository:build and repository:test both PASS, DEV_VALIDATED, no failed checks.\"\n    },\n    {\n      \"kind\": \"final-required-checks\",\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/checks-58a2c8eafa81.json\",\n      \"sha256\": \"4e520ec1102a28f440fc7c8a789e0be8f1e3d33f067c67a35b59b481c339ec49\",\n      \"result\": \"All nine recorded stages exit 0 at final head: npm-ci, Python dependencies, native validation, schema fixtures, 53 contracts/task records, nine Python tests, seed export, adversarial mutations and installed conformance.\"\n    },\n    {\n      \"kind\": \"final-installed-conformance\",\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/conformance-58a2c8eafa81.log\",\n      \"sha256\": \"8a79832d4a402901a9672d9414b1dd291b1d54a11738c20ed3a29895e82452a1\",\n      \"result\": \"3 top-level suites PASS, zero failures/skips/cancellations. The nested installed operation runner requires exactly three passing named scenarios, no failure/cancellation and a positive executed-test count; final head and artifact digest recorded.\"\n    },\n    {\n      \"kind\": \"artifact-equivalence\",\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/artifact-equivalence-58a2c8eafa81.json\",\n      \"sha256\": \"a8880b9ba481b8bb583699b48dce702b5f7a1d69745e332213f13ef4e7490836\",\n      \"result\": \"Direct independent hashing confirmed byte-identical 764 and final 58a2 tarballs. Final source changes since fff are only tests/packed-package.test.mjs, tests/workflow-operations.test.mjs and scripts/test-candidate.mjs; production implementation, contracts, schemas and proof script are unchanged.\",\n      \"package\": \"@brain-crumbs/vibez@0.1.0-rc.4\",\n      \"tarballSha256\": \"553916414a69808088a40da71c6c2e439c0edab1bd8f7f06de8cb80a22a761f8\",\n      \"scriptSha256\": \"dd1910904d20041fd1917aab05a84939311ca0ae5c17afcc5f6e6b3810b5ea69\"\n    },\n    {\n      \"kind\": \"authorized-real-provider-artifact-proof\",\n      \"path\": \"/tmp/vibez-real-operations-06K6bC/report.json\",\n      \"sha256\": \"7ab5c9708e0717fcaecf89ee18a0c3f7d84477a60cf611f22bbe476db0eeda85\",\n      \"originalSourceCommit\": \"764852560b940c21bae18772e28d12acccf67118\",\n      \"installedTreeSha256\": \"97b13ebbf156300a4b82be6a2b81771fefb181ffe535a4970bf16ceaa6486238\",\n      \"result\": \"PASS: 8 fresh real isolated local-llama role sessions, 2 actual validator subprocesses, DEMO-001 then dependent DEMO-002 native fixture DONE, replay did not repeat work; simulated remote push/create/ready/merge each exactly twice.\",\n      \"scope\": \"Disposable installed-artifact behavior evidence with explicitly simulated GitHub ports. Preserved original sourceCommit; final-revision applicability is established by exact artifact and proof-script identity, not rewritten history. It is not AUT-003 live review, hosted CI, PR approval or native completion authority.\"\n    },\n    {\n      \"kind\": \"independently-verified-final-windows-probe\",\n      \"path\": \"C:\\\\Projects\\\\Vibez-aut003-inspect\\\\.agent\\\\qa-windows-58a2c8e\\\\windows-result.json\",\n      \"sha256\": \"025f45ee52ff175f74299375563b3d77137df0cc1172525de0905983529d7ebe\",\n      \"tapPath\": \"C:\\\\Projects\\\\Vibez-aut003-inspect\\\\.agent\\\\qa-windows-58a2c8e\\\\windows-focused.tap\",\n      \"tapSha256\": \"8610cce7f0eae7740edf8cb7e860fe82c7869b18da23e4728b9ecb59799917ab\",\n      \"result\": \"7/7 PASS on Windows fixed NTFS/Node v24.18.0 with zero failures/cancellations/skips. Verified exact final test-source bytes after only public-import rewrites, archive SHA256 and npm integrity validation. Same-ID competition, uncertain publication drain, actual deadline expiry, concurrent validation cancellation and both intent/fresh pre-merge cancellation boundaries passed.\"\n    },\n    {\n      \"kind\": \"independently-retrieved-final-hosted-ci\",\n      \"head\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n      \"runId\": 44173220629,\n      \"url\": \"https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629\",\n      \"result\": \"Commit-associated CI run completed SUCCESS; all eight jobs completed SUCCESS, independently queried after the final Windows source job finished.\",\n      \"snapshotPath\": \"/home/justi/.local/state/vibez-aut003/validation/ci-58a2c8eafa81.json\",\n      \"snapshotSha256\": \"21b0e12767dc911d3549a1ba3096465a2595400a76d2767800b2f37799e9a51f\",\n      \"jobs\": [\n        {\n          \"id\": 134357626292,\n          \"name\": \"Schema and contract validation (Python)\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357626896,\n          \"name\": \"Seed validation (Windows)\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357626998,\n          \"name\": \"Pack exact candidate and record digests\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357627244,\n          \"name\": \"Build and test (Node)\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357938124,\n          \"name\": \"Installed consumer (ubuntu-24.04, Node 24)\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357938153,\n          \"name\": \"Installed consumer (windows-2025, Node 22)\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357938221,\n          \"name\": \"Installed consumer (windows-2025, Node 24)\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357938264,\n          \"name\": \"Installed consumer (ubuntu-24.04, Node 22)\",\n          \"conclusion\": \"success\"\n        }\n      ],\n      \"installedWindowsObservation\": \"Directly retrieved Node 22 and Node 24 logs: three top-level suites pass with zero failure/cancellation/skip and exact final revision plus tarball SHA256 553916414a69808088a40da71c6c2e439c0edab1bd8f7f06de8cb80a22a761f8. Hosted Node versions were 22.23.4 and 24.22.2.\"\n    },\n    {\n      \"kind\": \"final-windows-source-suite-and-skip-scope\",\n      \"url\": \"https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629/job/134357626896\",\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/ci-windows-source-58a2c8eafa81.log\",\n      \"sha256\": \"9b7750c9ad1cd53e549ee6499bea997120d513ff26cb95869128677b27a6c576\",\n      \"result\": \"950 total tests: 936 PASS, zero failures, zero cancellations, fourteen skips. All AUT-003 operation cases visibly passed, including the complete source fault suite and nested dirty/commit and intent/fresh cases.\",\n      \"skipAssessment\": \"All fourteen skipped names match the explicit skip:!linux tests in tests/local-llama-provider.test.mjs; linux is process.platform === 'linux'. That file is unchanged from base 38dea54. These are existing Linux-only isolated-runtime tests, exercised in the Linux validation path, not newly skipped AUT-003 cases. Windows schema fixtures, 53 contract/task records and seed verification also passed.\"\n    }\n  ],\n  \"contextAcknowledged\": true,\n  \"reviewedAt\": \"2026-11-17T22:22:02.737Z\",\n  \"reviewHistory\": [\n    {\n      \"head\": \"2d4bdbabc6d0254bdb570657edb64b6cf9d2fb63\",\n      \"outcome\": \"FAIL\",\n      \"sha256\": \"df66d710dcf4f69d50407872a7d5624fef5d32439ce72dcc6bf693aa95aedfe2\",\n      \"preserved\": true\n    },\n    {\n      \"head\": \"fff756284f027cd910c9d76be1108bd4ed56ffcc\",\n      \"outcome\": \"PASS\",\n      \"scope\": \"Local checks; superseded after hosted Windows timeout\",\n      \"path\": \"C:\\\\Projects\\\\Vibez-aut003-inspect\\\\.agent\\\\reviews\\\\fff756284f027cd910c9d76be1108bd4ed56ffcc\\\\architecture-local-checks-pass-superseded.json\",\n      \"sha256\": \"8e52fc900283bf2e4a9a86687ff82fbd7eee75b03ac20d9ce180821330bf5c50\",\n      \"preserved\": true\n    },\n    {\n      \"head\": \"fff756284f027cd910c9d76be1108bd4ed56ffcc\",\n      \"outcome\": \"BLOCKED\",\n      \"contextPackageId\": \"c6c41fd568ba0677a6958866c65edeebf6737677b80c3e876b2231c134173231\",\n      \"path\": \"C:\\\\Projects\\\\Vibez-aut003-inspect\\\\.agent\\\\reviews\\\\fff756284f027cd910c9d76be1108bd4ed56ffcc\\\\architecture-windows-ci-blocked.json\",\n      \"sha256\": \"6ad4060fbdeec29f10d85bd960c92065bc7f0f62aed8a1100aea5010f864acb5\",\n      \"preserved\": true\n    }\n  ]\n}\n```\n\n</details>"
+      },
+      {
+        "url": "https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6962938158",
+        "body": "Independent UAT/Product review — PASS\n\nReviewer: `/root/aut003_uat`. Reviewed head: `58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392`.\nNative context: `33f49678dab044a0e74bc43e6cae841765182012df0d575b852683b0fe499349`.\nReport SHA-256: `9d98410062034178da3ec1b54e69558641a097b3c407cb123a65e8e5b8e37a80`.\n\nAll seven acceptance criteria are supported, with no unresolved findings. This independent review verifies the final context, operator behavior, exact-artifact real-provider evidence and all eight passing CI jobs. Actual feature merge and native DONE remain the controller's final delivery gate.\n\n<details><summary>Full independent reviewer report</summary>\n\n```json\n{\n  \"head\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n  \"taskId\": \"AUT-003\",\n  \"role\": \"UAT/Product\",\n  \"agent\": \"/root/aut003_uat\",\n  \"reviewedAt\": \"2026-11-17T22:31:55.598Z\",\n  \"outcome\": \"PASS\",\n  \"findings\": [],\n  \"contextPackageId\": \"33f49678dab044a0e74bc43e6cae841765182012df0d575b852683b0fe499349\",\n  \"contextAcknowledged\": true,\n  \"details\": {\n    \"intendedOutcomesScenarios\": [\n      \"AC-01: An operator approves one bounded plan covering at least two dependent tasks; the shared operation selects and completes them in dependency order without per-task selection or routine handoffs.\",\n      \"AC-02: Existing native owners drive isolated Developer, QA, Architect and UAT sessions, real validation, legal rework, canonical PR/CI and controlled completion. Fixture role results and remote simulations remain distinguishable from this feature's independent approvals and actual delivery.\",\n      \"AC-03: Semantic failure has an auditable successor attempt; infrastructure recovery preserves identity and uses bounded exponential backoff. Restart cannot reset retry, rework or other budgets.\",\n      \"AC-04: Repeated starts, resume, concurrent calls and uncertain remote responses retain single operation/workspace ownership and cannot duplicate active agents, assignments, evidence, PRs or merges.\",\n      \"AC-05: Scope violations, missing approval, unsafe recovery, corruption, exhausted budgets and clarification needs produce persistent actionable exceptions that an operator can inspect.\",\n      \"AC-06: Inspect, pause, drain, cancel, revocation and resume describe actual writers and pending effects. Acknowledgment corresponds to the exact requested control. A corrected approved plan can replace only a safely cancelled empty operation; old operation IDs cannot regain ownership.\",\n      \"AC-07: Service and CLI share operation behavior and installed-package boundaries, providing the interface expected by issue #75 without a second supervisor. Compatibility, migration and rollback guidance preserves native assignments, evidence, grant scope and budgets.\"\n    ],\n    \"observedBehavior\": [\n      \"Independently reviewed the implementation and operator documentation through the final revision, including admission/task requirements and the retained amendments. The canonical branch is clean at the stated head, based on main 38dea54d2940027ebb93619bbc70d9a5b5a91343. Recomputed the native UAT context identity; all three artifacts exactly match committed task projection and current native Architect@2/QA@2 PASS records. The manifest and revision bindings match.\",\n      \"Resolved the three operator findings from this review: durable controlSequence and matching requested-control status prevent stale or concurrent acknowledgment; verified cancellation of an invalid empty plan permits a corrected approved plan while retaining history and excluding old start/resume; documented original-host stepwise resume --once provides a usable manual continuation path without changing provider/configuration or using legacy clipboard commands.\",\n      \"Reviewed later-grant continuation and ownership rules: completed previous-grant history is inspectable without granting old write authority; unfinished foreign-grant history still blocks replacement. Cancellation, deadline and grant revocation are rechecked after asynchronous preflight and at synchronous fresh-merge dispatch.\",\n      \"Inspected the completed installed-package real-provider rehearsal and underlying native lifecycle/role evidence. One operation ran DEMO-001 then DEMO-002, eight distinct local-llama.cpp role sessions and two actual validator subprocesses. The second assignment followed the first native DONE; both tasks reached controller-owned native DONE. Final markers are ready, and replay did not repeat work.\",\n      \"The rehearsal explicitly uses simulated remote GitHub ports for push/PR/CI/merge behavior; its count of two pushes, PRs, readiness observations and merges is fixture evidence. This meets the issue's authorized real-provider demonstration together with the actual AUT-003 feature PR, CI and independent reviews. The issue expressly makes this normal feature work, not an additional hosted-canary requirement. Actual AUT-003 native controlled completion remains the delivery owner's separate final gate.\",\n      \"The real-provider report retains original source commit 764852560b940c21bae18772e28d12acccf67118. Independently compared the original and final candidate archives byte for byte and by SHA256; they are identical at 553916414a69808088a40da71c6c2e439c0edab1bd8f7f06de8cb80a22a761f8. The unchanged rehearsal script and preserved equivalence receipt bind this runtime evidence to the final artifact without relabeling the original run.\",\n      \"Reviewed the final test-only successor delta. Installed conformance requires three exact public scenarios with positive TAP output, all names present, three passes and zero failures/cancellations, and clears inherited NODE_TEST_CONTEXT. The suite runs before intentional missing-schema damage. Windows-only test watchdog/deadline adjustments remain bounded; production operation budgets are unchanged and all 28 source operation cases remain enabled.\",\n      \"Read the final nine-command local validation record: all exit zero, including native validation, schemas/contracts, Python/seed checks, adversarial mutations and installed conformance. Read the independent Windows installed-package QA runner/results: seven passes, zero failures/cancellations/skips, covering concurrent ownership, uncertain publication, deadline quarantine, validator cancellation and pre-merge cancellation.\",\n      \"Independently queried live GitHub CI for run 44173220629: all eight jobs completed successfully at the exact final head, including installed Node 22/24 on Linux and Windows. Read the retained full Windows source output: 950 total, 936 passes, zero failures/cancellations, fourteen skips. All AUT-003 operation cases passed. Compared the fourteen skipped cases with the unchanged Linux-only local-llama test source; no new or AUT-003 skip masks a failure.\",\n      \"Reviewed durable exceptions, history-reader compatibility and the rollback instructions. New operation history is versioned; the rc.4 reader retains rc.3 provenance while older readers explicitly reject new history. Rollback/stepwise continuation uses the original compatible configured host and preserves operation identity, native assignments, evidence, active-task ownership and remaining budgets. Unsafe pending writers/effects remain visible instead of being reset.\",\n      \"Acceptance criteria are supported by the independent operator/source review, exact-artifact real-provider evidence, negative/concurrency regressions, platform results and current native review context. No unresolved UAT/Product finding remains. This report approves the stated revision; it does not manufacture GitHub integration or native MERGED/DONE evidence.\"\n    ]\n  },\n  \"evidence\": [\n    {\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/review-context-uat-58a2c8eafa81.json\",\n      \"sha256\": \"48d4fa2279397c85e2d7c24538b8efc0e7a67aaabfd5e44047fe9d7cbb21b9e4\",\n      \"contextPackageId\": \"33f49678dab044a0e74bc43e6cae841765182012df0d575b852683b0fe499349\"\n    },\n    {\n      \"path\": \"C:\\\\Projects\\\\Vibez-aut003-inspect\\\\.agent\\\\reviews\\\\uat-context-verification-58a2c8eafa81.json\",\n      \"sha256\": \"6813600d9794ab4403093d2927d60e7c920bdf0fc29eadb35d456e65f71e36e5\",\n      \"result\": \"PASS; context recomputed, 3/3 source artifacts matched, branch/head/main/clean status checked\"\n    },\n    {\n      \"path\": \"/tmp/vibez-real-operations-06K6bC/report.json\",\n      \"sha256\": \"7ab5c9708e0717fcaecf89ee18a0c3f7d84477a60cf611f22bbe476db0eeda85\",\n      \"result\": \"PASS; real installed provider, eight isolated roles, two real validators, two ordered native fixture DONE outcomes; remote integration simulated\"\n    },\n    {\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/artifact-equivalence-58a2c8eafa81.json\",\n      \"sha256\": \"a8880b9ba481b8bb583699b48dce702b5f7a1d69745e332213f13ef4e7490836\",\n      \"candidateSha256\": \"553916414a69808088a40da71c6c2e439c0edab1bd8f7f06de8cb80a22a761f8\",\n      \"rehearsalScriptSha256\": \"dd1910904d20041fd1917aab05a84939311ca0ae5c17afcc5f6e6b3810b5ea69\"\n    },\n    {\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/checks-58a2c8eafa81.json\",\n      \"sha256\": \"4e520ec1102a28f440fc7c8a789e0be8f1e3d33f067c67a35b59b481c339ec49\",\n      \"result\": \"Nine required local check commands exit zero\"\n    },\n    {\n      \"path\": \"C:\\\\Projects\\\\Vibez-aut003-inspect\\\\.agent\\\\qa-windows-58a2c8e\\\\windows-result.json\",\n      \"sha256\": \"025f45ee52ff175f74299375563b3d77137df0cc1172525de0905983529d7ebe\",\n      \"result\": \"Independent exact-artifact Windows focused QA: seven passes, zero failures/cancellations/skips\"\n    },\n    {\n      \"url\": \"https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629\",\n      \"result\": \"All eight jobs independently observed completed/success on exact head\",\n      \"jobs\": [\n        {\n          \"id\": 134357626292,\n          \"name\": \"Schema and contract validation (Python)\",\n          \"head\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357626896,\n          \"name\": \"Seed validation (Windows)\",\n          \"head\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357626998,\n          \"name\": \"Pack exact candidate and record digests\",\n          \"head\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357627244,\n          \"name\": \"Build and test (Node)\",\n          \"head\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357938124,\n          \"name\": \"Installed consumer (ubuntu-24.04, Node 24)\",\n          \"head\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357938153,\n          \"name\": \"Installed consumer (windows-2025, Node 22)\",\n          \"head\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357938221,\n          \"name\": \"Installed consumer (windows-2025, Node 24)\",\n          \"head\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n          \"conclusion\": \"success\"\n        },\n        {\n          \"id\": 134357938264,\n          \"name\": \"Installed consumer (ubuntu-24.04, Node 22)\",\n          \"head\": \"58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392\",\n          \"conclusion\": \"success\"\n        }\n      ]\n    },\n    {\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/ci-58a2c8eafa81.json\",\n      \"sha256\": \"21b0e12767dc911d3549a1ba3096465a2595400a76d2767800b2f37799e9a51f\"\n    },\n    {\n      \"path\": \"/home/justi/.local/state/vibez-aut003/validation/ci-windows-source-58a2c8eafa81.log\",\n      \"sha256\": \"9b7750c9ad1cd53e549ee6499bea997120d513ff26cb95869128677b27a6c576\",\n      \"result\": \"950 total; 936 pass; 0 fail/cancel; 14 unchanged Linux-only local-llama runtime skips; all AUT-003 cases PASS\"\n    },\n    {\n      \"url\": \"https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6961039686\",\n      \"nativeRef\": \"AUT-003::role::QA@2\",\n      \"recordSha256\": \"ae8f91af67e2db5232892999a0c2d67fbed232344a108c27ff99457265d0f8d0\"\n    },\n    {\n      \"url\": \"https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6962756408\",\n      \"nativeRef\": \"AUT-003::role::Architect@2\",\n      \"recordSha256\": \"7d5938c05079eddc4e5bfe8ec83b749392f7834b8cf894779dcc65dd22ed2eb5\"\n    }\n  ]\n}\n```\n\n</details>"
+      },
+      {
+        "url": "https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6963070063",
+        "body": "Controlled completion verified for AUT-003 / #11.\n\n- Reviewed head: `58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392`.\n- Merge commit on `main`: `d6f7c3b6ad1d6c0ad1e059485b97d582759c388d`.\n- Independent QA, Architecture and UAT/Product reports above are all PASS for that head; all eight jobs in [CI run 44173220629](https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629) passed.\n- The native controller rechecked branch/base/head, current approvals, CI, discussion, mergeability and repository protection, then the authorized controller app performed one exact-head merge. No protection setting was changed.\n- Native result: `DONE`, evidence `AUT-003::merge@1`. Replaying the same completion request returned the identical result with no second external merge and no lifecycle-byte change.\n- The original assignment was released and archived. The authoritative checkout was fast-forwarded to `main`, is clean, and the native audit reports zero findings. All nine lifecycle files were unchanged by that checkout synchronization.\n- GitHub issue #11 is closed as completed.\n\nRetained receipt SHA-256 values:\n\n| Receipt | SHA-256 |\n| --- | --- |\n| Independent review summary | `54e8f883793b4233643c24031c697631196d886f61091d0668718a65c3402c66` |\n| Native controlled completion | `d4258a91ac7ac5d636a48200270496ad079fe9f4875f853175d99942cfd7b49b` |\n| Post-merge verification | `fae03ca31f917c357ef31df3a918189901d2e9c141f1f4433bc938e46ff73fca` |\n\nOriginal failed validation/review evidence and the real-provider fixture's original source/artifact receipt remain preserved."
+      }
+    ],
+    "ci": {
+      "total_count": 8,
+      "jobs": [
+        {
+          "id": 134357626292,
+          "run_id": 44173220629,
+          "workflow_name": "CI",
+          "head_branch": "automation/aut-003-unattended-supervisor",
+          "run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/runs/44173220629",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVnYI4M8AAAAfSFattA",
+          "head_sha": "58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392",
+          "url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/jobs/134357626292",
+          "html_url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629/job/134357626292",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-11-17T20:48:50Z",
+          "started_at": "2026-11-17T20:48:52Z",
+          "completed_at": "2026-11-17T20:49:02Z",
+          "name": "Schema and contract validation (Python)",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-17T20:48:53Z",
+              "completed_at": "2026-11-17T20:48:54Z"
+            },
+            {
+              "name": "Checkout",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-17T20:48:54Z",
+              "completed_at": "2026-11-17T20:48:55Z"
+            },
+            {
+              "name": "Set up Python",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-17T20:48:55Z",
+              "completed_at": "2026-11-17T20:48:55Z"
+            },
+            {
+              "name": "Install schema-validation dependencies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-17T20:48:55Z",
+              "completed_at": "2026-11-17T20:48:57Z"
+            },
+            {
+              "name": "Validate schema fixtures",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-17T20:48:57Z",
+              "completed_at": "2026-11-17T20:48:57Z"
+            },
+            {
+              "name": "Validate real repository contract/task records",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-17T20:48:57Z",
+              "completed_at": "2026-11-17T20:48:57Z"
+            },
+            {
+              "name": "Validate design and provenance guards",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-17T20:48:57Z",
+              "completed_at": "2026-11-17T20:48:58Z"
+            },
+            {
+              "name": "Verify the recorded seed",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-17T20:48:58Z",
+              "completed_at": "2026-11-17T20:48:58Z"
+            },
+            {
+              "name": "Verify the seed PR tree",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 9,
+              "started_at": "2026-11-17T20:48:58Z",
+              "completed_at": "2026-11-17T20:48:58Z"
+            },
+            {
+              "name": "Post Set up Python",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17,
+              "started_at": "2026-11-17T20:48:58Z",
+              "completed_at": "2026-11-17T20:48:58Z"
+            },
+            {
+              "name": "Post Checkout",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 18,
+              "started_at": "2026-11-17T20:48:58Z",
+              "completed_at": "2026-11-17T20:48:58Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 19,
+              "started_at": "2026-11-17T20:48:58Z",
+              "completed_at": "2026-11-17T20:48:58Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/check-runs/134357626292",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000001406,
+          "runner_name": "GitHub Actions 1000001406",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 134357626896,
+          "run_id": 44173220629,
+          "workflow_name": "CI",
+          "head_branch": "automation/aut-003-unattended-supervisor",
+          "run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/runs/44173220629",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVnYI4M8AAAAfSFawEA",
+          "head_sha": "58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392",
+          "url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/jobs/134357626896",
+          "html_url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629/job/134357626896",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-11-17T20:48:50Z",
+          "started_at": "2026-11-17T20:48:52Z",
+          "completed_at": "2026-11-17T22:17:56Z",
+          "name": "Seed validation (Windows)",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-17T20:48:53Z",
+              "completed_at": "2026-11-17T20:48:55Z"
+            },
+            {
+              "name": "Checkout",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-17T20:48:55Z",
+              "completed_at": "2026-11-17T20:49:03Z"
+            },
+            {
+              "name": "Set up Node.js",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-17T20:49:03Z",
+              "completed_at": "2026-11-17T20:49:09Z"
+            },
+            {
+              "name": "Set up Python",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-17T20:49:09Z",
+              "completed_at": "2026-11-17T20:49:09Z"
+            },
+            {
+              "name": "Install build and schema tools",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-17T20:49:09Z",
+              "completed_at": "2026-11-17T20:49:22Z"
+            },
+            {
+              "name": "Build and run the full suite",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-17T20:49:22Z",
+              "completed_at": "2026-11-17T22:17:50Z"
+            },
+            {
+              "name": "Validate schemas and seed provenance",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-17T22:17:50Z",
+              "completed_at": "2026-11-17T22:17:52Z"
+            },
+            {
+              "name": "Post Set up Python",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-11-17T22:17:52Z",
+              "completed_at": "2026-11-17T22:17:52Z"
+            },
+            {
+              "name": "Post Set up Node.js",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13,
+              "started_at": "2026-11-17T22:17:52Z",
+              "completed_at": "2026-11-17T22:17:52Z"
+            },
+            {
+              "name": "Post Checkout",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14,
+              "started_at": "2026-11-17T22:17:52Z",
+              "completed_at": "2026-11-17T22:17:55Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15,
+              "started_at": "2026-11-17T22:17:55Z",
+              "completed_at": "2026-11-17T22:17:55Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/check-runs/134357626896",
+          "labels": [
+            "windows-latest"
+          ],
+          "runner_id": 1000001407,
+          "runner_name": "GitHub Actions 1000001407",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 134357626998,
+          "run_id": 44173220629,
+          "workflow_name": "CI",
+          "head_branch": "automation/aut-003-unattended-supervisor",
+          "run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/runs/44173220629",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVnYI4M8AAAAfSFawdg",
+          "head_sha": "58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392",
+          "url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/jobs/134357626998",
+          "html_url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629/job/134357626998",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-11-17T20:48:50Z",
+          "started_at": "2026-11-17T20:48:52Z",
+          "completed_at": "2026-11-17T20:49:20Z",
+          "name": "Pack exact candidate and record digests",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-17T20:48:53Z",
+              "completed_at": "2026-11-17T20:48:54Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-17T20:48:54Z",
+              "completed_at": "2026-11-17T20:48:57Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-17T20:48:57Z",
+              "completed_at": "2026-11-17T20:49:08Z"
+            },
+            {
+              "name": "Run npm ci",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-17T20:49:08Z",
+              "completed_at": "2026-11-17T20:49:12Z"
+            },
+            {
+              "name": "Run npm run pack:candidate -- \"/home/runner/work/_temp/vibez candidate\"",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-17T20:49:12Z",
+              "completed_at": "2026-11-17T20:49:18Z"
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-17T20:49:18Z",
+              "completed_at": "2026-11-17T20:49:19Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-11-17T20:49:19Z",
+              "completed_at": "2026-11-17T20:49:19Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-11-17T20:49:19Z",
+              "completed_at": "2026-11-17T20:49:19Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13,
+              "started_at": "2026-11-17T20:49:19Z",
+              "completed_at": "2026-11-17T20:49:19Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/check-runs/134357626998",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000001408,
+          "runner_name": "GitHub Actions 1000001408",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 134357627244,
+          "run_id": 44173220629,
+          "workflow_name": "CI",
+          "head_branch": "automation/aut-003-unattended-supervisor",
+          "run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/runs/44173220629",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVnYI4M8AAAAfSFaxbA",
+          "head_sha": "58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392",
+          "url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/jobs/134357627244",
+          "html_url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629/job/134357627244",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-11-17T20:48:50Z",
+          "started_at": "2026-11-17T20:48:52Z",
+          "completed_at": "2026-11-17T20:55:06Z",
+          "name": "Build and test (Node)",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-17T20:48:53Z",
+              "completed_at": "2026-11-17T20:48:54Z"
+            },
+            {
+              "name": "Checkout",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-17T20:48:54Z",
+              "completed_at": "2026-11-17T20:48:55Z"
+            },
+            {
+              "name": "Set up Node.js",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-17T20:48:55Z",
+              "completed_at": "2026-11-17T20:48:57Z"
+            },
+            {
+              "name": "Install dependencies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-17T20:48:57Z",
+              "completed_at": "2026-11-17T20:48:58Z"
+            },
+            {
+              "name": "Set up Python for test fixtures",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-17T20:48:58Z",
+              "completed_at": "2026-11-17T20:48:58Z"
+            },
+            {
+              "name": "Install schema-validation dependencies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-17T20:48:58Z",
+              "completed_at": "2026-11-17T20:49:02Z"
+            },
+            {
+              "name": "Build (tsc)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-17T20:49:02Z",
+              "completed_at": "2026-11-17T20:49:06Z"
+            },
+            {
+              "name": "Test (node --test)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-17T20:49:06Z",
+              "completed_at": "2026-11-17T20:54:47Z"
+            },
+            {
+              "name": "Mutation-check adversarial workflow guards",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-17T20:54:47Z",
+              "completed_at": "2026-11-17T20:55:03Z"
+            },
+            {
+              "name": "Post Set up Python for test fixtures",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16,
+              "started_at": "2026-11-17T20:55:03Z",
+              "completed_at": "2026-11-17T20:55:03Z"
+            },
+            {
+              "name": "Post Set up Node.js",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17,
+              "started_at": "2026-11-17T20:55:03Z",
+              "completed_at": "2026-11-17T20:55:03Z"
+            },
+            {
+              "name": "Post Checkout",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 18,
+              "started_at": "2026-11-17T20:55:03Z",
+              "completed_at": "2026-11-17T20:55:03Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 19,
+              "started_at": "2026-11-17T20:55:03Z",
+              "completed_at": "2026-11-17T20:55:03Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/check-runs/134357627244",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000001409,
+          "runner_name": "GitHub Actions 1000001409",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 134357938124,
+          "run_id": 44173220629,
+          "workflow_name": "CI",
+          "head_branch": "automation/aut-003-unattended-supervisor",
+          "run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/runs/44173220629",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVnYI4M8AAAAfSFtvzA",
+          "head_sha": "58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392",
+          "url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/jobs/134357938124",
+          "html_url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629/job/134357938124",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-11-17T20:49:20Z",
+          "started_at": "2026-11-17T20:49:23Z",
+          "completed_at": "2026-11-17T20:51:05Z",
+          "name": "Installed consumer (ubuntu-24.04, Node 24)",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-17T20:49:24Z",
+              "completed_at": "2026-11-17T20:49:27Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-17T20:49:27Z",
+              "completed_at": "2026-11-17T20:49:32Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-17T20:49:32Z",
+              "completed_at": "2026-11-17T20:49:39Z"
+            },
+            {
+              "name": "Run npm ci",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-17T20:49:39Z",
+              "completed_at": "2026-11-17T20:49:42Z"
+            },
+            {
+              "name": "Run npm run pack:candidate -- \"/home/runner/work/_temp/vibez candidate\"",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-17T20:49:42Z",
+              "completed_at": "2026-11-17T20:49:45Z"
+            },
+            {
+              "name": "Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-17T20:49:45Z",
+              "completed_at": "2026-11-17T20:49:46Z"
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-17T20:49:46Z",
+              "completed_at": "2026-11-17T20:49:47Z"
+            },
+            {
+              "name": "Verify reproducible candidate bytes",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-17T20:49:47Z",
+              "completed_at": "2026-11-17T20:49:47Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-17T20:49:47Z",
+              "completed_at": "2026-11-17T20:49:52Z"
+            },
+            {
+              "name": "Record Linux filesystem",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-11-17T20:49:52Z",
+              "completed_at": "2026-11-17T20:49:52Z"
+            },
+            {
+              "name": "Record Windows filesystem",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 11,
+              "started_at": "2026-11-17T20:49:52Z",
+              "completed_at": "2026-11-17T20:49:52Z"
+            },
+            {
+              "name": "Run npm run test:conformance -- \"/home/runner/work/_temp/vibez candidate\"",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-11-17T20:49:52Z",
+              "completed_at": "2026-11-17T20:51:01Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 21,
+              "started_at": "2026-11-17T20:51:01Z",
+              "completed_at": "2026-11-17T20:51:01Z"
+            },
+            {
+              "name": "Post Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 22,
+              "started_at": "2026-11-17T20:51:01Z",
+              "completed_at": "2026-11-17T20:51:01Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 23,
+              "started_at": "2026-11-17T20:51:01Z",
+              "completed_at": "2026-11-17T20:51:01Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 24,
+              "started_at": "2026-11-17T20:51:01Z",
+              "completed_at": "2026-11-17T20:51:01Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 25,
+              "started_at": "2026-11-17T20:51:01Z",
+              "completed_at": "2026-11-17T20:51:01Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/check-runs/134357938124",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000001412,
+          "runner_name": "GitHub Actions 1000001412",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 134357938153,
+          "run_id": 44173220629,
+          "workflow_name": "CI",
+          "head_branch": "automation/aut-003-unattended-supervisor",
+          "run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/runs/44173220629",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVnYI4M8AAAAfSFtv6Q",
+          "head_sha": "58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392",
+          "url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/jobs/134357938153",
+          "html_url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629/job/134357938153",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-11-17T20:49:20Z",
+          "started_at": "2026-11-17T20:49:22Z",
+          "completed_at": "2026-11-17T21:07:22Z",
+          "name": "Installed consumer (windows-2025, Node 22)",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-17T20:49:23Z",
+              "completed_at": "2026-11-17T20:49:25Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-17T20:49:25Z",
+              "completed_at": "2026-11-17T20:49:33Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-17T20:49:33Z",
+              "completed_at": "2026-11-17T20:49:44Z"
+            },
+            {
+              "name": "Run npm ci",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-17T20:49:44Z",
+              "completed_at": "2026-11-17T20:49:51Z"
+            },
+            {
+              "name": "Run npm run pack:candidate -- \"D:\\a\\_temp/vibez candidate\"",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-17T20:49:51Z",
+              "completed_at": "2026-11-17T20:50:00Z"
+            },
+            {
+              "name": "Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-17T20:50:00Z",
+              "completed_at": "2026-11-17T20:50:01Z"
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-17T20:50:01Z",
+              "completed_at": "2026-11-17T20:50:02Z"
+            },
+            {
+              "name": "Verify reproducible candidate bytes",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-17T20:50:02Z",
+              "completed_at": "2026-11-17T20:50:02Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-17T20:50:02Z",
+              "completed_at": "2026-11-17T20:50:03Z"
+            },
+            {
+              "name": "Record Linux filesystem",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 10,
+              "started_at": "2026-11-17T20:50:03Z",
+              "completed_at": "2026-11-17T20:50:03Z"
+            },
+            {
+              "name": "Record Windows filesystem",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-11-17T20:50:03Z",
+              "completed_at": "2026-11-17T20:50:06Z"
+            },
+            {
+              "name": "Run npm run test:conformance -- \"D:\\a\\_temp/vibez candidate\"",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-11-17T20:50:06Z",
+              "completed_at": "2026-11-17T21:07:18Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 21,
+              "started_at": "2026-11-17T21:07:18Z",
+              "completed_at": "2026-11-17T21:07:18Z"
+            },
+            {
+              "name": "Post Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 22,
+              "started_at": "2026-11-17T21:07:18Z",
+              "completed_at": "2026-11-17T21:07:18Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 23,
+              "started_at": "2026-11-17T21:07:18Z",
+              "completed_at": "2026-11-17T21:07:19Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 24,
+              "started_at": "2026-11-17T21:07:19Z",
+              "completed_at": "2026-11-17T21:07:21Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 25,
+              "started_at": "2026-11-17T21:07:21Z",
+              "completed_at": "2026-11-17T21:07:21Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/check-runs/134357938153",
+          "labels": [
+            "windows-2025"
+          ],
+          "runner_id": 1000001410,
+          "runner_name": "GitHub Actions 1000001410",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 134357938221,
+          "run_id": 44173220629,
+          "workflow_name": "CI",
+          "head_branch": "automation/aut-003-unattended-supervisor",
+          "run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/runs/44173220629",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVnYI4M8AAAAfSFtwLQ",
+          "head_sha": "58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392",
+          "url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/jobs/134357938221",
+          "html_url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629/job/134357938221",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-11-17T20:49:20Z",
+          "started_at": "2026-11-17T20:49:23Z",
+          "completed_at": "2026-11-17T21:07:19Z",
+          "name": "Installed consumer (windows-2025, Node 24)",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-17T20:49:24Z",
+              "completed_at": "2026-11-17T20:49:27Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-17T20:49:27Z",
+              "completed_at": "2026-11-17T20:49:37Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-17T20:49:37Z",
+              "completed_at": "2026-11-17T20:49:45Z"
+            },
+            {
+              "name": "Run npm ci",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-17T20:49:45Z",
+              "completed_at": "2026-11-17T20:49:51Z"
+            },
+            {
+              "name": "Run npm run pack:candidate -- \"D:\\a\\_temp/vibez candidate\"",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-17T20:49:51Z",
+              "completed_at": "2026-11-17T20:50:03Z"
+            },
+            {
+              "name": "Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-17T20:50:03Z",
+              "completed_at": "2026-11-17T20:50:03Z"
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-17T20:50:03Z",
+              "completed_at": "2026-11-17T20:50:04Z"
+            },
+            {
+              "name": "Verify reproducible candidate bytes",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-17T20:50:04Z",
+              "completed_at": "2026-11-17T20:50:05Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-17T20:50:05Z",
+              "completed_at": "2026-11-17T20:50:11Z"
+            },
+            {
+              "name": "Record Linux filesystem",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 10,
+              "started_at": "2026-11-17T20:50:11Z",
+              "completed_at": "2026-11-17T20:50:11Z"
+            },
+            {
+              "name": "Record Windows filesystem",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-11-17T20:50:11Z",
+              "completed_at": "2026-11-17T20:50:15Z"
+            },
+            {
+              "name": "Run npm run test:conformance -- \"D:\\a\\_temp/vibez candidate\"",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-11-17T20:50:15Z",
+              "completed_at": "2026-11-17T21:07:15Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 21,
+              "started_at": "2026-11-17T21:07:15Z",
+              "completed_at": "2026-11-17T21:07:16Z"
+            },
+            {
+              "name": "Post Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 22,
+              "started_at": "2026-11-17T21:07:16Z",
+              "completed_at": "2026-11-17T21:07:16Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 23,
+              "started_at": "2026-11-17T21:07:16Z",
+              "completed_at": "2026-11-17T21:07:16Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 24,
+              "started_at": "2026-11-17T21:07:16Z",
+              "completed_at": "2026-11-17T21:07:18Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 25,
+              "started_at": "2026-11-17T21:07:18Z",
+              "completed_at": "2026-11-17T21:07:18Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/check-runs/134357938221",
+          "labels": [
+            "windows-2025"
+          ],
+          "runner_id": 1000001411,
+          "runner_name": "GitHub Actions 1000001411",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 134357938264,
+          "run_id": 44173220629,
+          "workflow_name": "CI",
+          "head_branch": "automation/aut-003-unattended-supervisor",
+          "run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/runs/44173220629",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVnYI4M8AAAAfSFtwWA",
+          "head_sha": "58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392",
+          "url": "https://api.github.com/repos/Brain-Crumbs/Vibez/actions/jobs/134357938264",
+          "html_url": "https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629/job/134357938264",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-11-17T20:49:20Z",
+          "started_at": "2026-11-17T20:49:22Z",
+          "completed_at": "2026-11-17T20:50:51Z",
+          "name": "Installed consumer (ubuntu-24.04, Node 22)",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-17T20:49:23Z",
+              "completed_at": "2026-11-17T20:49:25Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-17T20:49:25Z",
+              "completed_at": "2026-11-17T20:49:31Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-17T20:49:31Z",
+              "completed_at": "2026-11-17T20:49:37Z"
+            },
+            {
+              "name": "Run npm ci",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-17T20:49:37Z",
+              "completed_at": "2026-11-17T20:49:38Z"
+            },
+            {
+              "name": "Run npm run pack:candidate -- \"/home/runner/work/_temp/vibez candidate\"",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-17T20:49:38Z",
+              "completed_at": "2026-11-17T20:49:42Z"
+            },
+            {
+              "name": "Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-17T20:49:42Z",
+              "completed_at": "2026-11-17T20:49:42Z"
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-17T20:49:42Z",
+              "completed_at": "2026-11-17T20:49:43Z"
+            },
+            {
+              "name": "Verify reproducible candidate bytes",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-17T20:49:43Z",
+              "completed_at": "2026-11-17T20:49:43Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-17T20:49:43Z",
+              "completed_at": "2026-11-17T20:49:43Z"
+            },
+            {
+              "name": "Record Linux filesystem",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-11-17T20:49:43Z",
+              "completed_at": "2026-11-17T20:49:43Z"
+            },
+            {
+              "name": "Record Windows filesystem",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 11,
+              "started_at": "2026-11-17T20:49:43Z",
+              "completed_at": "2026-11-17T20:49:43Z"
+            },
+            {
+              "name": "Run npm run test:conformance -- \"/home/runner/work/_temp/vibez candidate\"",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-11-17T20:49:43Z",
+              "completed_at": "2026-11-17T20:50:49Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 21,
+              "started_at": "2026-11-17T20:50:49Z",
+              "completed_at": "2026-11-17T20:50:49Z"
+            },
+            {
+              "name": "Post Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 22,
+              "started_at": "2026-11-17T20:50:49Z",
+              "completed_at": "2026-11-17T20:50:49Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 23,
+              "started_at": "2026-11-17T20:50:49Z",
+              "completed_at": "2026-11-17T20:50:49Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 24,
+              "started_at": "2026-11-17T20:50:49Z",
+              "completed_at": "2026-11-17T20:50:49Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 25,
+              "started_at": "2026-11-17T20:50:49Z",
+              "completed_at": "2026-11-17T20:50:49Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Brain-Crumbs/Vibez/check-runs/134357938264",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000001413,
+          "runner_name": "GitHub Actions 1000001413",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        }
+      ]
+    }
+  },
+  "mig010": {
+    "pr": {
+      "url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/pulls/87",
+      "id": 5343020502,
+      "node_id": "PR_kwDOUMRl_M8AAAABPngF1g",
+      "html_url": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/87",
+      "diff_url": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/87.diff",
+      "patch_url": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/87.patch",
+      "issue_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/issues/87",
+      "commits_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/pulls/87/commits",
+      "review_comments_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/pulls/87/comments",
+      "review_comment_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/pulls/comments{/number}",
+      "comments_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/issues/87/comments",
+      "statuses_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/statuses/ea23d4c6f3e20911f26c9459e7b7acdc9b2cd2c8",
+      "number": 87,
+      "state": "closed",
+      "locked": false,
+      "title": "MIG-010: [MIG-010] Remove the embedded workflow only after verified Vibez adoption",
+      "user": {
+        "login": "Brain-Crumbs",
+        "id": 55927359,
+        "node_id": "MDQ6VXNlcjU1OTI3MzU5",
+        "avatar_url": "https://avatars.githubusercontent.com/u/55927359?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/Brain-Crumbs",
+        "html_url": "https://github.com/Brain-Crumbs",
+        "followers_url": "https://api.github.com/users/Brain-Crumbs/followers",
+        "following_url": "https://api.github.com/users/Brain-Crumbs/following{/other_user}",
+        "gists_url": "https://api.github.com/users/Brain-Crumbs/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/Brain-Crumbs/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/Brain-Crumbs/subscriptions",
+        "organizations_url": "https://api.github.com/users/Brain-Crumbs/orgs",
+        "repos_url": "https://api.github.com/users/Brain-Crumbs/repos",
+        "events_url": "https://api.github.com/users/Brain-Crumbs/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/Brain-Crumbs/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "body": "Closes #82\n\nCoordinates Fantasy Football #1 and #74, and Brain-Crumbs/Vibez#1.\n\n## Reviewed admission\n\nAdmission-only commit `ce0c0f3c6d2af1364d5117f35e68d428b062903f` was independently reviewed before the native start. The evidence below distinguishes that prerequisite review from the final cleanup reviews.\n\n- Base is current Fantasy Football main, `c7fa639539d2f92a36a59a1bb2fd4630d7fbd7d2`. The native MIG-009 dependency remains backed by the original Ubuntu/ext4 rc.2 workflow record, `MIG-009::merge@1`, and [PR #86](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/86).\n- The existing package lock, project config, bound profile and MIG-009 definition and receipt are retained. The revised #82 issue text, hash, requirement, staged definition and admission receipt agree. The review checks the exact registration revision before native start.\n- Existing rc.2 history matches its protected backup and offline restore across 141 runtime files. The Windows historical backup/restore pairs match all 119 files. The live canary archive checkout has a preexisting package.json difference; its runtime matches the archive, and both preserved copies still contain the pinned package file.\n- `npm run migration:check`, `npm run test:consumer` (three passing tests), `python3 schemas/validate_fixtures.py`, `python3 schemas/validate_repository_contracts.py` (61 records) and `git diff --check` passed on the registration revision.\n\n[Independent admission approval](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/87#issuecomment-6925857103).\n\n## Cleanup and acceptance\n\n| Criterion | Evidence |\n| --- | --- |\n| AC-01 | [Native MIG-009 completion and accepted rollback](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/86); revised source-body, requirement and definition hashes verified by independent admission review. |\n| AC-02 | The exact 249 deletions match all removal candidates in the accepted 331-path adoption tree. Project inputs, config, archived definitions, receipts, and off-tree evidence remain available. |\n| AC-03 | The exact immutable Vibez rc.2 lockfile artifact is the only installed engine. The supported npm adapter uses public exports. Focused regressions confirm that the guard rejects copied or relocated source/schema files and commented private-module imports. The staged-plan audit continues to reject mismatched issue hashes and dropped prerequisites. |\n| AC-04 | The native driver selected only MIG-010 against genuine MIG-009 DONE. The rework attempt `790370f3-6b70-2805-fd3a-e7dd497bcd53` preserves predecessor `e666e4cc-afce-413f-a912-126c6ce978d9` and the audited QA transport rejection. [Exact-head CI](https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/43938063380) retains all four configured jobs. |\n| AC-05 | In an isolated Ubuntu checkout, reverting both cleanup commits restored the exact tracked admission files and working rc.2 version/status. All retained links to removed paths now resolve to the immutable adoption tree. All 141 original rc.2 runtime files still match their hashes. The protected Windows archives and offline restores match 119/119 inputs; the original canary checkout's previously observed package difference is outside this cleanup. |\n| AC-06 | The [cleanup and #74 evidence map](docs/MIG-010-cleanup.md) records consumer ownership, the final post-checkpoint reconciliation, historical links, CI and rollback procedure. |\n\nValidation on Ubuntu 24.04/ext4 and Node 24.18.0 included `npm ci --engine-strict`, `npm run build`, the native npm test validator, the installed CLI version/status, `python3 scripts/validate-consumer-records.py` (33 records), `git diff --check`, exact removal inventory, and the stopped-writer rollback and history checks. The CI matrix uses Ubuntu 24.04/Node 22 and Windows Server 2025/Node 24.\n\nThe project/worktree config, required CI names, existing validator IDs, Vibez pin, task and history identities, and persisted schemas are preserved. The old embedded engine remains available only through its pinned historical checkout and readers. See the cutover guide for stopping and verifying writers before rollback.\n\nThe rework head is `ea23d4c6f3e20911f26c9459e7b7acdc9b2cd2c8`. All four exact-head CI jobs passed. Fresh independent QA, Architecture and UAT judgments are required by the native gates before ready conversion and controlled merge.\n\n<!-- control-plane.pr-lifecycle:generated:begin -->\n_This section is generated and kept in sync by control-plane.pr-lifecycle (BOOT-022); do not hand-edit it. Content outside these markers is preserved._\n\nTask: MIG-010 — [MIG-010] Remove the embedded workflow only after verified Vibez adoption\n\nEnd duplicate workflow maintenance in Fantasy Football without losing project data, audit history or the ability to use Vibez.\n\nCloses #82\nParent: #82\n\nBranch: `migration/mig-010-remove-embedded-workflow` -> `main`\nRevision: `ea23d4c6f3e20911f26c9459e7b7acdc9b2cd2c8`\n\n## Review/validation evidence\n- Developer: CURRENT PASS (history: 2)\n- QA: CURRENT PASS (history: 1)\n- Architect: CURRENT PASS (history: 1)\n- UAT/Product: CURRENT PASS (history: 1)\n- MergeController: NONE (history: 0)\n<!-- control-plane.pr-lifecycle:generated:end -->",
+      "labels": [],
+      "milestone": null,
+      "active_lock_reason": null,
+      "created_at": "2026-11-16T18:50:59Z",
+      "updated_at": "2026-11-16T19:40:17Z",
+      "closed_at": "2026-11-16T19:38:12Z",
+      "merged_at": "2026-11-16T19:38:12Z",
+      "merge_commit_sha": "122606be11360e7019932b4f7df434db82ff13a7",
+      "assignee": null,
+      "assignees": [],
+      "requested_reviewers": [],
+      "requested_teams": [],
+      "head": {
+        "label": "Brain-Crumbs:migration/mig-010-remove-embedded-workflow",
+        "ref": "migration/mig-010-remove-embedded-workflow",
+        "repo": {
+          "id": 1355048444,
+          "node_id": "R_kgDOUMRl_A",
+          "name": "IPTFantasyFootball",
+          "full_name": "Brain-Crumbs/IPTFantasyFootball",
+          "owner": {
+            "login": "Brain-Crumbs",
+            "id": 55927359,
+            "node_id": "MDQ6VXNlcjU1OTI3MzU5",
+            "avatar_url": "https://avatars.githubusercontent.com/u/55927359?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Brain-Crumbs",
+            "html_url": "https://github.com/Brain-Crumbs",
+            "followers_url": "https://api.github.com/users/Brain-Crumbs/followers",
+            "following_url": "https://api.github.com/users/Brain-Crumbs/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Brain-Crumbs/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Brain-Crumbs/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Brain-Crumbs/subscriptions",
+            "organizations_url": "https://api.github.com/users/Brain-Crumbs/orgs",
+            "repos_url": "https://api.github.com/users/Brain-Crumbs/repos",
+            "events_url": "https://api.github.com/users/Brain-Crumbs/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Brain-Crumbs/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "private": false,
+          "fork": false,
+          "archived": false,
+          "disabled": false,
+          "description": null,
+          "homepage": null,
+          "language": "JavaScript",
+          "visibility": "public",
+          "is_template": false,
+          "topics": [],
+          "forks_count": 0,
+          "forks": 0,
+          "stargazers_count": 0,
+          "watchers_count": 0,
+          "watchers": 0,
+          "open_issues_count": 1,
+          "open_issues": 1,
+          "size": 1818,
+          "default_branch": "main",
+          "has_issues": true,
+          "has_projects": true,
+          "has_wiki": true,
+          "has_pages": false,
+          "has_downloads": false,
+          "has_discussions": false,
+          "has_pull_requests": true,
+          "pushed_at": "2026-11-16T19:38:12Z",
+          "created_at": "2026-09-02T17:31:58Z",
+          "updated_at": "2026-11-16T20:38:19Z",
+          "allow_forking": true,
+          "web_commit_signoff_required": false,
+          "pull_request_creation_policy": "all",
+          "license": null,
+          "url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball",
+          "html_url": "https://github.com/Brain-Crumbs/IPTFantasyFootball",
+          "archive_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/{archive_format}{/ref}",
+          "assignees_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/assignees{/user}",
+          "blobs_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/git/blobs{/sha}",
+          "branches_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/branches{/branch}",
+          "collaborators_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/collaborators{/collaborator}",
+          "comments_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/comments{/number}",
+          "commits_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/commits{/sha}",
+          "compare_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/compare/{base}...{head}",
+          "contents_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/contents/{+path}",
+          "contributors_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/contributors",
+          "deployments_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/deployments",
+          "downloads_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/downloads",
+          "events_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/events",
+          "forks_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/forks",
+          "git_commits_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/git/commits{/sha}",
+          "git_refs_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/git/refs{/sha}",
+          "git_tags_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/git/tags{/sha}",
+          "git_url": "git://github.com/Brain-Crumbs/IPTFantasyFootball.git",
+          "issue_comment_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/issues/comments{/number}",
+          "issue_events_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/issues/events{/number}",
+          "issues_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/issues{/number}",
+          "keys_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/keys{/key_id}",
+          "labels_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/labels{/name}",
+          "languages_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/languages",
+          "merges_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/merges",
+          "milestones_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/milestones{/number}",
+          "notifications_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/notifications{?since,all,participating}",
+          "pulls_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/pulls{/number}",
+          "releases_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/releases{/id}",
+          "ssh_url": "git@github.com:Brain-Crumbs/IPTFantasyFootball.git",
+          "stargazers_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/stargazers",
+          "statuses_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/statuses/{sha}",
+          "subscribers_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/subscribers",
+          "subscription_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/subscription",
+          "tags_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/tags",
+          "teams_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/teams",
+          "trees_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/git/trees{/sha}",
+          "clone_url": "https://github.com/Brain-Crumbs/IPTFantasyFootball.git",
+          "mirror_url": null,
+          "hooks_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/hooks",
+          "svn_url": "https://github.com/Brain-Crumbs/IPTFantasyFootball"
+        },
+        "sha": "ea23d4c6f3e20911f26c9459e7b7acdc9b2cd2c8",
+        "user": {
+          "login": "Brain-Crumbs",
+          "id": 55927359,
+          "node_id": "MDQ6VXNlcjU1OTI3MzU5",
+          "avatar_url": "https://avatars.githubusercontent.com/u/55927359?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/Brain-Crumbs",
+          "html_url": "https://github.com/Brain-Crumbs",
+          "followers_url": "https://api.github.com/users/Brain-Crumbs/followers",
+          "following_url": "https://api.github.com/users/Brain-Crumbs/following{/other_user}",
+          "gists_url": "https://api.github.com/users/Brain-Crumbs/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/Brain-Crumbs/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/Brain-Crumbs/subscriptions",
+          "organizations_url": "https://api.github.com/users/Brain-Crumbs/orgs",
+          "repos_url": "https://api.github.com/users/Brain-Crumbs/repos",
+          "events_url": "https://api.github.com/users/Brain-Crumbs/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/Brain-Crumbs/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        }
+      },
+      "base": {
+        "label": "Brain-Crumbs:main",
+        "ref": "main",
+        "repo": {
+          "id": 1355048444,
+          "node_id": "R_kgDOUMRl_A",
+          "name": "IPTFantasyFootball",
+          "full_name": "Brain-Crumbs/IPTFantasyFootball",
+          "owner": {
+            "login": "Brain-Crumbs",
+            "id": 55927359,
+            "node_id": "MDQ6VXNlcjU1OTI3MzU5",
+            "avatar_url": "https://avatars.githubusercontent.com/u/55927359?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Brain-Crumbs",
+            "html_url": "https://github.com/Brain-Crumbs",
+            "followers_url": "https://api.github.com/users/Brain-Crumbs/followers",
+            "following_url": "https://api.github.com/users/Brain-Crumbs/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Brain-Crumbs/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Brain-Crumbs/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Brain-Crumbs/subscriptions",
+            "organizations_url": "https://api.github.com/users/Brain-Crumbs/orgs",
+            "repos_url": "https://api.github.com/users/Brain-Crumbs/repos",
+            "events_url": "https://api.github.com/users/Brain-Crumbs/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Brain-Crumbs/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "private": false,
+          "fork": false,
+          "archived": false,
+          "disabled": false,
+          "description": null,
+          "homepage": null,
+          "language": "JavaScript",
+          "visibility": "public",
+          "is_template": false,
+          "topics": [],
+          "forks_count": 0,
+          "forks": 0,
+          "stargazers_count": 0,
+          "watchers_count": 0,
+          "watchers": 0,
+          "open_issues_count": 1,
+          "open_issues": 1,
+          "size": 1818,
+          "default_branch": "main",
+          "has_issues": true,
+          "has_projects": true,
+          "has_wiki": true,
+          "has_pages": false,
+          "has_downloads": false,
+          "has_discussions": false,
+          "has_pull_requests": true,
+          "pushed_at": "2026-11-16T19:38:12Z",
+          "created_at": "2026-09-02T17:31:58Z",
+          "updated_at": "2026-11-16T20:38:19Z",
+          "allow_forking": true,
+          "web_commit_signoff_required": false,
+          "pull_request_creation_policy": "all",
+          "license": null,
+          "url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball",
+          "html_url": "https://github.com/Brain-Crumbs/IPTFantasyFootball",
+          "archive_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/{archive_format}{/ref}",
+          "assignees_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/assignees{/user}",
+          "blobs_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/git/blobs{/sha}",
+          "branches_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/branches{/branch}",
+          "collaborators_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/collaborators{/collaborator}",
+          "comments_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/comments{/number}",
+          "commits_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/commits{/sha}",
+          "compare_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/compare/{base}...{head}",
+          "contents_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/contents/{+path}",
+          "contributors_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/contributors",
+          "deployments_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/deployments",
+          "downloads_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/downloads",
+          "events_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/events",
+          "forks_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/forks",
+          "git_commits_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/git/commits{/sha}",
+          "git_refs_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/git/refs{/sha}",
+          "git_tags_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/git/tags{/sha}",
+          "git_url": "git://github.com/Brain-Crumbs/IPTFantasyFootball.git",
+          "issue_comment_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/issues/comments{/number}",
+          "issue_events_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/issues/events{/number}",
+          "issues_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/issues{/number}",
+          "keys_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/keys{/key_id}",
+          "labels_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/labels{/name}",
+          "languages_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/languages",
+          "merges_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/merges",
+          "milestones_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/milestones{/number}",
+          "notifications_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/notifications{?since,all,participating}",
+          "pulls_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/pulls{/number}",
+          "releases_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/releases{/id}",
+          "ssh_url": "git@github.com:Brain-Crumbs/IPTFantasyFootball.git",
+          "stargazers_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/stargazers",
+          "statuses_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/statuses/{sha}",
+          "subscribers_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/subscribers",
+          "subscription_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/subscription",
+          "tags_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/tags",
+          "teams_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/teams",
+          "trees_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/git/trees{/sha}",
+          "clone_url": "https://github.com/Brain-Crumbs/IPTFantasyFootball.git",
+          "mirror_url": null,
+          "hooks_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/hooks",
+          "svn_url": "https://github.com/Brain-Crumbs/IPTFantasyFootball"
+        },
+        "sha": "c7fa639539d2f92a36a59a1bb2fd4630d7fbd7d2",
+        "user": {
+          "login": "Brain-Crumbs",
+          "id": 55927359,
+          "node_id": "MDQ6VXNlcjU1OTI3MzU5",
+          "avatar_url": "https://avatars.githubusercontent.com/u/55927359?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/Brain-Crumbs",
+          "html_url": "https://github.com/Brain-Crumbs",
+          "followers_url": "https://api.github.com/users/Brain-Crumbs/followers",
+          "following_url": "https://api.github.com/users/Brain-Crumbs/following{/other_user}",
+          "gists_url": "https://api.github.com/users/Brain-Crumbs/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/Brain-Crumbs/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/Brain-Crumbs/subscriptions",
+          "organizations_url": "https://api.github.com/users/Brain-Crumbs/orgs",
+          "repos_url": "https://api.github.com/users/Brain-Crumbs/repos",
+          "events_url": "https://api.github.com/users/Brain-Crumbs/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/Brain-Crumbs/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        }
+      },
+      "_links": {
+        "comments": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/issues/87/comments"
+        },
+        "commits": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/pulls/87/commits"
+        },
+        "statuses": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/statuses/ea23d4c6f3e20911f26c9459e7b7acdc9b2cd2c8"
+        },
+        "html": {
+          "href": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/87"
+        },
+        "issue": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/issues/87"
+        },
+        "review_comments": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/pulls/87/comments"
+        },
+        "review_comment": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/pulls/comments{/number}"
+        },
+        "self": {
+          "href": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/pulls/87"
+        }
+      },
+      "author_association": "OWNER",
+      "auto_merge": null,
+      "draft": false,
+      "merged": true,
+      "mergeable": null,
+      "rebaseable": null,
+      "mergeable_state": "unknown",
+      "merged_by": {
+        "login": "Brain-Crumbs",
+        "id": 55927359,
+        "node_id": "MDQ6VXNlcjU1OTI3MzU5",
+        "avatar_url": "https://avatars.githubusercontent.com/u/55927359?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/Brain-Crumbs",
+        "html_url": "https://github.com/Brain-Crumbs",
+        "followers_url": "https://api.github.com/users/Brain-Crumbs/followers",
+        "following_url": "https://api.github.com/users/Brain-Crumbs/following{/other_user}",
+        "gists_url": "https://api.github.com/users/Brain-Crumbs/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/Brain-Crumbs/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/Brain-Crumbs/subscriptions",
+        "organizations_url": "https://api.github.com/users/Brain-Crumbs/orgs",
+        "repos_url": "https://api.github.com/users/Brain-Crumbs/repos",
+        "events_url": "https://api.github.com/users/Brain-Crumbs/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/Brain-Crumbs/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "comments": 3,
+      "review_comments": 0,
+      "maintainer_can_modify": false,
+      "commits": 3,
+      "additions": 698,
+      "deletions": 54844,
+      "changed_files": 283
+    },
+    "comments": [
+      {
+        "url": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/87#issuecomment-6925857103",
+        "body": "## Independent Architecture admission review\n\n**Approved for native start** at `ce0c0f3c6d2af1364d5117f35e68d428b062903f`. The reviewer independently checked the clean Ubuntu/ext4 checkout and base `c7fa639`, verified the live GitHub #82 body and requirement/definition hashes, and confirmed that both installed selectors return MIG-010 with the real MIG-009 DONE dependency. The original pin, config, profile context, MIG-009 records and protected history were preserved. The admission diff contains no deletions. This approval covers registration only. Final cleanup still requires fresh independent QA, Architecture and UAT.\r\n",
+        "updatedAt": "2026-11-16T18:51:30Z"
+      },
+      {
+        "url": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/87#issuecomment-6926428927",
+        "body": "## Independent QA findings at aa5a95e\n\nQA rejected the revision. An exact relocated lifecycle source file, a copied bundled schema, and commented dynamic imports of a private installed module passed the source guard. QA also reproduced acceptance of dropped cross-repository prerequisites and stale captured issue hashes after the staged-plan audit was removed. Architecture independently reproduced the guard and plan failures. UAT reported 12 retained links to deleted files.\n\nThe first QA submission reached the manual transport, but the native evidence gate rejected the extra reviewer-attribution property. The source and judgment remain on record. The operator will quiesce the task and use Vibez's audited recovery and successor rework flow. The new head will receive fresh deterministic validation, QA, Architecture, UAT and CI.\n\nThe docs-only archive navigation fixes include `evidence/README.md` and `tasks/README.md` under issue #82's archive-navigation scope. No task definitions, evidence records, or the already bound admission definition will change as a consequence of that clarification.\r\n",
+        "updatedAt": "2026-11-16T19:14:01Z"
+      },
+      {
+        "url": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/87#issuecomment-6927104430",
+        "body": "## Native controlled completion\n\nVibez recorded `MERGE_READY → MERGED → DONE` for MIG-010 in successor session `790370f3-6b70-2805-fd3a-e7dd497bcd53`, with `MIG-010::merge@1`. GitHub merged the exact reviewed source `ea23d4c6f3e20911f26c9459e7b7acdc9b2cd2c8` into main as `122606be11360e7019932b4f7df434db82ff13a7` and closed #82. The observed merge parents equal the verified adoption base and the reviewed source.\n\n- Developer validation passed natively at `MIG-010::validator::node-build@2` and `MIG-010::validator::node-test@2`.\n- Fresh independent approvals were recorded at `MIG-010::role::QA@1`, `MIG-010::role::Architect@1`, and `MIG-010::role::UAT/Product@1`. All four [exact-head CI jobs](https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/43938063380) passed. The [rework record](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/87#issuecomment-6926428927) retains the first findings and the audited recovery.\n- The 249 removed paths match the reviewed inventory. Rollback of both cleanup commits restored the tracked admission files in an isolated checkout and reopened the pinned installed reader. All 141 preexisting bound runtime files remained byte-identical. Native audit reopened MIG-010 as DONE. The completed Ubuntu store, protected backup and offline staged restore match across 257 runtime files and five configuration, package and binding files (manifest SHA-256 `65688a2da52aba8a5b30f26edd43f58bf260c7ef3d2692c25fc63f58f3ab44f0`).\n\n[Cleanup and #74 evidence map](https://github.com/Brain-Crumbs/IPTFantasyFootball/blob/122606be11360e7019932b4f7df434db82ff13a7/docs/MIG-010-cleanup.md)\r\n",
+        "updatedAt": "2026-11-16T19:40:17Z"
+      }
+    ],
+    "ci": {
+      "total_count": 4,
+      "jobs": [
+        {
+          "id": 133547825863,
+          "run_id": 43938063380,
+          "workflow_name": "CI",
+          "head_branch": "migration/mig-010-remove-embedded-workflow",
+          "run_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/actions/runs/43938063380",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOUMRl_M8AAAAfGBIaxw",
+          "head_sha": "ea23d4c6f3e20911f26c9459e7b7acdc9b2cd2c8",
+          "url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/actions/jobs/133547825863",
+          "html_url": "https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/43938063380/job/133547825863",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-11-16T19:19:05Z",
+          "started_at": "2026-11-16T19:19:07Z",
+          "completed_at": "2026-11-16T19:19:47Z",
+          "name": "Schema and contract validation (Python)",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-16T19:19:08Z",
+              "completed_at": "2026-11-16T19:19:12Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-16T19:19:12Z",
+              "completed_at": "2026-11-16T19:19:20Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-16T19:19:20Z",
+              "completed_at": "2026-11-16T19:19:29Z"
+            },
+            {
+              "name": "Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-16T19:19:29Z",
+              "completed_at": "2026-11-16T19:19:30Z"
+            },
+            {
+              "name": "Run npm ci --engine-strict",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-16T19:19:30Z",
+              "completed_at": "2026-11-16T19:19:34Z"
+            },
+            {
+              "name": "Run python -m pip install 'jsonschema>=4.23,<5'",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-16T19:19:34Z",
+              "completed_at": "2026-11-16T19:19:43Z"
+            },
+            {
+              "name": "Run python scripts/validate-consumer-records.py",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-16T19:19:43Z",
+              "completed_at": "2026-11-16T19:19:43Z"
+            },
+            {
+              "name": "Post Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-11-16T19:19:43Z",
+              "completed_at": "2026-11-16T19:19:43Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13,
+              "started_at": "2026-11-16T19:19:43Z",
+              "completed_at": "2026-11-16T19:19:43Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14,
+              "started_at": "2026-11-16T19:19:43Z",
+              "completed_at": "2026-11-16T19:19:43Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15,
+              "started_at": "2026-11-16T19:19:43Z",
+              "completed_at": "2026-11-16T19:19:43Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/check-runs/133547825863",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000001294,
+          "runner_name": "GitHub Actions 1000001294",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 133547826230,
+          "run_id": 43938063380,
+          "workflow_name": "CI",
+          "head_branch": "migration/mig-010-remove-embedded-workflow",
+          "run_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/actions/runs/43938063380",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOUMRl_M8AAAAfGBIcNg",
+          "head_sha": "ea23d4c6f3e20911f26c9459e7b7acdc9b2cd2c8",
+          "url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/actions/jobs/133547826230",
+          "html_url": "https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/43938063380/job/133547826230",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-11-16T19:19:05Z",
+          "started_at": "2026-11-16T19:19:07Z",
+          "completed_at": "2026-11-16T19:19:40Z",
+          "name": "Build and test (Node)",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-16T19:19:08Z",
+              "completed_at": "2026-11-16T19:19:11Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-16T19:19:11Z",
+              "completed_at": "2026-11-16T19:19:19Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-16T19:19:19Z",
+              "completed_at": "2026-11-16T19:19:29Z"
+            },
+            {
+              "name": "Run npm ci --engine-strict",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-16T19:19:29Z",
+              "completed_at": "2026-11-16T19:19:31Z"
+            },
+            {
+              "name": "Run npm run build",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-16T19:19:31Z",
+              "completed_at": "2026-11-16T19:19:31Z"
+            },
+            {
+              "name": "Run npm test",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-16T19:19:31Z",
+              "completed_at": "2026-11-16T19:19:37Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-11-16T19:19:37Z",
+              "completed_at": "2026-11-16T19:19:37Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-11-16T19:19:37Z",
+              "completed_at": "2026-11-16T19:19:37Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13,
+              "started_at": "2026-11-16T19:19:37Z",
+              "completed_at": "2026-11-16T19:19:37Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/check-runs/133547826230",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000001296,
+          "runner_name": "GitHub Actions 1000001296",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 133547826318,
+          "run_id": 43938063380,
+          "workflow_name": "CI",
+          "head_branch": "migration/mig-010-remove-embedded-workflow",
+          "run_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/actions/runs/43938063380",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOUMRl_M8AAAAfGBIcjg",
+          "head_sha": "ea23d4c6f3e20911f26c9459e7b7acdc9b2cd2c8",
+          "url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/actions/jobs/133547826318",
+          "html_url": "https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/43938063380/job/133547826318",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-11-16T19:19:05Z",
+          "started_at": "2026-11-16T19:19:07Z",
+          "completed_at": "2026-11-16T19:19:21Z",
+          "name": "Installed consumer (Ubuntu)",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-16T19:19:07Z",
+              "completed_at": "2026-11-16T19:19:09Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-16T19:19:09Z",
+              "completed_at": "2026-11-16T19:19:10Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-16T19:19:10Z",
+              "completed_at": "2026-11-16T19:19:11Z"
+            },
+            {
+              "name": "Run npm ci --engine-strict",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-16T19:19:11Z",
+              "completed_at": "2026-11-16T19:19:12Z"
+            },
+            {
+              "name": "Run npm run test:consumer",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-16T19:19:12Z",
+              "completed_at": "2026-11-16T19:19:19Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-16T19:19:19Z",
+              "completed_at": "2026-11-16T19:19:19Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-11-16T19:19:19Z",
+              "completed_at": "2026-11-16T19:19:19Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-11-16T19:19:19Z",
+              "completed_at": "2026-11-16T19:19:19Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/check-runs/133547826318",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000001295,
+          "runner_name": "GitHub Actions 1000001295",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 133547826476,
+          "run_id": 43938063380,
+          "workflow_name": "CI",
+          "head_branch": "migration/mig-010-remove-embedded-workflow",
+          "run_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/actions/runs/43938063380",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOUMRl_M8AAAAfGBIdLA",
+          "head_sha": "ea23d4c6f3e20911f26c9459e7b7acdc9b2cd2c8",
+          "url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/actions/jobs/133547826476",
+          "html_url": "https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/43938063380/job/133547826476",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-11-16T19:19:05Z",
+          "started_at": "2026-11-16T19:19:07Z",
+          "completed_at": "2026-11-16T19:20:59Z",
+          "name": "Installed consumer (Windows)",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-16T19:19:08Z",
+              "completed_at": "2026-11-16T19:19:09Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-16T19:19:09Z",
+              "completed_at": "2026-11-16T19:19:18Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-16T19:19:18Z",
+              "completed_at": "2026-11-16T19:19:41Z"
+            },
+            {
+              "name": "Run npm ci --engine-strict",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-16T19:19:41Z",
+              "completed_at": "2026-11-16T19:19:47Z"
+            },
+            {
+              "name": "Run npm run test:consumer",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-16T19:19:47Z",
+              "completed_at": "2026-11-16T19:20:55Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-16T19:20:55Z",
+              "completed_at": "2026-11-16T19:20:55Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-11-16T19:20:55Z",
+              "completed_at": "2026-11-16T19:20:57Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-11-16T19:20:57Z",
+              "completed_at": "2026-11-16T19:20:57Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Brain-Crumbs/IPTFantasyFootball/check-runs/133547826476",
+          "labels": [
+            "windows-2025"
+          ],
+          "runner_id": 1000001297,
+          "runner_name": "GitHub Actions 1000001297",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        }
+      ]
+    }
+  }
+}

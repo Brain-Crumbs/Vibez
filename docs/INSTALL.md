@@ -58,6 +58,15 @@ The general `review` and `rework` commands still return exit
 3. Manual packet commands keep their existing behavior. See the
 [CLI reference](CLI.md) for arguments and failure codes.
 
+## Installed headless acceptance
+
+For the bounded Linux local-provider host, use the packaged
+[unattended acceptance guide](UNATTENDED_ACCEPTANCE.md) and
+[preparation example](../examples/unattended/README.md). Installing the package
+never enables a grant or changes repository protection. rc.5 is an acceptance
+candidate until an immutable release receipt identifies its live proof and
+reviews. The rc.2 link above remains the accepted Fantasy Football pin.
+
 ## Library use and rollback
 
 Import the [supported ESM paths](PUBLIC_API.md) in JavaScript or TypeScript

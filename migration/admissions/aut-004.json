@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "taskId": "AUT-004",
+  "repository": "Brain-Crumbs/Vibez",
+  "issue": "https://github.com/Brain-Crumbs/Vibez/issues/12",
+  "issueUpdatedAt": "2026-11-08T19:17:59Z",
+  "issueBodySha256": "d55d4b86072522898ebb191a7b7cc8c14e93cf50d03c7f43f8d0e8432a808efa",
+  "integrationBase": "d6f7c3b6ad1d6c0ad1e059485b97d582759c388d",
+  "canonicalBranch": "automation/aut-004-unattended-acceptance",
+  "prerequisites": [
+    {
+      "taskId": "AUT-003",
+      "repository": "Brain-Crumbs/Vibez",
+      "issue": 11,
+      "pr": 29,
+      "reviewedHead": "58a2c8eafa8122a0e5c5480fe32cc3d14cc0b392",
+      "merge": "d6f7c3b6ad1d6c0ad1e059485b97d582759c388d",
+      "ci": "https://github.com/Brain-Crumbs/Vibez/actions/runs/44173220629",
+      "completion": "https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6963070063",
+      "nativeDoneEvidence": "AUT-003::merge@1",
+      "reviews": [
+        "https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6961039686",
+        "https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6962756408",
+        "https://github.com/Brain-Crumbs/Vibez/pull/29#issuecomment-6962938158"
+      ],
+      "nativeLifecycleSha256": "0c9168492623416510270ea04ea8dc8812fbda78094077cffe5b22d3633dc831",
+      "nativeMergeEnvelopeSha256": "b9b2a5cbc52d0b139d836bb68fa117dff6cebce374dc3ff24778a80313152d23",
+      "ciResult": {
+        "conclusion": "success",
+        "jobs": 8,
+        "allJobsAtReviewedHead": true
+      },
+      "rationale": "Independent architecture inspection verified exact-head CI, three fresh final independent reviews, controller completion, main ancestry, and the original authoritative ext4 lifecycle/merge envelope."
+    },
+    {
+      "taskId": "MIG-010",
+      "repository": "Brain-Crumbs/IPTFantasyFootball",
+      "issue": 82,
+      "pr": 87,
+      "reviewedHead": "ea23d4c6f3e20911f26c9459e7b7acdc9b2cd2c8",
+      "merge": "122606be11360e7019932b4f7df434db82ff13a7",
+      "ci": "https://github.com/Brain-Crumbs/IPTFantasyFootball/actions/runs/43938063380",
+      "completion": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/87#issuecomment-6927104430",
+      "nativeDoneEvidence": "MIG-010::merge@1",
+      "rationale": "External accepted cleanup remains an evidence-backed admission edge, never transplanted native state.",
+      "ciResult": {
+        "conclusion": "success",
+        "jobs": 4,
+        "allJobsAtReviewedHead": true
+      },
+      "reviews": {
+        "source": "https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/87#issuecomment-6927104430",
+        "nativeEvidence": [
+          "MIG-010::role::QA@1",
+          "MIG-010::role::Architect@1",
+          "MIG-010::role::UAT/Product@1"
+        ],
+        "revision": "ea23d4c6f3e20911f26c9459e7b7acdc9b2cd2c8",
+        "note": "The public native completion record references final independent judgments; prior rejection history is retained in PR87. These are external acceptance records, never imported approvals for AUT-004."
+      },
+      "artifact": {
+        "package": "@brain-crumbs/vibez",
+        "version": "0.1.0-rc.2",
+        "sha256": "2c67cc07c866f54eb6768f94dac3f1fdd1be7781e1fd58062fcd3fb4a2ef26bc",
+        "lockfileBlob": "bd45e952cb89851b1ed4e3aa9afda0cfd0524f9c",
+        "configBlob": "09acef875638b1f6d1623d8dd50bfab888a27de9",
+        "source": "https://github.com/Brain-Crumbs/IPTFantasyFootball/blob/122606be11360e7019932b4f7df434db82ff13a7/docs/VIBEZ_CUTOVER.md"
+      }
+    }
+  ],
+  "historicalPrerequisite": {
+    "taskId": "MIG-003",
+    "pr": 15,
+    "reviewedHead": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+    "merge": "16a73b8071f5b9ef390d08504e325b779af291fe",
+    "sealedCommit": "fdebe9111ce7aa004566c4068a2c15a9a95ab00c",
+    "receipt": "migration/admissions/mig-003.json",
+    "ci": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876",
+    "mainCi": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42869658896",
+    "allSixJobs": "success",
+    "reviews": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+    "reviewedRoles": [
+      "QA",
+      "Architect",
+      "UAT/Product"
+    ],
+    "reviewReportSha256": [
+      "29fb6acfe2e11a15b6426bb419b56cb3725caa0818c56bd0d2028d1b7c56e0db",
+      "304a16ba1d0f7d210ec176a3f84e10a0ca8d55bafd2730aca430e09e004411ee",
+      "1e214dfdc930206d864248d68e2e233a795b84576a664960147b1f21365fcec9"
+    ],
+    "evidenceSnapshotSha256": "68d2141bba01111653b28a75566b62b6cb45845075f4a202053c8bb85de5e852",
+    "observedAt": "2026-11-17T18:39:33.361Z",
+    "verifier": "AUT-003 admission with independent Architecture inspection",
+    "rationale": "Verified accepted seed merge and sealed ancestry; exact-source and merged-main checks succeeded; all independent reports bind the accepted source. Historical acceptance is retained without inventing native seed state."
+  },
+  "dependencyProjection": {
+    "native": [
+      "AUT-003"
+    ],
+    "external": [
+      "MIG-010"
+    ],
+    "historical": [
+      "MIG-003"
+    ]
+  },
+  "definition": {
+    "path": "tasks/definitions/aut-004.task.json",
+    "sha256": "181055f30a06ed4e215b17346efe48286ae69835635ec643af85bbddccfa2050"
+  },
+  "requirement": {
+    "path": "requirements/aut-004.requirement.json",
+    "sha256": "5419badbe966552ccf6b33b71cef9eed06191b7616126eec65ac7b79a7ef84cc"
+  },
+  "acceptanceBoundary": "AUT-003 real-provider rehearsal simulated remote integration. AUT-004 requires actual remote publication/CI/controlled completion for the dependent chain; prior fixture results cannot satisfy that criterion.",
+  "observedAt": "2026-11-17T23:51:12.919907+00:00",
+  "admissionStatus": "APPROVED_AND_STARTED",
+  "evidenceSnapshot": {
+    "path": "migration/admissions/evidence/aut004-prerequisites.json",
+    "sha256": "6bb4edbece95f072c0f573f725bf3bb76ff2af112061b4a18902ef5943b6f04e",
+    "contents": "Fetched GitHub PR metadata and report/completion text plus exact-head CI job records for direct prerequisites."
+  },
+  "nativeVerification": {
+    "filesystem": "ext4",
+    "authoritativeCheckout": "stopped project-local Vibez store",
+    "task": "AUT-003",
+    "state": "DONE",
+    "activeAssignments": 0
+  },
+  "verifier": "AUT-004 admission with independent Architecture prerequisite inspection",
+  "admissionReview": {
+    "role": "Architect",
+    "reportSha256": "5db7532c193c991fd88bdd96d6ea61f81961850b48bf43d5a36523de67bc41ee",
+    "outcome": "PASS",
+    "scope": "Staged definition, requirement, prerequisite evidence and projection before native start."
+  },
+  "nativeStart": {
+    "registrationCommit": "60f9f843a1f5dc31ed535ff3b8d158db1c6b9750",
+    "ownerId": "aut004-developer",
+    "runId": "aut004-20261117",
+    "state": "IN_DEVELOPMENT",
+    "selection": "The candidate registry was scoped to AUT-004 and its native dependency closure; original lifecycle records selected AUT-004. The dormant unrelated FIX-001 was not admitted or changed."
+  }
+}

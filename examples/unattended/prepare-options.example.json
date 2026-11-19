@@ -1,0 +1,42 @@
+{
+  "destination": "/home/operator/acceptance/aut004-run-001",
+  "projectId": "aut004-independent-acceptance",
+  "repository": "Brain-Crumbs/Vibez",
+  "integrationRef": "acceptance/aut004-base",
+  "branches": [
+    "acceptance/aut004-task-1",
+    "acceptance/aut004-task-2"
+  ],
+  "issueNumbers": [
+    101,
+    102
+  ],
+  "requiredChecks": [
+    {
+      "name": "Unattended acceptance",
+      "appId": 15368
+    }
+  ],
+  "controllerAppId": 5704318,
+  "artifact": {
+    "repository": "Brain-Crumbs/Vibez",
+    "runId": 1,
+    "artifactId": 1,
+    "name": "vibez-candidate-0000000000000000000000000000000000000000"
+  },
+  "candidateFile": "/home/operator/artifacts/candidate.json",
+  "installedDirectory": "/home/operator/installed/node_modules/@brain-crumbs/vibez",
+  "assets": {
+    "path": "/home/operator/host/inference-assets.json",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "tokenIssuer": {
+    "path": "/home/operator/host/credential-issuer.mjs",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "npmCli": "/home/operator/tools/node/lib/node_modules/npm/bin/npm-cli.js",
+  "seedTimestamp": "2026-11-18T00:00:00Z",
+  "notBeforeMs": 1794960000000,
+  "expiresAtMs": 1794967200000,
+  "initialSetupRef": "PENDING_OWNER_SETUP_DECISION"
+}

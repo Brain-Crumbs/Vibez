@@ -1,7 +1,9 @@
-# Installed manual workflow driver
+# Installed workflow driver
 
 Install the exact verified private tarball using [Install](INSTALL.md). This
 guide applies to both `vibez` and the compatibility alias `agent`.
+For the packaged bounded Linux headless host and live acceptance procedure,
+see [UNATTENDED_ACCEPTANCE.md](UNATTENDED_ACCEPTANCE.md).
 
 Bracketed names such as `<intake>` and `<operations>` below refer to
 the corresponding configured paths, relative to the selected checkout.

@@ -8,7 +8,9 @@ See the [verified support matrix](docs/SUPPORT.md).
 The configured host can run a finite approved task plan through the shared
 [unattended operation service](docs/WORKFLOW_DRIVER.md#approved-unattended-operations-aut-003),
 using native validation, independent review and controlled integration gates.
-The existing manual workflow remains available.
+The existing manual workflow remains available. The [installed acceptance guide](docs/UNATTENDED_ACCEPTANCE.md)
+provides the bounded Linux headless host, operator controls and evidence requirements;
+a private candidate is not an accepted release until its exact live proof and reviews pass.
 
 The [migration record](migration/SEED_EXPORT.md) links the audited source
 snapshot, export decision, scope, validation, and rollback. See the [roadmap](https://github.com/Brain-Crumbs/Vibez/issues/1)
