@@ -580,14 +580,12 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
       explainMerge: guarded(diagnostics.explainMerge.bind(diagnostics)),
     },
     recovery: { check: recoveryCheck, apply: recoveryApply },
+    driverForCurrentRevision,
     async cli(args: readonly string[], signal?: AbortSignal, runtime: DriverRuntime = {}) {
       assertCurrent();
       const driverRuntime: DriverRuntime = {
         ...runtime, config, operations,
-        services: async () => {
-          const current = projectGit(projectRoot, ["rev-parse", "HEAD"]).trim();
-          return current === config.revision ? driverServices : (await composeProjectServices(location, host)).driver;
-        },
+        services: driverForCurrentRevision,
       };
       const cliContext: CliRunContext = {
         configuredProject: true, historyConfig, repositoryRoot: projectRoot, taskRegistry: registry, taskStates: taskStates(), driverRuntime, developerStartWorkflow: developerStart,
@@ -598,6 +596,10 @@ async function composeProjectServices(location: ProjectLocation, host: ProjectHo
       return runCli(args, cliContext);
     },
   };
+  async function driverForCurrentRevision(): Promise<ConfiguredDriverServices> {
+    const current = projectGit(projectRoot, ["rev-parse", "HEAD"]).trim();
+    return current === config.revision ? driverServices : (await composeProjectServices(location, host)).driver;
+  }
   const driverServices = {
     config, registry, taskStates, scopedRegistry, manual, developerStart, developerValidation, qaReview, architectureReview,
     startWithin: (taskIds:readonly string[],request:Parameters<typeof startGate.start>[0])=>{

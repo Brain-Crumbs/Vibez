@@ -31,7 +31,7 @@ export class ManualConsoleReader {
   readonly #profileHash: string;
   readonly #root: string;
 
-  constructor(private readonly config: ResolvedProjectConfig) {
+  constructor(private readonly config: ResolvedProjectConfig, private readonly commandsEnabled = false) {
     this.#root = config.projectRoot;
     this.projectId = config.projectIdentity;
     this.checkoutLabel = config.document.worktree.id;
@@ -84,6 +84,12 @@ export class ManualConsoleReader {
       target: { projectId: this.projectId, sessionId, attemptId: current.detail.attempt.attemptId },
       packet: packet.ref, body,
     };
+  }
+
+  commandSession(id: string) {
+    const profile = this.checkScope();
+    const view = this.#view(profile, this.#rootSession(profile, id), new Date().toISOString());
+    return { profile, session: this.#session(profile, view.detail.attempt.attemptId), detail: view.detail };
   }
 
   #session(profile: DriverProfile, id: string): DriverSession {
@@ -205,9 +211,16 @@ export class ManualConsoleReader {
     const { pullRequest, ci } = integrationObservations(root, profile, session, merged);
     const registeredRevision = session.status === "PREPARED" && !journal ? revision(session.registrationRevision) : null;
 
+    const actions: string[] = role || (repair && phase !== "completed") ? ["read-packet"] : [];
+    if (this.commandsEnabled && !writer) {
+      if (phase === "prepared") actions.push("start");
+      else if (phase === "blocked" && !role && diagnostic?.code !== "DEPENDENCY_NOT_DONE" && !blockedDependency && !repair) actions.push("resume");
+      else if (rework && session.predecessor && session.status === "PREPARED" && !repair) actions.push("resume");
+      if ((phase === "waiting" && role) || (repair && replyToPacketId && phase !== "completed")) actions.push("submit-reply");
+    }
     const nextAction = phase === "waiting" ? "Copy the current handoff into a fresh role session and return the reply through the Vibez CLI inbox." :
       phase === "active" ? "Wait for Vibez to finish developer validation." :
-      phase === "prepared" ? "Start this prepared session from the Vibez CLI." :
+      phase === "prepared" ? (actions.includes("start") ? "Start this prepared session." : "Start this prepared session from the Vibez CLI.") :
       phase === "rework" ? "Inspect the recorded review and continue through Vibez CLI rework." :
       phase === "blocked" ? (stopped ? this.#diagnostic("WORKFLOW_STOPPED", stopped.remediation).message : "Resolve the blocker in Vibez and refresh this run.") : null;
     return {
@@ -222,7 +235,7 @@ export class ManualConsoleReader {
         gate, blocker: phase === "completed" ? null : reason, nextAction,
         pending: { role: phase === "waiting" || staleRole ? role?.ref ?? null : null,
           repair: repair && replyToPacketId && phase !== "completed" ? { packet: repair.ref, replyToPacketId } : null },
-        actions: ((phase === "waiting" || staleRole) && role) || (repair && phase !== "completed") ? ["read-packet"] : [],
+        actions,
         pullRequest, ci,
       },
     };

@@ -6,6 +6,7 @@ import { GitHubCiStatusOperations, GitHubMergeReadinessPullRequestOperations } f
 import { GitHubPullRequestOperations } from "../pr-lifecycle/index.js";
 import { resolveProjectConfig } from "../project-config/index.js";
 import { reconcileRegistration } from "../workflow-driver/intake.js";
+import { ManualConsoleCommands } from "../manual-console/commands.js";
 import { ManualConsoleReader } from "../manual-console/reader.js";
 import { serveManualConsole } from "../manual-console/server.js";
 import { DriverError, redact, requireValue } from "../workflow-driver/io.js";
@@ -32,7 +33,7 @@ export async function runStandaloneCli(argv: readonly string[], signal: AbortSig
 async function runConfiguredDriver(argv: readonly string[], signal: AbortSignal, progress: (message: string) => void) {
   const scoped = argv.filter(arg => arg !== "--json");
   const consoleHost = scoped[0] === "manual-console";
-  const consoleUsage = "vibez manual-console --project CHECKOUT --origin http://127.0.0.1:5173 [--port PORT]";
+  const consoleUsage = "vibez manual-console --project CHECKOUT --origin http://127.0.0.1:5173 [--port PORT] [--commands]";
   if (consoleHost && scoped.length === 2 && ["help", "--help", "-h"].includes(scoped[1]!))
     return { exitCode: 0 as const, stdout: consoleUsage + "\n", stderr: "" };
   if (!consoleHost && (scoped[0] !== "orchestrate" || scoped.length === 1 || ["help", "--help", "-h"].includes(scoped[1]!))) return null;
@@ -55,6 +56,8 @@ async function runConfiguredDriver(argv: readonly string[], signal: AbortSignal,
   const configPath = selectedConfig ?? "vibez.config.json";
   if (!consoleHost && !project && !selectedConfig && !existsSync(join(projectRoot, configPath))) return null;
 
+  const consoleCommands = consoleHost && args.includes("--commands");
+  if (consoleCommands) args.splice(args.indexOf("--commands"), 1);
   const ntfs = args.includes("--local-ntfs");
   if (ntfs) args.splice(args.indexOf("--local-ntfs"), 1);
   if (consoleHost) requireValue(args.length === 1 && project && consoleOrigin &&
@@ -95,11 +98,15 @@ async function runConfiguredDriver(argv: readonly string[], signal: AbortSignal,
       merge: new GitHubControlledMergePullRequestOperations({ ...options, fetchImpl }),
     },
     authorizePublication: request => credentialed && request.repository === repository && (scoped[1] === "publish" || scoped[1] === "ready"),
-    authorizeMerge: request => credentialed && mergeAuthorization === `${request.repository}#${request.number}@${request.expectedHeadSha}`,
-    authorizeRecovery: request => (process.env.IPT_RECOVERY_ADMIN_ACTORS ?? "").split(",").includes(request.actorId),
+    authorizeMerge: request => !consoleHost && credentialed && mergeAuthorization === `${request.repository}#${request.number}@${request.expectedHeadSha}`,
+    authorizeRecovery: request => !consoleHost && (process.env.IPT_RECOVERY_ADMIN_ACTORS ?? "").split(",").includes(request.actorId),
   });
   if (consoleHost) {
-    await serveManualConsole(new ManualConsoleReader(services.config), consoleOrigin!, Number(consolePort), signal, progress);
+    const reader = new ManualConsoleReader(services.config, consoleCommands);
+    const commands = consoleCommands ? new ManualConsoleCommands(projectRoot, reader, {
+      services: services.driverForCurrentRevision, ...(token ? { token } : {}),
+    }) : undefined;
+    await serveManualConsole(reader, consoleOrigin!, Number(consolePort), signal, progress, commands);
     return { exitCode: 0 as const, stdout: "", stderr: "" };
   }
   return services.cli(args, signal, {

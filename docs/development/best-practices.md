@@ -63,6 +63,19 @@ not authorize new work, reviews, merges or lifecycle mutations.
 - **Evidence:** [Vibez #40](https://github.com/Brain-Crumbs/Vibez/issues/40)
   and [the installed HTTP fixture](../../tests/manual-console-host.test.mjs).
 
+## BP-005 Bind shared-inbox input before import
+
+- **Status:** Active
+- **Added / latest revision:** 2026-11-21
+- **Rule and scope:** Durably reserve the target attempt and expected packet
+  before native import. Use a scoped archive for rejected or malformed input.
+  Reconcile interrupted operations from their original request and immutable
+  native result. Observe the subsequent gate separately.
+- **Rationale:** A shared byte hash cannot identify the intended session,
+  especially when parsing the reply fails.
+- **Evidence:** [Vibez #41](https://github.com/Brain-Crumbs/Vibez/issues/41)
+  and [the installed HTTP fixture](../../tests/manual-console-host.test.mjs).
+
 ## Change history
 
 | Date | ID | Change | Reason | Evidence |
@@ -73,3 +86,4 @@ not authorize new work, reviews, merges or lifecycle mutations.
 | 2026-10-12 | BP-002 | revised | Link the submitted mutation proof implementation | [PR #72](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/72) |
 | 2026-11-20 | BP-003 | added | Validate published transport shapes and independent cross-document promises | [Vibez #39](https://github.com/Brain-Crumbs/Vibez/issues/39) |
 | 2026-11-20 | BP-004 | added | Establish exact read and native state preservation in a packed consumer | [Vibez #40](https://github.com/Brain-Crumbs/Vibez/issues/40) |
+| 2026-11-21 | BP-005 | added | Preserve selected-session isolation and replay in the shared inbox | [Vibez #41](https://github.com/Brain-Crumbs/Vibez/issues/41) |

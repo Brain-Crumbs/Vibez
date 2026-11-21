@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { once } from "node:events";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync } from "node:fs";
 import { request } from "node:http";
@@ -73,8 +73,8 @@ function install(t) {
   const selection = ["--project", project, "--config", "workflow.json", "--npm-cli", npm,
     ...(process.platform === "win32" ? ["--local-ntfs"] : [])];
   const cli = (args, input) => JSON.parse(call(tools, entry, ["--json", "orchestrate", ...args, ...selection], input)).data;
-  async function start() {
-    const child = spawn(process.execPath, [entry, "manual-console", ...selection, "--origin", origin], { cwd: tools, windowsHide: true });
+  async function start(commands = false) {
+    const child = spawn(process.execPath, [entry, "manual-console", ...selection, "--origin", origin, ...(commands ? ["--commands"] : [])], { cwd: tools, windowsHide: true });
     const exit = once(child, "exit");
     let stderr = "";
     const found = await new Promise((resolve, reject) => {
@@ -94,7 +94,18 @@ function install(t) {
     t.after(stop);
     return { endpoint: found[1], code: found[2], stop };
   }
-  return { cli, project, start };
+  function watch(sessionId) {
+    const child = spawn(process.execPath, [entry, "orchestrate", "watch", sessionId, ...selection],
+      { cwd: tools, stdio: "ignore", windowsHide: true });
+    const exit = once(child, "exit");
+    const stop = async () => {
+      if (child.exitCode === null && child.signalCode === null) child.kill("SIGTERM");
+      await exit;
+    };
+    t.after(stop);
+    return stop;
+  }
+  return { cli, project, start, watch };
 }
 
 // Independent HTTP client. In particular it can send Host, Origin and chunked bytes
@@ -351,4 +362,209 @@ test("native reviewer source drift and revision-bound integration snapshots rema
   assert.equal(observed.ci.status, "pass");
   assert.equal(observed.ci.revision, changed.summary.revision);
   await host.stop();
+});
+
+async function connectCommands(start, commands) {
+  const host = await start(commands);
+  const paired = await http(host.endpoint, base + "/operator-session", { method: "POST",
+    headers: { Origin: origin, "Content-Type": "application/json" },
+    body: JSON.stringify({ version: 1, kind: "pairingRequest", data: { code: host.code } }) });
+  assert.equal(paired.status, 200);
+  const headers = { Origin: origin, Authorization: "Bearer " + paired.data.data.token, "Content-Type": "application/json" };
+  async function send(path, options = {}) {
+    const result = await http(host.endpoint, path, { headers, ...options });
+    if (result.status !== 429) return result;
+    await pause(result.data.data.retryAfterMs + 40);
+    return http(host.endpoint, path, { headers, ...options });
+  }
+  const cap = await send(base + "/capabilities");
+  const { projectId, capabilities } = cap.data.data;
+  const path = id => base + "/p/" + projectId + "/runs/" + id;
+  function command(id, action, fields = {}, requestId = randomUUID()) {
+    const data = { target: { projectId, sessionId: id, attemptId: id }, requestId, ...fields };
+    return send(path(id) + "/" + action, { method: "POST",
+      body: JSON.stringify({ version: 1, kind: action === "replies" ? "replyRequest" : "commandRequest", data }) });
+  }
+  return { host, send, path, command, capabilities, projectId, headers };
+}
+
+test("packaged console commands scope rejected replies and recover exact receipts across restart", { timeout: 180_000 }, async t => {
+  const { cli, project, start } = install(t);
+  cli(["init", "--actor-prefix", "operator", "--developer-tools", "read_file,write_file,git_commit",
+    "--review-tools", "read_file,run_test", "--enforce-policies", "externally"]);
+  const first = cli(["prepare", "--stdin"], markdown()).sessionId;
+  const sibling = cli(["prepare", "--stdin"], markdown("DEMO-002")).sessionId;
+  const blocked = cli(["prepare", "--stdin"], markdown("DEMO-003", ["DEMO-001"])
+    .replace("Issue: #102", "Issue: #103")).sessionId;
+
+  let client = await connectCommands(start, true);
+  assert.ok(client.capabilities.includes("submit-reply"));
+  assert.equal((await client.command(blocked, "start")).status, 422);
+  const lock = ".vibez/operations/driver/writer.lock";
+  put(project, lock, "fixture-held-lock");
+  const contention = await client.command(first, "start");
+  assert.equal(contention.status, 409);
+  assert.equal(contention.data.data.code, "writer-busy");
+  rmSync(join(project, lock));
+
+  const startId = randomUUID();
+  const began = await client.command(first, "start", {}, startId);
+  assert.equal(began.status, 200);
+  assert.equal(began.data.data.operation.state, "finished", JSON.stringify(began.data));
+  const developer = cli(["status", first]).pendingPacket;
+  assert.ok(developer);
+  assert.equal((await client.command(first, "start", {}, startId)).data.data.replayed, true);
+
+  git(project, "switch", "main");
+  const siblingRun = cli(["run", sibling]).session;
+  assert.ok(siblingRun.pendingPacket);
+  git(project, "switch", "feature/demo-001");
+
+  const packet = get(project, ".vibez/exchange/" + developer + ".packet.json");
+  const otherPacket = get(project, ".vibez/exchange/" + siblingRun.pendingPacket + ".packet.json");
+  const valid = response(packet);
+  const displaced = JSON.stringify(response(otherPacket));
+  const reply = (replyText, id = randomUUID(), expectedPacketId = developer) =>
+    client.command(first, "replies", { expectedPacketId, replyText }, id);
+  assert.equal((await reply(displaced, randomUUID(), siblingRun.pendingPacket)).data.data.code, "stale-target");
+  for (const input of ["{", "\x60\x60\x60json\n{}\n\x60\x60\x60\n\x60\x60\x60json\n{}\n\x60\x60\x60",
+    displaced, JSON.stringify({ ...valid, role: "QA" }), JSON.stringify({ ...valid, runId: "other-run" }),
+    JSON.stringify({ ...valid, revisionIdentity: "0".repeat(40) })]) {
+    const rejected = await reply(input);
+    assert.equal(rejected.status, 200, JSON.stringify(rejected.data));
+    const receiptId = rejected.data.data.operation.receiptId;
+    const receipt = (await client.send(client.path(first) + "/receipts/" + receiptId)).data.data;
+    assert.equal(receipt.disposition, "rejected");
+    assert.equal(receipt.expectedPacketId, developer);
+    assert.equal(receipt.importedPacketId, null);
+    assert.equal(receipt.target.sessionId, first);
+    assert.ok(receipt.repairPacketId);
+    assert.equal((await client.send(client.path(first) + "/packets/" + receipt.repairPacketId)).status, 200);
+    assert.equal(cli(["status", first]).pendingPacket, developer);
+    assert.equal(cli(["status", sibling]).pendingPacket, siblingRun.pendingPacket);
+    assert.equal((await client.send(client.path(sibling) + "/receipts/" + receiptId)).status, 404);
+  }
+  assert.deepEqual(readdirSync(join(project, ".vibez/operations/driver/archive")).filter(name => name.endsWith(".receipt.json")), []);
+
+  // Wrong bytes aimed at A remain independently usable in B's normal CLI inbox.
+  git(project, "switch", "feature/demo-002");
+  put(project, ".vibez/inbox/responses/sibling.json", displaced);
+  await watchFor(cli, sibling, (_session, data) => data.receipts.some(receipt => receipt.status === "ACCEPTED"));
+  assert.ok(existsSync(join(project, ".vibez/exchange", siblingRun.pendingPacket + ".result.json")));
+  rmSync(join(project, ".vibez/inbox/responses/sibling.json"));
+  git(project, "switch", "feature/demo-001");
+
+  // Give the native validation a failing marker. The import still succeeds.
+  put(project, "marker.txt", "fixture failure");
+  git(project, "add", "marker.txt");
+  git(project, "commit", "-m", "Commit fixture marker");
+  const fenced = "\x60\x60\x60json\n" + JSON.stringify(valid) + "\n\x60\x60\x60";
+  const key = randomUUID();
+  const [left, right] = await Promise.all([reply(fenced, key), reply(fenced, key)]);
+  for (const result of [left, right]) assert.ok([200, 202].includes(result.status), JSON.stringify(result.data));
+  const accepted = (await client.send(client.path(first) + "/requests/" + key)).data.data;
+  assert.equal(accepted.operation.state, "finished");
+  const ref = accepted.operation.receiptId;
+  assert.ok(ref);
+  const receipt = (await client.send(client.path(first) + "/receipts/" + ref)).data.data;
+  assert.equal(receipt.disposition, "accepted");
+  assert.equal(receipt.importedPacketId, developer);
+  const gate = (await client.send(client.path(first))).data.data;
+  assert.equal(gate.gate.stage, "developer-validation");
+  assert.equal(gate.gate.outcome, "fail");
+  assert.equal((await reply(fenced + " ", key)).data.data.code, "conflicting-request");
+  await client.host.stop();
+
+  client = await connectCommands(start, true);
+  const replay = await reply(fenced, key);
+  assert.equal(replay.status, 200);
+  assert.equal(replay.data.data.replayed, true);
+  assert.equal(replay.data.data.operation.receiptId, ref);
+  assert.deepEqual((await client.send(client.path(first) + "/receipts/" + ref)).data.data, receipt);
+  assert.equal(readdirSync(join(project, ".vibez/exchange")).filter(name => name === developer + ".result.json").length, 1);
+  await client.host.stop();
+
+  const readOnly = await connectCommands(start, false);
+  assert.equal(readOnly.capabilities.includes("submit-reply"), false);
+  assert.equal((await readOnly.command(first, "resume")).status, 422);
+  assert.equal((await readOnly.send(readOnly.path(first))).data.data.gate.outcome, "fail");
+  assert.equal(cli(["status", first]).sessionId, first);
+});
+
+test("scoped ingress resumes after interrupted storage and an unacknowledged native import", { timeout: 180_000 }, async t => {
+  const { cli, project, start, watch } = install(t);
+  const { hash, stableId } = await import("../dist/workflow-driver/io.js");
+  cli(["init", "--actor-prefix", "operator", "--developer-tools", "read_file,write_file,git_commit",
+    "--review-tools", "read_file,run_test", "--enforce-policies", "externally"]);
+  const first = cli(["prepare", "--stdin"], markdown()).sessionId;
+  const initial = cli(["run", first]).session;
+  const developer = initial.pendingPacket;
+  put(project, "marker.txt", "correct");
+  git(project, "add", "marker.txt");
+  git(project, "commit", "-m", "Commit correct marker");
+  const raw = JSON.stringify(response(get(project, ".vibez/exchange/" + developer + ".packet.json")));
+  const key = randomUUID();
+  const driver = ".vibez/operations/driver";
+  const archive = join(project, driver, "archive/bound");
+  mkdirSync(dirname(archive), { recursive: true });
+  put(project, driver + "/archive/bound", "block atomic publication");
+  const nativeResult = join(project, ".vibez/exchange", developer + ".result.json");
+
+  let client = await connectCommands(start, true);
+  const post = () => client.command(first, "replies", { expectedPacketId: developer, replyText: raw }, key);
+  assert.equal((await post()).status, 202);
+  assert.equal(existsSync(nativeResult), false);
+  const lookup = () => client.send(client.path(first) + "/requests/" + key);
+  assert.equal((await lookup()).data.data.operation.state, "pending");
+  await client.host.stop();
+  rmSync(archive);
+
+  // Force a recoverable write failure between native receipt persistence and
+  // the HTTP acknowledgment. The native result must survive this boundary.
+  const target = { projectId: client.projectId, sessionId: first, attemptId: first };
+  const profile = get(project, driver + "/profile.json");
+  const scope = hash({ profile: hash(profile), projectId: target.projectId, sessionId: first });
+  const id = stableId({ target, requestId: key, expected: developer, input: hash(raw) });
+  const wireReceipt = join(project, driver, "console", scope, id + ".receipt.json");
+  mkdirSync(wireReceipt);
+
+  client = await connectCommands(start, true);
+  const interrupted = await post();
+  assert.equal(interrupted.status, 202);
+  assert.equal(existsSync(nativeResult), true);
+  const nativeReceiptNames = readdirSync(archive).filter(item => item.endsWith(".receipt.json"));
+  assert.equal(nativeReceiptNames.length, 1);
+  const originalNative = readFileSync(join(archive, nativeReceiptNames[0]));
+  await client.host.stop();
+  rmSync(wireReceipt, { recursive: true });
+
+  client = await connectCommands(start, true);
+  assert.equal((await lookup()).data.data.operation.state, "pending");
+  const stopWatcher = watch(first);
+  put(project, ".vibez/inbox/responses/concurrent.json", raw);
+  let result;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    result = await post();
+    if (result.status === 200) break;
+    assert.equal(result.status, 202);
+    await pause(650);
+  }
+  await stopWatcher();
+  assert.equal(result.status, 200);
+  assert.equal(result.data.data.replayed, true);
+  assert.equal(result.data.data.operation.receiptId, id);
+  const receipt = (await client.send(client.path(first) + "/receipts/" + id)).data.data;
+  assert.equal(receipt.disposition, "accepted");
+  const after = cli(["status", first]);
+  assert.notEqual(after.pendingPacket, developer);
+  assert.equal(get(project, ".vibez/exchange/" + after.pendingPacket + ".packet.json").role, "QA");
+  const packets = readdirSync(join(project, ".vibez/exchange")).filter(name => name.endsWith(".packet.json"));
+  assert.equal(packets.filter(name => get(project, ".vibez/exchange/" + name).role === "QA").length, 1);
+  assert.equal(readdirSync(join(project, ".vibez/exchange")).filter(name => name.endsWith(".result.json")).length, 1);
+  assert.deepEqual(readFileSync(join(archive, nativeReceiptNames[0])), originalNative);
+  assert.equal((await post()).data.data.operation.receiptId, id);
+  assert.equal(cli(["status", first]).pendingPacket, after.pendingPacket);
+
+  await client.host.stop();
+  assert.equal(cli(["resume", first, "--once"]).session.pendingPacket, after.pendingPacket);
 });

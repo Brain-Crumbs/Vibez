@@ -3,8 +3,8 @@
 [Homebase #22](https://github.com/Brain-Crumbs/Homebase/issues/22) defines the
 operator workflow. [Vibez #39](https://github.com/Brain-Crumbs/Vibez/issues/39)
 defines this contract. Its boundary is one configured checkout with
-already-admitted tasks. The [installed read host](MANUAL_CONSOLE_HOST.md) serves the scoped read routes.
-Writer routes and the UI follow in their owning issues.
+already-admitted tasks. The [installed host](MANUAL_CONSOLE_HOST.md) serves scoped reads and optional
+writer routes. The Homebase UI and historical reads are separate implementations.
 
 ## Connect and negotiate
 
