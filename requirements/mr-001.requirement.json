@@ -1,0 +1,17 @@
+{
+  "schemaId": "ipt.requirement",
+  "schemaVersion": "1.0.0",
+  "requirementId": "MR-001-R1",
+  "taskId": "MR-001",
+  "statement": "Publish a testable v1 loopback manual-run console contract for Vibez and Homebase.",
+  "acceptanceCriteria": [
+    "MR-001.1: Validate versioned good and bad examples for waiting, blocked, disconnected/last-observed, accepted/reused/rejected, validation failure, rework and completion. Separate receipt, gate and host actions.",
+    "MR-001.2: Preserve exact original Markdown and stable project/session/attempt/packet, role, revision and receipt references across reads, with explicit historical-body and PR/CI unknown states.",
+    "MR-001.3: Define scoping, versions, limits, session setup, polling, retries and uncertain outcomes. Provide independently consumable conformance inputs and pinning and compatibility/rollback guidance."
+  ],
+  "sourceRefs": [
+    "https://github.com/Brain-Crumbs/Vibez/issues/39",
+    "https://github.com/Brain-Crumbs/Homebase/issues/22",
+    "sha256:91dba6b39ad8f94dc4fb7f4596aefdc1cf1cce4eea0b992809d38a0835e61a03"
+  ]
+}

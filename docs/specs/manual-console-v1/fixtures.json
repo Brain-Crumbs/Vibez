@@ -1,0 +1,1975 @@
+{
+  "format": "vibez.manual-console.conformance",
+  "version": 1,
+  "fixtures": [
+    {
+      "id": "discover",
+      "definition": "discovery",
+      "payload": {
+        "protocol": "vibez.manual-console",
+        "versions": [
+          1
+        ]
+      },
+      "valid": true
+    },
+    {
+      "id": "unsupported-path",
+      "definition": "unsupportedVersion",
+      "payload": {
+        "protocol": "vibez.manual-console",
+        "code": "unsupported-version",
+        "versions": [
+          1
+        ]
+      },
+      "valid": true
+    },
+    {
+      "id": "pairing",
+      "definition": "pairingRequestEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "pairingRequest",
+        "data": {
+          "code": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "operator-session",
+      "definition": "operatorSessionEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "operatorSession",
+        "data": {
+          "token": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBA",
+          "expiresAt": "2026-11-20T18:00:00Z"
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "capabilities",
+      "definition": "capabilitiesEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "capabilities",
+        "data": {
+          "projectId": "vibez-local-example",
+          "checkoutLabel": "Example checkout",
+          "capabilities": [
+            "run-list",
+            "run-read",
+            "packet-read",
+            "start",
+            "resume",
+            "submit-reply",
+            "request-lookup",
+            "receipt-read",
+            "history-read",
+            "historical-packet-read"
+          ],
+          "pollAfterMs": 1500
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "read-only-capabilities",
+      "definition": "capabilitiesEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "capabilities",
+        "data": {
+          "projectId": "vibez-local-example",
+          "checkoutLabel": "Example checkout",
+          "capabilities": [
+            "run-list",
+            "run-read",
+            "packet-read"
+          ],
+          "pollAfterMs": 1500
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "prepared-list",
+      "definition": "runListEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "runList",
+        "data": {
+          "projectId": "vibez-local-example",
+          "observedAt": "2026-11-20T16:00:00Z",
+          "runs": [
+            {
+              "projectId": "vibez-local-example",
+              "sessionId": "session-one",
+              "currentAttemptId": "session-one",
+              "taskId": "DEMO-001",
+              "issueUrl": "https://github.com/example/project/issues/42",
+              "checkoutLabel": "Example checkout",
+              "branch": "feature/demo-001",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "phase": "prepared",
+              "observedAt": "2026-11-20T16:00:00Z"
+            }
+          ],
+          "nextCursor": null
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "empty-list",
+      "definition": "runListEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "runList",
+        "data": {
+          "projectId": "vibez-local-example",
+          "observedAt": "2026-11-20T16:00:00Z",
+          "runs": [],
+          "nextCursor": null
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "prepared",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "prepared",
+            "observedAt": "2026-11-20T16:00:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "idle"
+          },
+          "pending": {
+            "role": null,
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Start the prepared run.",
+          "actions": [
+            "start"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "waiting",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "waiting",
+            "observedAt": "2026-11-20T16:00:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "awaiting-role",
+            "role": "Developer"
+          },
+          "pending": {
+            "role": {
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "kind": "role",
+              "role": "Developer",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Copy the Developer handoff and submit the reply.",
+          "actions": [
+            "read-packet",
+            "submit-reply"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "blocked",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "blocked",
+            "observedAt": "2026-11-20T16:01:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "observed",
+            "stage": "assignment",
+            "outcome": "blocked",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "diagnostic": {
+              "code": "WRITER_BUSY",
+              "message": "The CLI currently holds the project writer. Refresh after it stops."
+            }
+          },
+          "pending": {
+            "role": null,
+            "repair": null
+          },
+          "blocker": {
+            "code": "WRITER_BUSY",
+            "message": "The CLI currently holds the project writer. Refresh after it stops."
+          },
+          "nextAction": "Wait for the CLI writer, then refresh.",
+          "actions": [],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "repair-pending",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "waiting",
+            "observedAt": "2026-11-20T16:01:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "awaiting-role",
+            "role": "Developer"
+          },
+          "pending": {
+            "role": {
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "kind": "role",
+              "role": "Developer",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "repair": {
+              "packet": {
+                "packetId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                "kind": "repair",
+                "role": "Developer",
+                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "replyToPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+            }
+          },
+          "blocker": {
+            "code": "REJECTED_INPUT",
+            "message": "Correct the role reply using the original pending handoff."
+          },
+          "nextAction": "Copy the Developer handoff and submit the reply.",
+          "actions": [
+            "read-packet",
+            "submit-reply"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "validation-failed",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "phase": "blocked",
+            "observedAt": "2026-11-20T16:02:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "observed",
+            "stage": "developer-validation",
+            "outcome": "fail",
+            "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "diagnostic": {
+              "code": "CHECK_FAILED",
+              "message": "The build check failed. Inspect the validation evidence."
+            }
+          },
+          "pending": {
+            "role": null,
+            "repair": null
+          },
+          "blocker": {
+            "code": "CHECK_FAILED",
+            "message": "The build check failed. Inspect the validation evidence."
+          },
+          "nextAction": "Inspect the failed validator and follow the driver diagnostic.",
+          "actions": [],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "qa",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "phase": "waiting",
+            "observedAt": "2026-11-20T16:02:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "awaiting-role",
+            "role": "QA"
+          },
+          "pending": {
+            "role": {
+              "packetId": "packet-qa",
+              "kind": "role",
+              "role": "QA",
+              "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Copy the QA handoff.",
+          "actions": [
+            "read-packet",
+            "submit-reply"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "rework",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "attempt-two",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "phase": "rework",
+            "observedAt": "2026-11-20T16:02:00Z"
+          },
+          "attempt": {
+            "attemptId": "attempt-two",
+            "predecessorAttemptId": "session-one",
+            "nativeRunId": "native-two"
+          },
+          "gate": {
+            "state": "observed",
+            "stage": "rework",
+            "outcome": "pass",
+            "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "diagnostic": null
+          },
+          "pending": {
+            "role": null,
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Resume the linked attempt.",
+          "actions": [
+            "resume"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "completed",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "phase": "completed",
+            "observedAt": "2026-11-20T16:02:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "observed",
+            "stage": "completion",
+            "outcome": "pass",
+            "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "diagnostic": null
+          },
+          "pending": {
+            "role": null,
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": null,
+          "actions": [],
+          "pullRequest": {
+            "state": "observed",
+            "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "observedAt": "2026-11-20T16:02:00Z",
+            "url": "https://github.com/example/project/pull/43",
+            "status": "merged"
+          },
+          "ci": {
+            "state": "observed",
+            "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "observedAt": "2026-11-20T16:01:00Z",
+            "url": "https://github.com/example/project/actions/runs/44",
+            "status": "pass"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "connected",
+      "definition": "runViewEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "runView",
+        "data": {
+          "connection": "connected",
+          "lastObserved": {
+            "summary": {
+              "projectId": "vibez-local-example",
+              "sessionId": "session-one",
+              "currentAttemptId": "session-one",
+              "taskId": "DEMO-001",
+              "issueUrl": "https://github.com/example/project/issues/42",
+              "checkoutLabel": "Example checkout",
+              "branch": "feature/demo-001",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "phase": "waiting",
+              "observedAt": "2026-11-20T16:00:00Z"
+            },
+            "attempt": {
+              "attemptId": "session-one",
+              "predecessorAttemptId": null,
+              "nativeRunId": "native-one"
+            },
+            "gate": {
+              "state": "awaiting-role",
+              "role": "Developer"
+            },
+            "pending": {
+              "role": {
+                "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "kind": "role",
+                "role": "Developer",
+                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "repair": null
+            },
+            "blocker": null,
+            "nextAction": "Copy the Developer handoff and submit the reply.",
+            "actions": [
+              "read-packet",
+              "submit-reply"
+            ],
+            "pullRequest": {
+              "state": "unknown"
+            },
+            "ci": {
+              "state": "unknown"
+            }
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "disconnected",
+      "definition": "runViewEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "runView",
+        "data": {
+          "connection": "disconnected",
+          "lastObserved": {
+            "summary": {
+              "projectId": "vibez-local-example",
+              "sessionId": "session-one",
+              "currentAttemptId": "session-one",
+              "taskId": "DEMO-001",
+              "issueUrl": "https://github.com/example/project/issues/42",
+              "checkoutLabel": "Example checkout",
+              "branch": "feature/demo-001",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "phase": "waiting",
+              "observedAt": "2026-11-20T16:00:00Z"
+            },
+            "attempt": {
+              "attemptId": "session-one",
+              "predecessorAttemptId": null,
+              "nativeRunId": "native-one"
+            },
+            "gate": {
+              "state": "awaiting-role",
+              "role": "Developer"
+            },
+            "pending": {
+              "role": {
+                "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "kind": "role",
+                "role": "Developer",
+                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "repair": null
+            },
+            "blocker": null,
+            "nextAction": "Copy the Developer handoff and submit the reply.",
+            "actions": [
+              "read-packet",
+              "submit-reply"
+            ],
+            "pullRequest": {
+              "state": "unknown"
+            },
+            "ci": {
+              "state": "unknown"
+            }
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "disconnected-before-read",
+      "definition": "runViewEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "runView",
+        "data": {
+          "connection": "disconnected",
+          "lastObserved": null
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "start",
+      "definition": "commandRequestEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "commandRequest",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000003"
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "reply-raw",
+      "definition": "replyRequestEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "replyRequest",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "replyText": "{\n  \"schemaId\": \"ipt.local-agent-result\",\n  \"schemaVersion\": \"1.0.0\",\n  \"packetId\": \"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\n  \"providerId\": \"local-manual-agent\",\n  \"taskId\": \"DEMO-001\",\n  \"role\": \"Developer\",\n  \"revisionIdentity\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"runId\": \"native-one\",\n  \"actorId\": \"example-developer\",\n  \"contextIdentity\": \"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\n  \"inputIdentity\": \"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\n  \"status\": \"COMPLETED\",\n  \"result\": {\n    \"runId\": \"native-one\",\n    \"providerId\": \"local-manual-agent\",\n    \"taskId\": \"DEMO-001\",\n    \"role\": \"Developer\",\n    \"revisionIdentity\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n    \"outcome\": \"PASS\",\n    \"details\": {\n      \"implementationSummary\": \"Created the synthetic output.\",\n      \"changedSurfaces\": [\n        \"example.txt\"\n      ],\n      \"acceptanceCriteriaEvidence\": [\n        \"Verified synthetic marker.\"\n      ],\n      \"validationChecks\": [\n        \"Fixture only.\"\n      ],\n      \"knownLimitationsAssumptionsRisks\": [\n        \"Synthetic transport sample.\"\n      ]\n    },\n    \"findings\": [],\n    \"evidenceRefs\": [],\n    \"occurredAt\": \"2026-11-20T16:02:00Z\"\n  }\n}\n"
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "reply-fenced",
+      "definition": "replyRequestEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "replyRequest",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000001",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "replyText": "```json\r\n{\"packetId\":\"wrong-packet\"}\r\n```\r\n"
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "reply-malformed-but-bound",
+      "definition": "replyRequestEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "replyRequest",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000001",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "replyText": "not JSON"
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "pending",
+      "definition": "operationViewEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "operationView",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "action": "submit-reply",
+          "replayed": false,
+          "operation": {
+            "state": "pending"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "finished",
+      "definition": "operationViewEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "operationView",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "action": "submit-reply",
+          "replayed": false,
+          "operation": {
+            "state": "finished",
+            "receiptId": "receipt-accepted"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "replayed",
+      "definition": "operationViewEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "operationView",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "action": "submit-reply",
+          "replayed": true,
+          "operation": {
+            "state": "finished",
+            "receiptId": "receipt-accepted"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "finished-start",
+      "definition": "operationViewEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "operationView",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000003",
+          "action": "start",
+          "replayed": false,
+          "operation": {
+            "state": "finished",
+            "receiptId": null
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "failed-command",
+      "definition": "operationViewEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "operationView",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "action": "submit-reply",
+          "replayed": false,
+          "operation": {
+            "state": "failed",
+            "problem": {
+              "code": "stale-target",
+              "message": "Refresh the current attempt before creating a new request.",
+              "retryAfterMs": null
+            }
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "accepted",
+      "definition": "receiptEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "receipt",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "receiptId": "receipt-accepted",
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "importedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "disposition": "accepted",
+          "recordedAt": "2026-11-20T16:02:00Z",
+          "diagnostic": null,
+          "repairPacketId": null,
+          "nextAction": "Inspect the subsequent gate."
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "reused",
+      "definition": "receiptEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "receipt",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "receiptId": "receipt-native-reuse",
+          "requestId": null,
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "importedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "disposition": "reused",
+          "recordedAt": "2026-11-20T16:02:00Z",
+          "diagnostic": null,
+          "repairPacketId": null,
+          "nextAction": "Inspect the subsequent gate."
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "rejected",
+      "definition": "receiptEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "receipt",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "receiptId": "receipt-rejected",
+          "requestId": "00000000-0000-4000-8000-000000000001",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "importedPacketId": null,
+          "disposition": "rejected",
+          "recordedAt": "2026-11-20T16:01:00Z",
+          "diagnostic": {
+            "code": "REJECTED_INPUT",
+            "message": "Correct the role reply using the original pending handoff."
+          },
+          "repairPacketId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "nextAction": "Paste a corrected reply or use the repair handoff."
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "original-reply",
+      "definition": "replyOriginalEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "replyOriginal",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "receiptId": "receipt-accepted",
+          "body": {
+            "availability": "available",
+            "encoding": "utf-8",
+            "originalReply": "{\n  \"schemaId\": \"ipt.local-agent-result\",\n  \"schemaVersion\": \"1.0.0\",\n  \"packetId\": \"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\n  \"providerId\": \"local-manual-agent\",\n  \"taskId\": \"DEMO-001\",\n  \"role\": \"Developer\",\n  \"revisionIdentity\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"runId\": \"native-one\",\n  \"actorId\": \"example-developer\",\n  \"contextIdentity\": \"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\n  \"inputIdentity\": \"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\n  \"status\": \"COMPLETED\",\n  \"result\": {\n    \"runId\": \"native-one\",\n    \"providerId\": \"local-manual-agent\",\n    \"taskId\": \"DEMO-001\",\n    \"role\": \"Developer\",\n    \"revisionIdentity\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n    \"outcome\": \"PASS\",\n    \"details\": {\n      \"implementationSummary\": \"Created the synthetic output.\",\n      \"changedSurfaces\": [\n        \"example.txt\"\n      ],\n      \"acceptanceCriteriaEvidence\": [\n        \"Verified synthetic marker.\"\n      ],\n      \"validationChecks\": [\n        \"Fixture only.\"\n      ],\n      \"knownLimitationsAssumptionsRisks\": [\n        \"Synthetic transport sample.\"\n      ]\n    },\n    \"findings\": [],\n    \"evidenceRefs\": [],\n    \"occurredAt\": \"2026-11-20T16:02:00Z\"\n  }\n}\n"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "redacted-reply",
+      "definition": "replyOriginalEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "replyOriginal",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "receiptId": "receipt-rejected",
+          "body": {
+            "availability": "unavailable",
+            "reason": "redacted"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "multiline",
+      "definition": "correspondenceEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "correspondence",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "packet": {
+            "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "kind": "role",
+            "role": "Developer",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "body": {
+            "availability": "available",
+            "encoding": "utf-8",
+            "originalMarkdown": "# Developer handoff\r\n\r\nCopy exactly.  \r\n\r\n```json\r\n{\"packetId\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"role\":\"Developer\",\"revision\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"toolPolicy\":{\"allowed\":[\"read_file\"],\"network\":\"none\"},\"responseTemplate\":{\"status\":\"<outcome>\"},\"label\":\"café Δ 🙂\"}\r\n```\r\n",
+            "sha256": "a4db2b849106ef49b41413fb7398da109df4daa069de56866ebb9ec0c44bbcef"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "historical-missing",
+      "definition": "correspondenceEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "correspondence",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "packet": {
+            "packetId": "legacy-unknown",
+            "kind": "role",
+            "role": null,
+            "revision": null
+          },
+          "body": {
+            "availability": "unavailable",
+            "reason": "missing"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "not-found",
+      "definition": "problemEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "problem",
+        "data": {
+          "code": "not-found",
+          "message": "Run resource unavailable.",
+          "retryAfterMs": null
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "writer-busy",
+      "definition": "problemEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "problem",
+        "data": {
+          "code": "writer-busy",
+          "message": "The driver writer is busy.",
+          "retryAfterMs": 1500
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "history",
+      "definition": "historyEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "history",
+        "data": {
+          "projectId": "vibez-local-example",
+          "sessionId": "session-one",
+          "observedAt": "2026-11-20T16:02:00Z",
+          "nextCursor": null,
+          "events": [
+            {
+              "eventId": "event-handoff",
+              "attemptId": "session-one",
+              "recordedAt": "2026-11-20T16:00:00Z",
+              "details": {
+                "kind": "handoff",
+                "packet": {
+                  "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                  "kind": "role",
+                  "role": "Developer",
+                  "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                }
+              }
+            },
+            {
+              "eventId": "event-reply-rejected",
+              "attemptId": "session-one",
+              "recordedAt": "2026-11-20T16:01:00Z",
+              "details": {
+                "kind": "reply",
+                "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "receiptId": "receipt-rejected",
+                "replyAvailability": "unavailable"
+              }
+            },
+            {
+              "eventId": "event-receipt-rejected",
+              "attemptId": "session-one",
+              "recordedAt": "2026-11-20T16:01:00Z",
+              "details": {
+                "kind": "receipt",
+                "receipt": {
+                  "target": {
+                    "projectId": "vibez-local-example",
+                    "sessionId": "session-one",
+                    "attemptId": "session-one"
+                  },
+                  "receiptId": "receipt-rejected",
+                  "requestId": "00000000-0000-4000-8000-000000000001",
+                  "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                  "importedPacketId": null,
+                  "disposition": "rejected",
+                  "recordedAt": "2026-11-20T16:01:00Z",
+                  "diagnostic": {
+                    "code": "REJECTED_INPUT",
+                    "message": "Correct the role reply using the original pending handoff."
+                  },
+                  "repairPacketId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                  "nextAction": "Paste a corrected reply or use the repair handoff."
+                }
+              }
+            },
+            {
+              "eventId": "event-repair",
+              "attemptId": "session-one",
+              "recordedAt": "2026-11-20T16:01:00Z",
+              "details": {
+                "kind": "handoff",
+                "packet": {
+                  "packetId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                  "kind": "repair",
+                  "role": "Developer",
+                  "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                }
+              }
+            },
+            {
+              "eventId": "event-reply-accepted",
+              "attemptId": "session-one",
+              "recordedAt": "2026-11-20T16:02:00Z",
+              "details": {
+                "kind": "reply",
+                "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "receiptId": "receipt-accepted",
+                "replyAvailability": "available"
+              }
+            },
+            {
+              "eventId": "event-receipt-accepted",
+              "attemptId": "session-one",
+              "recordedAt": "2026-11-20T16:02:00Z",
+              "details": {
+                "kind": "receipt",
+                "receipt": {
+                  "target": {
+                    "projectId": "vibez-local-example",
+                    "sessionId": "session-one",
+                    "attemptId": "session-one"
+                  },
+                  "receiptId": "receipt-accepted",
+                  "requestId": "00000000-0000-4000-8000-000000000002",
+                  "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                  "importedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                  "disposition": "accepted",
+                  "recordedAt": "2026-11-20T16:02:00Z",
+                  "diagnostic": null,
+                  "repairPacketId": null,
+                  "nextAction": "Inspect the subsequent gate."
+                }
+              }
+            },
+            {
+              "eventId": "event-validator-build",
+              "attemptId": "session-one",
+              "recordedAt": "2026-11-20T16:02:00Z",
+              "details": {
+                "kind": "validation-check",
+                "validatorId": "repository:build",
+                "outcome": "pass",
+                "required": true,
+                "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "evidenceId": "validator-build-evidence-one",
+                "diagnostic": null
+              }
+            },
+            {
+              "eventId": "event-gate",
+              "attemptId": "session-one",
+              "recordedAt": "2026-11-20T16:02:00Z",
+              "details": {
+                "kind": "gate",
+                "gate": {
+                  "state": "observed",
+                  "stage": "developer-validation",
+                  "outcome": "pass",
+                  "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "diagnostic": null
+                }
+              }
+            },
+            {
+              "eventId": "event-finding",
+              "attemptId": "session-one",
+              "recordedAt": "2026-11-20T16:02:00Z",
+              "details": {
+                "kind": "finding",
+                "role": "QA",
+                "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "findingId": "finding-1",
+                "summary": "The QA reviewer found a missing error case."
+              }
+            },
+            {
+              "eventId": "event-rework",
+              "attemptId": "attempt-two",
+              "recordedAt": "2026-11-20T16:02:00Z",
+              "details": {
+                "kind": "rework",
+                "fromAttemptId": "session-one",
+                "toAttemptId": "attempt-two"
+              }
+            },
+            {
+              "eventId": "event-legacy",
+              "attemptId": "session-one",
+              "recordedAt": null,
+              "details": {
+                "kind": "handoff",
+                "packet": {
+                  "packetId": "legacy-unknown",
+                  "kind": "role",
+                  "role": null,
+                  "revision": null
+                }
+              }
+            }
+          ]
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "unknown-version",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 99,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "waiting",
+            "observedAt": "2026-11-20T16:00:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "awaiting-role",
+            "role": "Developer"
+          },
+          "pending": {
+            "role": {
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "kind": "role",
+              "role": "Developer",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Copy the Developer handoff and submit the reply.",
+          "actions": [
+            "read-packet",
+            "submit-reply"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "missing-binding",
+      "definition": "replyRequestEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "replyRequest",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "replyText": "{\n  \"packetId\": \"packet-dev\",\n  \"example\": \"Δ\"\n}\n"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "missing-session-binding",
+      "definition": "replyRequestEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "replyRequest",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "replyText": "{\n  \"packetId\": \"packet-dev\",\n  \"example\": \"Δ\"\n}\n"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "wrong-reply-shape",
+      "definition": "replyRequestEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "replyRequest",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "replyText": {
+            "text": "{\n  \"packetId\": \"packet-dev\",\n  \"example\": \"Δ\"\n}\n"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-identifier",
+      "definition": "commandRequestEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "commandRequest",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "../attempt"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000002"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-timestamp",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "waiting",
+            "observedAt": "yesterday"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "awaiting-role",
+            "role": "Developer"
+          },
+          "pending": {
+            "role": {
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "kind": "role",
+              "role": "Developer",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Copy the Developer handoff and submit the reply.",
+          "actions": [
+            "read-packet",
+            "submit-reply"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-pending-role",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "waiting",
+            "observedAt": "2026-11-20T16:00:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "awaiting-role",
+            "role": "Developer"
+          },
+          "pending": {
+            "role": {
+              "packetId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "kind": "repair",
+              "role": "Developer",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Copy the Developer handoff and submit the reply.",
+          "actions": [
+            "read-packet",
+            "submit-reply"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "accepted-without-packet",
+      "definition": "receiptEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "receipt",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "receiptId": "receipt-accepted",
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "importedPacketId": null,
+          "disposition": "accepted",
+          "recordedAt": "2026-11-20T16:02:00Z",
+          "diagnostic": null,
+          "repairPacketId": null,
+          "nextAction": "Inspect the subsequent gate."
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "finished-reply-without-receipt",
+      "definition": "operationViewEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "operationView",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "action": "submit-reply",
+          "replayed": false,
+          "operation": {
+            "state": "finished",
+            "receiptId": null
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "finished-start-with-receipt",
+      "definition": "operationViewEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "operationView",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "action": "start",
+          "replayed": false,
+          "operation": {
+            "state": "finished",
+            "receiptId": "receipt-accepted"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "mixed-packet-body-shape",
+      "definition": "correspondenceEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "correspondence",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "packet": {
+            "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "kind": "role",
+            "role": "Developer",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "body": {
+            "availability": "unavailable",
+            "reason": "missing",
+            "originalMarkdown": "# Developer handoff\r\n\r\nCopy exactly.  \r\n\r\n```json\r\n{\"packetId\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"role\":\"Developer\",\"revision\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"toolPolicy\":{\"allowed\":[\"read_file\"],\"network\":\"none\"},\"responseTemplate\":{\"status\":\"<outcome>\"},\"label\":\"café Δ 🙂\"}\r\n```\r\n"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "receipt-with-gate",
+      "definition": "receiptEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "receipt",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "receiptId": "receipt-accepted",
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "importedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "disposition": "accepted",
+          "recordedAt": "2026-11-20T16:02:00Z",
+          "diagnostic": null,
+          "repairPacketId": null,
+          "nextAction": "Inspect the subsequent gate.",
+          "gate": {
+            "state": "observed",
+            "stage": "developer-validation",
+            "outcome": "fail",
+            "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "diagnostic": {
+              "code": "CHECK_FAILED",
+              "message": "The build check failed. Inspect the validation evidence."
+            }
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "unknown-ci-with-result",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "waiting",
+            "observedAt": "2026-11-20T16:00:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "awaiting-role",
+            "role": "Developer"
+          },
+          "pending": {
+            "role": {
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "kind": "role",
+              "role": "Developer",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Copy the Developer handoff and submit the reply.",
+          "actions": [
+            "read-packet",
+            "submit-reply"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown",
+            "status": "pass"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "unsupported-capability",
+      "definition": "capabilitiesEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "capabilities",
+        "data": {
+          "projectId": "vibez-local-example",
+          "checkoutLabel": "Example",
+          "capabilities": [
+            "merge"
+          ],
+          "pollAfterMs": 1000
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "incorrect-route-kind",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "receipt",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "receiptId": "receipt-accepted",
+          "requestId": "00000000-0000-4000-8000-000000000002",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "importedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "disposition": "accepted",
+          "recordedAt": "2026-11-20T16:02:00Z",
+          "diagnostic": null,
+          "repairPacketId": null,
+          "nextAction": "Inspect the subsequent gate."
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "repair-correspondence",
+      "definition": "correspondenceEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "correspondence",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "packet": {
+            "packetId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "kind": "repair",
+            "role": "Developer",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "body": {
+            "availability": "available",
+            "encoding": "utf-8",
+            "originalMarkdown": "# Workflow repair handoff\r\n\r\nReturn a corrected raw role result for the original packet.  \r\n\r\n```json\r\n{\"packetId\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"originalPacketId\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"responseTemplate\":{\"schemaId\":\"ipt.local-agent-result\",\"schemaVersion\":\"1.0.0\",\"packetId\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"providerId\":\"local-manual-agent\",\"taskId\":\"DEMO-001\",\"role\":\"Developer\",\"revisionIdentity\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"runId\":\"native-one\",\"actorId\":\"example-developer\",\"contextIdentity\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"inputIdentity\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\"}}\r\n```\r\n",
+            "sha256": "72fb740d13bf48c812da626a217c376adbc8e38ef17b2efb4dfaf1c563f61ed2"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "validation-check-failed",
+      "definition": "historyEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "history",
+        "data": {
+          "projectId": "vibez-local-example",
+          "sessionId": "session-one",
+          "observedAt": "2026-11-20T16:02:00Z",
+          "nextCursor": null,
+          "events": [
+            {
+              "eventId": "event-validator-fail",
+              "attemptId": "session-one",
+              "recordedAt": "2026-11-20T16:02:00Z",
+              "details": {
+                "kind": "validation-check",
+                "validatorId": "repository:build",
+                "outcome": "fail",
+                "required": true,
+                "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "evidenceId": "validator-build-failed-evidence",
+                "diagnostic": {
+                  "code": "CHECK_FAILED",
+                  "message": "The build check failed. Inspect the validation evidence."
+                }
+              }
+            }
+          ]
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "impossible-date",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "waiting",
+            "observedAt": "2026-02-31T00:00:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "awaiting-role",
+            "role": "Developer"
+          },
+          "pending": {
+            "role": {
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "kind": "role",
+              "role": "Developer",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Copy the Developer handoff and submit the reply.",
+          "actions": [
+            "read-packet",
+            "submit-reply"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "non-ascii-date",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "waiting",
+            "observedAt": "２０２６-11-20T16:00:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "awaiting-role",
+            "role": "Developer"
+          },
+          "pending": {
+            "role": {
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "kind": "role",
+              "role": "Developer",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Copy the Developer handoff and submit the reply.",
+          "actions": [
+            "read-packet",
+            "submit-reply"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-https-uri",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https:// not-a-url",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "waiting",
+            "observedAt": "2026-11-20T16:00:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "awaiting-role",
+            "role": "Developer"
+          },
+          "pending": {
+            "role": {
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "kind": "role",
+              "role": "Developer",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Copy the Developer handoff and submit the reply.",
+          "actions": [
+            "read-packet",
+            "submit-reply"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "trailing-newline-identifier",
+      "definition": "commandRequestEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "commandRequest",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one\n"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000003"
+        }
+      },
+      "valid": false
+    }
+  ]
+}
