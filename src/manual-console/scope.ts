@@ -8,3 +8,6 @@ export const replyBytes = 4 * 1024 * 1024;
 export function consoleRecordDirectory(profile: DriverProfile, projectId: string, sessionId: string) {
   return driverDirectory(profile) + "/console/" + hash({ profile: hash(profile), projectId, sessionId });
 }
+
+export const rejectedReplyDiagnostic = { code: "REJECTED_INPUT",
+  message: "The reply did not match the bound handoff. Check the repair correspondence and submit a correction with a new request ID." };

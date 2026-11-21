@@ -5,7 +5,7 @@ import { followSuccessors, scanBoundReply, type DriverReceipt } from "../workflo
 import { loadSession } from "../workflow-driver/intake.js";
 import { driverDirectory, DriverError, exclusive, git, hash, read, redact, safePath, stableId, write, writeText } from "../workflow-driver/io.js";
 import type { DriverProfile, DriverSession } from "../workflow-driver/model.js";
-import { consoleRecordDirectory, replyBytes } from "./scope.js";
+import { consoleRecordDirectory, rejectedReplyDiagnostic, replyBytes } from "./scope.js";
 import { ConsoleProblem } from "./problem.js";
 import type { ManualConsoleReader } from "./reader.js";
 
@@ -219,7 +219,7 @@ export class ManualConsoleCommands {
       target, receiptId, requestId, expectedPacketId,
       importedPacketId: rejected ? null : receipt.packetId, disposition: receipt.status.toLowerCase(),
       recordedAt: receipt.occurredAt,
-      diagnostic: rejected ? { code: "REJECTED_INPUT", message: "The reply did not match the bound handoff. Check the repair correspondence and submit a correction with a new request ID." } : null,
+      diagnostic: rejected ? rejectedReplyDiagnostic : null,
       repairPacketId: rejected ? repairPacketId : null,
       nextAction: receipt.nextAction.slice(0, 2048),
     }, true);

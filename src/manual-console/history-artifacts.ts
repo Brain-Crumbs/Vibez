@@ -3,9 +3,16 @@ import { driverDirectory, files, hash, object, redact, safePath, validate } from
 import type { DriverProfile, DriverSession } from "../workflow-driver/model.js";
 import { nativeObject, originalBytes, packetId, revision, type BoundPacket } from "./artifacts.js";
 
-export const recordedTime = (value: unknown) =>
-  typeof value === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/.test(value) &&
-  Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
+export function recordedTime(value: unknown) {
+  if (typeof value !== "string") return null;
+  const parts = /^(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d)(\.\d{1,9})?(Z|[+-]\d\d:\d\d)$/.exec(value);
+  if (!parts || !Number.isFinite(Date.parse(value))) return null;
+  const civil = parts[1] + "T" + parts[2];
+  const candidate = new Date(civil + "Z");
+  if (!Number.isFinite(candidate.getTime()) || candidate.toISOString().slice(0, 19) !== civil) return null;
+  const utc = new Date(value).toISOString().slice(0, 19);
+  return /^\d{4}-/.test(utc) ? utc + (parts[3] ?? "") + "Z" : null;
+}
 export const isPacket = (value: unknown): value is string => typeof value === "string" && packetId.test(value);
 export const safeText = (value: unknown, root: string, fallback: string) => typeof value === "string" ?
   redact(value).split(root).join("[checkout]").replace(/\b(?:gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+)\b/g, "[redacted]")
@@ -19,7 +26,7 @@ export function recordNames(root: string, directory: string, suffix: string) {
 const roleRuns: Partial<Record<BoundPacket["ref"]["role"] & string, string>> = { Developer: "developer-agent", QA: "qa-agent", Architect: "architecture-agent", "UAT/Product": "uat-agent" };
 
 export function historicalPackets(root: string, profile: DriverProfile, session: DriverSession) {
-  const packets = new Map<string, { packet: BoundPacket; recordedAt: string | null }>();
+  const packets = new Map<string, { packet: BoundPacket; recordedAt: string | null; diagnostic?: Record<string, unknown> }>();
   const reports = new Map<string, string>();
   const roleIds = new Set([session.pendingPacket, session.developerPacket].filter(isPacket));
   const repairIds = new Set([session.diagnosticId].filter(isPacket));
@@ -30,15 +37,18 @@ export function historicalPackets(root: string, profile: DriverProfile, session:
     const { observedAt, ...snapshot } = data;
     if (snapshot.sessionId !== session.sessionId || snapshot.taskId !== session.taskId ||
         snapshot.runId !== session.request.runId || hash(snapshot) + ".json" !== name) continue;
-    for (const [id, known] of [[snapshot.pendingPacket, roleIds], [snapshot.diagnosticId, repairIds]] as const) {
-      if (!isPacket(id)) continue;
-      known.add(id);
-      const at = recordedTime(observedAt);
-      if (at && (!reports.has(id) || Date.parse(at) < Date.parse(reports.get(id)!))) reports.set(id, at);
+    if (isPacket(snapshot.diagnosticId)) repairIds.add(snapshot.diagnosticId);
+    if (isPacket(snapshot.pendingPacket)) {
+      roleIds.add(snapshot.pendingPacket);
+      const at = snapshot.event === "manual-handoff" ? recordedTime(observedAt) : null;
+      const prior = reports.get(snapshot.pendingPacket);
+      if (at && (!prior || Date.parse(at) < Date.parse(prior))) reports.set(snapshot.pendingPacket, at);
     }
   }
 
-  const put = (packet: BoundPacket) => packets.set(packet.ref.packetId, { packet, recordedAt: reports.get(packet.ref.packetId) ?? null });
+  const put = (packet: BoundPacket, diagnostic?: Record<string, unknown>) => packets.set(packet.ref.packetId, {
+    packet, recordedAt: reports.get(packet.ref.packetId) ?? null, ...(diagnostic ? { diagnostic } : {}),
+  });
   const roleNames = recordNames(root, profile.paths.outbound, ".handoff.json")
     .map(name => name.slice(0, -".handoff.json".length)).filter(isPacket);
   for (const id of new Set([...roleIds, ...roleNames])) {
@@ -73,8 +83,11 @@ export function historicalPackets(root: string, profile: DriverProfile, session:
     if (data.packetId !== id || projectRoot !== root || profileHash !== session.profileHash || intakeId !== null ||
         !object(taskContext) || taskContext.taskId !== session.taskId || taskContext.issueNumber !== session.issueNumber ||
         taskContext.runId !== session.request.runId || taskContext.definitionHash !== session.definitionHash ||
-        hash({ projectRoot, profileHash, sessionId, intakeId, revision: sha, code, message, taskContext }) !== id ||
-        !object(responseTemplate)) continue;
+        hash({ projectRoot, profileHash, sessionId, intakeId, revision: sha, code, message, taskContext }) !== id) continue;
+    if (!object(responseTemplate)) {
+      put({ ref: { packetId: id, kind: "repair", role: null, revision: revision(sha) }, relativePath: path + ".md", expected: null }, data);
+      continue;
+    }
     const role = isPacket(taskContext.pendingPacket) ? packets.get(taskContext.pendingPacket)?.packet : undefined;
     const handoff = role?.expected;
     const correction = responseTemplate.schemaId === "ipt.local-agent-result";
@@ -84,7 +97,7 @@ export function historicalPackets(root: string, profile: DriverProfile, session:
       responseTemplate.projectRoot === root && responseTemplate.profileHash === profileHash &&
       responseTemplate.sessionId === sessionId && ["recheck", "rework"].includes(String(responseTemplate.action)) ? data : null;
     put({ ref: { packetId: id, kind: "repair", role: correction ? role?.ref.role ?? null : null, revision: revision(sha) },
-      relativePath: path + ".md", expected, ...(correction && expected && handoff ? { originalHandoff: handoff } : {}) });
+      relativePath: path + ".md", expected, ...(correction && expected && handoff ? { originalHandoff: handoff } : {}) }, data);
   }
   for (const id of repairIds) {
     if (!packets.has(id)) put({ ref: { packetId: id, kind: "repair", role: null, revision: null },

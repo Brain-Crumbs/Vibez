@@ -264,6 +264,13 @@ test("packaged manual console preserves native CLI state and authenticates scope
   assert.equal(legacyReceipt.disposition, "rejected");
   assert.deepEqual((await read(runPath + "/receipts/" + legacyReceipt.receiptId + "/original")).data.data.body,
     { availability: "available", originalReply: "{", encoding: "utf-8" });
+  const companion = file.slice(0, -3);
+  const companionText = readFileSync(join(project, companion), "utf8");
+  rmSync(join(project, companion));
+  assert.deepEqual((await read(runPath + "/receipts/" + legacyReceipt.receiptId)).data.data, legacyReceipt);
+  assert.ok((await read(runPath + "/history")).data.data.events.some(event =>
+    event.details.kind === "receipt" && event.details.receipt.receiptId === legacyReceipt.receiptId));
+  put(project, companion, companionText);
   const legacyPath = ".vibez/operations/driver/archive/" + digest("{") + ".input.json";
   rmSync(join(project, legacyPath));
   assert.equal((await read(runPath + "/receipts/" + legacyReceipt.receiptId + "/original")).data.data.body.reason, "missing");
@@ -327,6 +334,16 @@ test("packaged manual console preserves native CLI state and authenticates scope
   assert.equal(historic.status, 200);
   assert.equal(historic.data.data.body.originalMarkdown, nativeOriginal);
   assert.equal(historic.data.data.packet.role, "Developer");
+  const lifecycleFile = ".vibez/state/lifecycle/DEMO-001.lifecycle.json";
+  const lifecycleText = readFileSync(join(project, lifecycleFile), "utf8");
+  const oldState = JSON.parse(lifecycleText);
+  oldState.history.push(null);
+  put(project, lifecycleFile, oldState);
+  const legacyCorrupt = await http(restarted.endpoint, runPath + "/history", { headers: newHeaders });
+  assert.equal(legacyCorrupt.status, 200, JSON.stringify(legacyCorrupt.data));
+  assert.ok(legacyCorrupt.data.data.events.some(event =>
+    event.details.kind === "receipt" && event.details.receipt.receiptId === legacyReceipt.receiptId));
+  put(project, lifecycleFile, lifecycleText);
   await restarted.stop();
 });
 
@@ -561,11 +578,11 @@ test("packaged console commands scope rejected replies and recover exact receipt
   for (const [index, event] of events.entries()) {
     if (event.details.kind !== "receipt") continue;
     const earlier = events.findIndex(item => item.details.kind === "reply" && item.details.receiptId === event.details.receipt.receiptId);
-    assert.ok(earlier >= 0 && earlier < index, "A submission precedes its receipt with the same recorded time.");
-    assert.equal(events[earlier].recordedAt, event.recordedAt);
+    assert.ok(earlier >= 0 && earlier < index, "A submission without a timestamp still precedes its native receipt.");
+    assert.equal(events[earlier].recordedAt, null);
   }
   assert.ok(events.some(event => event.details.kind === "receipt" && event.details.receipt.disposition === "rejected"));
-  assert.ok(events.some(event => event.details.kind === "validation-check" && event.details.outcome === "fail"));
+  assert.ok(events.some(event => event.details.kind === "validation-check" && event.details.outcome === "fail" && event.details.required === true));
   assert.ok(events.some(event => event.details.kind === "gate" && event.details.gate.stage === "developer-validation"));
   const originalPath = readOnly.path(first) + "/receipts/" + ref + "/original";
   assert.equal((await readOnly.send(originalPath)).data.data.body.originalReply, fenced);
@@ -573,6 +590,52 @@ test("packaged console commands scope rejected replies and recover exact receipt
   const cursor = (await readOnly.send(readOnly.path(first) + "/history?limit=1")).data.data.nextCursor;
   assert.equal((await readOnly.send(readOnly.path(sibling) + "/history?cursor=" + cursor)).data.data.code, "invalid-cursor");
   assert.equal((await readOnly.send(readOnly.path(first).split("/").slice(0, -1).join("/") + "?cursor=" + cursor)).data.data.code, "invalid-cursor");
+  const layout = get(project, ".vibez/operations/driver/profile.json").storage;
+  const checks = readdirSync(join(project, layout.evidence)).filter(name => name.startsWith("DEMO-001_003a_003avalidator"));
+  const failPath = checks.map(name => layout.evidence + "/" + name + "/0000001.json")
+    .find(name => get(project, name).payload.outcome === "FAIL");
+  assert.ok(failPath, "The installed native runner must record a failing validator.");
+  const originalCheck = readFileSync(join(project, failPath), "utf8");
+  const editedCheck = JSON.parse(originalCheck);
+  editedCheck.payload.outcome = "PASS";
+  for (const check of editedCheck.payload.checks) check.outcome = "PASS";
+  put(project, failPath, editedCheck);
+  const withoutTamper = await historyEvents(readOnly, first);
+  assert.ok(!withoutTamper.some(event => event.details.kind === "validation-check" &&
+    event.details.validatorId === editedCheck.payload.validatorId), "Audit-rejected evidence must not become a historical result.");
+  assert.ok(withoutTamper.some(event => event.details.kind === "gate" && event.details.gate.outcome === "fail"));
+  put(project, failPath, originalCheck);
+  const rejected = events.filter(event => event.details.kind === "receipt" &&
+    event.details.receipt.disposition === "rejected").slice(0, 2);
+  assert.equal(rejected.length, 2);
+  const tiedAt = rejected[0].recordedAt;
+  const consoleDirectory = layout.driver + "/console";
+  const boundArchive = layout.driver + "/archive/bound";
+  const originals = new Map();
+  try {
+    for (const event of rejected) {
+      const { receiptId, requestId } = event.details.receipt;
+      const directory = readdirSync(join(project, consoleDirectory)).map(name => consoleDirectory + "/" + name)
+        .find(name => existsSync(join(project, name, receiptId + ".receipt.json")));
+      assert.ok(directory);
+      const storedPath = directory + "/" + receiptId + ".receipt.json";
+      const inputHash = get(project, directory + "/" + requestId + ".request.json").inputHash;
+      const nativePath = readdirSync(join(project, boundArchive)).filter(name => name.endsWith(".receipt.json"))
+        .map(name => boundArchive + "/" + name).find(name => get(project, name).inputHash === inputHash);
+      assert.ok(nativePath);
+      for (const [location, field] of [[storedPath, "recordedAt"], [nativePath, "occurredAt"]]) {
+        const original = readFileSync(join(project, location), "utf8");
+        originals.set(location, original);
+        put(project, location, { ...JSON.parse(original), [field]: tiedAt });
+      }
+    }
+    const ids = rejected.map(event => event.eventId).sort();
+    const tied = (await historyEvents(readOnly, first)).filter(event => ids.includes(event.eventId));
+    assert.deepEqual(tied.map(event => event.recordedAt), [tiedAt, tiedAt]);
+    assert.deepEqual(tied.map(event => event.eventId), ids, "Independent native timestamp ties use stable event IDs.");
+  } finally {
+    for (const [location, original] of originals) put(project, location, original);
+  }
   assert.deepEqual(snapshot(project), beforeHistory);
   assert.equal(cli(["status", first]).sessionId, first);
 });
@@ -732,7 +795,27 @@ process.exitCode = readFileSync("marker.txt", "utf8") === "correct" ? 0 : 1;`);
   const linkAt = history.findIndex(event => event.details.kind === "rework");
   assert.ok(linkAt > 0);
   assert.deepEqual(history[linkAt].details, { kind: "rework", fromAttemptId: first, toAttemptId: linked.attempt.attemptId });
-  assert.ok(history.some(event => event.details.kind === "finding" && event.details.role === "QA" && event.details.revision === qaHead));
+  const qaGate = history.find(event => event.details.kind === "gate" && event.details.gate.stage === "qa-review");
+  assert.equal(qaGate.details.gate.revision, qaHead);
+  const findingAt = history.findIndex(event => event.details.kind === "finding" &&
+    event.details.role === "QA" && event.details.revision === qaHead);
+  const qaReceiptAt = history.findIndex(event => event.details.kind === "receipt" && event.details.receipt.receiptId === qaReceipt.receiptId);
+  assert.ok(qaReceiptAt >= 0 && findingAt > qaReceiptAt);
+  const firstState = cli(["status", first]);
+  const layout = get(project, ".vibez/operations/driver/profile.json").storage;
+  const firstRecord = layout.driver + "/sessions/" + first + ".json";
+  const journalFile = layout.orchestration + "/" + digest(firstState.request.idempotencyKey) + ".run.json";
+  const savedJournal = readFileSync(join(project, journalFile), "utf8");
+  const savedSession = readFileSync(join(project, firstRecord), "utf8");
+  const olderSession = JSON.parse(savedSession);
+  olderSession.result.stages = [];
+  put(project, firstRecord, olderSession);
+  rmSync(join(project, journalFile));
+  const restoredGate = (await historyEvents(client, first)).find(event => event.eventId === qaGate.eventId);
+  assert.equal(restoredGate.details.gate.revision, qaHead);
+  assert.equal(restoredGate.details.gate.outcome, "fail");
+  put(project, journalFile, savedJournal);
+  put(project, firstRecord, savedSession);
   assert.ok(history.findIndex(event => event.details.kind === "handoff" &&
     event.details.packet.packetId === linked.pending.role.packetId) > linkAt);
   const historicalQa = await client.send(current + "/packets/" + after.pendingPacket);

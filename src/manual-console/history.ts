@@ -19,9 +19,12 @@ const receiptEvent = (attemptId: string, id: string) => stableId({ attemptId, re
 const transitions: Partial<Record<string, readonly [string, string]>> = { Developer: ["developer-start", "dev-validation"], QA: ["dev-validation", "qa-review"],
   Architect: ["qa-review", "architecture-review"], "UAT/Product": ["architecture-review", "uat-review"] } as const;
 
-function timeOf(event: OrderedEvent) {
-  return event.recordedAt === null ? Infinity : Date.parse(event.recordedAt);
+function timeKey(event: OrderedEvent) {
+  if (event.recordedAt === null) return "~";
+  const [seconds, fraction = ""] = event.recordedAt.slice(0, -1).split(".");
+  return seconds + "." + fraction.padEnd(9, "0");
 }
+const compare = (left: string, right: string) => left < right ? -1 : left > right ? 1 : 0;
 function ordered(events: OrderedEvent[]) {
   const byId = new Map(events.map(event => [event.eventId, event]));
   const visited = new Set<string>();
@@ -36,8 +39,7 @@ function ordered(events: OrderedEvent[]) {
     const { after: _after, ...entry } = event;
     sorted.push(entry);
   };
-  for (const event of events.sort((left, right) => (timeOf(left) - timeOf(right)) ||
-    (left.eventId < right.eventId ? -1 : left.eventId > right.eventId ? 1 : 0))) visit(event);
+  for (const event of events.sort((left, right) => compare(timeKey(left), timeKey(right)) || compare(left.eventId, right.eventId))) visit(event);
   return sorted;
 }
 
@@ -58,7 +60,7 @@ export async function runHistory(config: ResolvedProjectConfig, profile: DriverP
     const attemptId = session.sessionId;
     const reworkId = index === 0 ? null : stableId({ from: session.predecessor, to: attemptId });
     const { packets, receipts } = attemptCorrespondence(config, profile, first.sessionId, session);
-    const gates = historicalGates(root, profile, session, audit?.projectIdentity === config.projectIdentity ? audit : null);
+    const gates = historicalGates(config, profile, session, audit?.projectIdentity === config.projectIdentity ? audit : null);
     const byGateId = new Map(gates.events.map(event => [event.eventId, event]));
     const handoffs = new Map<string, OrderedEvent>();
     for (const { packet, recordedAt } of packets.values()) {
@@ -76,7 +78,7 @@ export async function runHistory(config: ResolvedProjectConfig, profile: DriverP
       const replyId = stableId({ attemptId, reply: receipt.receiptId });
       const eventId = receiptEvent(attemptId, receipt.receiptId);
       const expected = receipt.expectedPacketId;
-      events.push({ eventId: replyId, attemptId, recordedAt: receipt.recordedAt,
+      events.push({ eventId: replyId, attemptId, recordedAt: null,
         after: expected ? [handoffEvent(attemptId, expected)] : [],
         details: { kind: "reply", expectedPacketId: expected, receiptId: receipt.receiptId, replyAvailability: item.body().availability } },
       { eventId, attemptId, recordedAt: receipt.recordedAt, after: [replyId], details: { kind: "receipt", receipt } });
@@ -85,8 +87,14 @@ export async function runHistory(config: ResolvedProjectConfig, profile: DriverP
       const role = expected ? packets.get(expected)?.packet.ref.role : null;
       const gate = role ? gates.stageGates.get(transitions[role]?.[1] ?? "") : null;
       const gateEvent = gate && byGateId.get(gate);
-      if (gateEvent && receipt.disposition === "accepted" && packets.get(expected!)?.packet.ref.kind === "role")
+      if (gateEvent && receipt.disposition === "accepted" && packets.get(expected!)?.packet.ref.kind === "role") {
+        for (const dependency of gateEvent.after) {
+          const evidence = byGateId.get(dependency);
+          if (evidence && "kind" in evidence.details && ["validation-check", "finding"].includes(String(evidence.details.kind)))
+            evidence.after.push(eventId);
+        }
         gateEvent.after.push(eventId);
+      }
     }
     const ownEvents = [...events.filter(event => event.attemptId === attemptId), ...gates.events];
     if (reworkId && session.predecessor) {

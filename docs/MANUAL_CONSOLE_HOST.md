@@ -96,8 +96,10 @@ Historical correspondence remains readable with command routes disabled.
 ## Stop and verify rollback
 
 Stop the host with Ctrl+C and wait for accepted in-flight HTTP operations to drain. Restart without `--commands` to disable commands. Reopen the same session with
-`vibez orchestrate status SESSION --project CHECKOUT`. The CLI uses the same
-profile, native journals and handoffs. The driver keeps native inbox and receipt history. Preserve the additive
+`vibez orchestrate status SESSION --project CHECKOUT`. For linked rework, the root ID
+selects the lineage. Use `status CURRENT_ATTEMPT` to inspect its successor
+without advancing it, or `resume ROOT --once` to continue through the CLI.
+The CLI uses the same profile, native journals and handoffs. The driver keeps native inbox and receipt history. Preserve the additive
 command correlations and bound reply archive under the configured driver directory.
 A compatible CLI can inspect and resume native sessions with commands disabled.
 Re-enable a compatible host to reconcile any original request left pending.

@@ -2,7 +2,7 @@ import { hash, object, redact, stableId, validate } from "../workflow-driver/io.
 import type { DriverProfile, DriverSession } from "../workflow-driver/model.js";
 import { nativeObject, originalBytes } from "./artifacts.js";
 import { isPacket, recordedTime, recordNames, safeText } from "./history-artifacts.js";
-import { consoleRecordDirectory, replyBytes, requestIdPattern } from "./scope.js";
+import { consoleRecordDirectory, rejectedReplyDiagnostic, replyBytes, requestIdPattern } from "./scope.js";
 
 export interface Target { projectId: string; sessionId: string; attemptId: string }
 type Disposition = "accepted" | "reused" | "rejected";
@@ -26,7 +26,7 @@ function replyBody(root: string, path: string, inputHash: string, legacy: boolea
 }
 
 export function historicalReceipts(root: string, profile: DriverProfile, session: DriverSession, target: Target,
-  packets: ReadonlyMap<string, { packet: { ref: { kind: "role" | "repair" }; expected: Record<string, unknown> | null } }>) {
+  packets: ReadonlyMap<string, { packet: { ref: { kind: "role" | "repair" } }; diagnostic?: Record<string, unknown> }>) {
   const records = [];
   function nativeReceipt(path: string) {
     const data = nativeObject(root, path + ".receipt.json");
@@ -46,8 +46,9 @@ export function historicalReceipts(root: string, profile: DriverProfile, session
     if (!rejected && !importedPacketId) return null;
     return {
       receipt: { target, receiptId, requestId, expectedPacketId, importedPacketId, disposition, recordedAt,
-        diagnostic: rejected ? { code: "REJECTED_INPUT", message: safeText(repair?.packet.expected?.message, root,
-          "The reply did not match the bound handoff. Inspect the repair or retry with the current binding.") } : null,
+        diagnostic: rejected ? (legacy ? { code: "REJECTED_INPUT", message: safeText(repair?.diagnostic?.message, root,
+          "The reply did not match the bound handoff. Inspect the repair or retry with the current binding.") }
+          : rejectedReplyDiagnostic) : null,
         repairPacketId: rejected && repair?.packet.ref.kind === "repair" ? data.diagnosticId as string : null,
         nextAction: safeText(data.nextAction, root, "Inspect this run with Vibez.") },
       body: () => replyBody(root, archive + (legacy ? ".input.json" : ".input.txt"), inputHash, legacy),
@@ -63,12 +64,29 @@ export function historicalReceipts(root: string, profile: DriverProfile, session
     const expected = request.expectedPacketId;
     const archive = profile.paths.archive + "/bound/" + hash({ profile: session.profileHash,
       attemptId: session.sessionId, packetId: expected, inputHash: request.inputHash });
-    const native = nativeReceipt(archive);
-    if (!native || native.inputHash !== request.inputHash ||
-        (native.disposition !== "rejected" && native.data.packetId !== expected)) continue;
     const receiptId = stableId({ target, requestId, expected, input: request.inputHash });
-    const item = project(native, receiptId, requestId, expected, archive, false);
-    if (item) records.push(item);
+    const native = nativeReceipt(archive);
+    const nativeMatches = native?.inputHash === request.inputHash &&
+      (native.disposition === "rejected" || native.data.packetId === expected);
+    const saved = nativeObject(root, consoleDir + "/" + receiptId + ".receipt.json");
+    const recordedAt = recordedTime(saved?.recordedAt);
+    if (saved?.receiptId === receiptId && saved.requestId === requestId && saved.expectedPacketId === expected &&
+        object(saved.target) && hash(saved.target) === hash(target) && recordedAt &&
+        (saved.disposition === "accepted" || saved.disposition === "reused" || saved.disposition === "rejected") &&
+        (!native || (nativeMatches && saved.disposition === native.disposition && recordedAt === native.recordedAt)) &&
+        (saved.disposition === "rejected" ? saved.importedPacketId === null : saved.importedPacketId === expected) &&
+        (saved.repairPacketId === null || (saved.disposition === "rejected" && isPacket(saved.repairPacketId))) &&
+        (saved.disposition === "rejected" ? object(saved.diagnostic) && saved.diagnostic.code === "REJECTED_INPUT" &&
+          typeof saved.diagnostic.message === "string" && saved.diagnostic.message === rejectedReplyDiagnostic.message :
+          saved.diagnostic === null)) {
+      records.push({ receipt: { target, receiptId, requestId, expectedPacketId: expected, importedPacketId: saved.importedPacketId as string | null,
+        disposition: saved.disposition, recordedAt, diagnostic: saved.disposition === "rejected" ? rejectedReplyDiagnostic : null,
+        repairPacketId: saved.repairPacketId, nextAction: safeText(saved.nextAction, root, "Inspect this run with Vibez.") },
+        body: () => replyBody(root, archive + ".input.txt", request.inputHash as string, false) });
+    } else if (native && nativeMatches) {
+      const item = project(native, receiptId, requestId, expected, archive, false);
+      if (item) records.push(item);
+    }
   }
   for (const name of recordNames(root, profile.paths.archive, ".receipt.json")) {
     const id = name.slice(0, -".receipt.json".length);
@@ -80,9 +98,9 @@ export function historicalReceipts(root: string, profile: DriverProfile, session
     let packet: string | null;
     if (native.disposition === "rejected") {
       // A reply's untrusted packet field alone cannot identify a CLI rejection.
-      const repair = isPacket(diagnosticId) ? packets.get(diagnosticId)?.packet : undefined;
-      if (repair?.ref.kind !== "repair" || !repair.expected) continue;
-      const context = repair.expected.taskContext;
+      const repair = isPacket(diagnosticId) ? packets.get(diagnosticId) : undefined;
+      if (repair?.packet.ref.kind !== "repair" || !repair.diagnostic) continue;
+      const context = repair.diagnostic.taskContext;
       packet = object(context) && isPacket(context.pendingPacket) ? context.pendingPacket : null;
     } else {
       if (!isPacket(packetId) || !packets.has(packetId)) continue;
