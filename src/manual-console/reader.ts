@@ -218,10 +218,13 @@ export class ManualConsoleReader {
       else if (rework && session.predecessor && session.status === "PREPARED" && !repair) actions.push("resume");
       if ((phase === "waiting" && role) || (repair && replyToPacketId && phase !== "completed")) actions.push("submit-reply");
     }
-    const nextAction = phase === "waiting" ? "Copy the current handoff into a fresh role session and return the reply through the Vibez CLI inbox." :
+    const nextAction = phase === "waiting" ? (actions.includes("submit-reply")
+      ? "Copy the current handoff into a fresh role session, then submit the reply here."
+      : "Copy the current handoff into a fresh role session and return the reply through the Vibez CLI inbox.") :
       phase === "active" ? "Wait for Vibez to finish developer validation." :
       phase === "prepared" ? (actions.includes("start") ? "Start this prepared session." : "Start this prepared session from the Vibez CLI.") :
-      phase === "rework" ? "Inspect the recorded review and continue through Vibez CLI rework." :
+      phase === "rework" ? (actions.includes("submit-reply") ? "Copy the offered repair into a fresh role session and submit its reply here."
+        : actions.includes("resume") ? "Resume the linked attempt." : "Inspect the recorded review and continue through Vibez CLI rework.") :
       phase === "blocked" ? (stopped ? this.#diagnostic("WORKFLOW_STOPPED", stopped.remediation).message : "Resolve the blocker in Vibez and refresh this run.") : null;
     return {
       role: phase === "waiting" || staleRole ? role : null, repair: phase === "completed" ? null : repair,

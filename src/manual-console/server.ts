@@ -227,6 +227,7 @@ export async function serveManualConsole(reader: ManualConsoleReader, origin: st
       if (signal.aborted) throw new ConsoleProblem(503, "temporarily-unavailable", "The local host is draining.", 1000);
       const reply = resource === "replies";
       const body = await readEnvelope(request, reply ? "replyRequest" : "commandRequest", reply ? 32 * 1024 * 1024 : undefined);
+      if (Date.now() >= operator.expires) throw unauthorized();
       const target = body.target;
       const requestId = body.requestId;
       if (Object.keys(body).length !== (reply ? 4 : 2) || !object(target) || Object.keys(target).length !== 3 ||

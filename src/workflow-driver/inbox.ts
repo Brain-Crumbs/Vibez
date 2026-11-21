@@ -62,7 +62,7 @@ function unwrap(text: string): unknown {
   const trimmed = text.trim();
   if (trimmed.startsWith("```")) {
     const match = /^```json\s*\n([\s\S]*?)\n```$/.exec(trimmed);
-    requireValue(match && !match[1]!.includes("```"), "Save exactly one fenced JSON block with no surrounding prose.");
+    requireValue(match, "Save exactly one fenced JSON block with no surrounding prose.");
     return JSON.parse(match[1]!) as unknown;
   }
   return JSON.parse(trimmed) as unknown;
@@ -119,7 +119,7 @@ export async function scan(root: string, p: DriverProfile, session: DriverSessio
     catch { diagnostic(root,p,"INBOX_UNREADABLE","An inbox entry is not a bounded regular file. Save a new regular file atomically.");continue; }
     if(bytes!==null)incoming.set(hash(bytes),bytes);
   }
-  for (const name of files(safePath(root,p.paths.archive),".input.json")) {
+  if (!bound) for (const name of files(safePath(root,p.paths.archive),".input.json")) {
     const inputHash=name.slice(0,-".input.json".length);
     if(incoming.has(inputHash)||existsSync(safePath(root,`${p.paths.archive}/${inputHash}.receipt.json`)))continue;
     const capture=read(safePath(root,`${p.paths.archive}/${name}`));
@@ -177,8 +177,14 @@ export async function scan(root: string, p: DriverProfile, session: DriverSessio
         validate(root, "driver-response", input);
         const response = input as unknown as DriverResponse;
         requireValue(response.projectRoot === root && response.profileHash === hash(p), "Response belongs to another repository/profile.");
-        const packet = read(safePath(root, `${p.paths.outbound}/${packetId}.diagnostic.json`));
+        const diagnosticPath = safePath(root, `${p.paths.outbound}/${packetId}.diagnostic.json`);
+        if (bound) requireValue(response.action !== "clarify" && existsSync(diagnosticPath),
+          "A typed diagnostic reply requires the offered repair handoff.");
+        const packet = read(diagnosticPath);
         requireValue(object(packet) && packet.packetId === packetId && packet.profileHash === response.profileHash, "Unknown diagnostic binding.");
+        if (bound) requireValue(packet.sessionId === bound.attemptId && object(packet.responseTemplate) &&
+          packet.responseTemplate.schemaId === "ipt.driver-response" && packet.responseTemplate.action === response.action,
+          "Reply does not match the offered diagnostic action.");
         if (response.action === "clarify") {
           requireValue(!bound, "New task admission requires the Vibez CLI.");
           requireValue(response.sessionId===undefined,"Intake clarification cannot include a session ID.");

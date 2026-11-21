@@ -74,7 +74,8 @@ not authorize new work, reviews, merges or lifecycle mutations.
 - **Rationale:** A shared byte hash cannot identify the intended session,
   especially when parsing the reply fails.
 - **Evidence:** [Vibez #41](https://github.com/Brain-Crumbs/Vibez/issues/41)
-  and [the installed HTTP fixture](../../tests/manual-console-host.test.mjs).
+  and [PR #45](https://github.com/Brain-Crumbs/Vibez/pull/45). The installed HTTP
+  test observes native validation while the console remains responsive.
 
 ## Change history
 

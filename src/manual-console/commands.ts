@@ -1,9 +1,9 @@
 import { existsSync, lstatSync, readFileSync } from "node:fs";
-import { step, type DriverRuntime } from "../workflow-driver/driver.js";
-import { scanBoundReply, type DriverReceipt } from "../workflow-driver/inbox.js";
+import type { DriverRuntime } from "../workflow-driver/driver.js";
+import { followSuccessors, scanBoundReply, type DriverReceipt } from "../workflow-driver/inbox.js";
 import { loadSession } from "../workflow-driver/intake.js";
 import { driverDirectory, DriverError, exclusive, hash, read, redact, safePath, stableId, write, writeText } from "../workflow-driver/io.js";
-import type { DriverProfile } from "../workflow-driver/model.js";
+import type { DriverProfile, DriverSession } from "../workflow-driver/model.js";
 import { ConsoleProblem } from "./problem.js";
 import type { ManualConsoleReader } from "./reader.js";
 
@@ -32,7 +32,9 @@ export class ManualConsoleCommands {
   readonly #active = new Map<string, string>();
   readonly #host: DriverRuntime;
 
-  constructor(private readonly root: string, private readonly reader: ManualConsoleReader, host: DriverRuntime) {
+  constructor(private readonly root: string, private readonly reader: ManualConsoleReader, host: DriverRuntime,
+    private readonly runStep: (profile: DriverProfile, session: DriverSession) =>
+      Promise<Pick<DriverSession, "pendingPacket" | "diagnosticId">>) {
     this.#host = { ...host, manualConsole: true };
   }
 
@@ -114,6 +116,8 @@ export class ManualConsoleCommands {
           } else if (action === "start") {
             if (phase !== "prepared" || current.session.predecessor)
               throw unsupported(current.detail.blocker?.message ?? "Start requires an eligible prepared session.");
+          } else if (phase === "blocked" && current.detail.pending.role) {
+            throw unsupported(current.detail.blocker?.message ?? "Restore the bound role's source revision before resuming.");
           } else if (phase === "completed" || phase === "active" || phase === "prepared" ||
               (phase === "rework" && current.detail.pending.repair)) {
             throw unsupported("Resume requires a stopped or waiting attempt. Use the offered repair for legal rework.");
@@ -130,9 +134,13 @@ export class ManualConsoleCommands {
             finish({ state: "failed", problem: { code: problem.code, message: problem.message, retryAfterMs: problem.retryAfterMs } });
             return;
           }
-          const result = await step(this.root, profile, current.session, this.#host);
-          if (!result.pendingPacket && result.diagnosticId) {
-            const observed = this.reader.commandSession(target.sessionId).detail;
+          const native = action === "resume" && current.session.predecessor
+            ? await followSuccessors(this.root, profile, loadSession(this.root, profile, target.sessionId), this.#host)
+            : current.session;
+          if (native.sessionId !== target.attemptId) throw stale();
+          const result = await this.runStep(profile, native);
+          const observed = this.reader.commandSession(target.sessionId).detail;
+          if (result.diagnosticId && (!result.pendingPacket || observed.summary.phase === "blocked")) {
             const problem = unsupported(observed.blocker?.message ?? "Inspect the native run blocker before retrying.");
             finish({ state: "failed", problem: { code: problem.code, message: problem.message, retryAfterMs: problem.retryAfterMs } });
           } else finish({ state: "finished", receiptId: null });
@@ -160,7 +168,7 @@ export class ManualConsoleCommands {
           const originalStillPending = active.sessionId === target.attemptId &&
             (active.pendingPacket === command.expectedPacketId || (repair && !active.pendingPacket && !active.diagnosticId));
           const successorPrepared = repair && active.predecessor === target.attemptId && active.status === "PREPARED";
-          if (originalStillPending || successorPrepared) await step(this.root, profile, active, this.#host);
+          if (originalStillPending || successorPrepared) await this.runStep(profile, active);
         }
         finish({ state: "finished", receiptId });
       });
