@@ -90,11 +90,12 @@ function observeReadiness(root: string, profile: DriverProfile, session: DriverS
 async function withObservedValidation<T>(root: string, profile: DriverProfile, session: DriverSession,
   action: () => Promise<T>): Promise<T> {
   const directory = driverDirectory(profile);
-  const lock = safePath(root, `${directory}/writer.lock`);
-  const path = safePath(root, `${directory}/reports/${session.sessionId}/integration/validation-heartbeat.json`);
-  let lockHash: string;
-  try { lockHash = hash(readFileSync(lock, "utf8")); }
-  catch { return action(); }
+  let lock: string, path: string, lockHash: string;
+  try {
+    lock = safePath(root, `${directory}/writer.lock`);
+    path = safePath(root, `${directory}/reports/${session.sessionId}/integration/validation-heartbeat.json`);
+    lockHash = hash(readFileSync(lock, "utf8"));
+  } catch { return action(); }
 
   function update() {
     try {
@@ -396,6 +397,11 @@ export async function publish(root: string, p: DriverProfile, s: DriverSession, 
     if (configured) requireValue(configured.authorizePublication(s.taskId, head),
       "Host authorization for the exact task and source is required for publication or ready conversion.", "PUBLICATION_AUTHORIZATION_REQUIRED");
   };
+  const recordPull = (pr: GithubPull) => {
+    if (typeof pr.draft === "boolean")
+      observeIntegration(root, p, s, { kind: "pull-request", number: pr.number, revision: pr.head.sha,
+        status: pr.draft ? "draft" : "open", draftKnown: true }, runtime.progress);
+  };
   const existing=await candidate();authorizeWrite();
   if (ready) {
     requireValue(existing,"Publish the canonical draft first; ready never creates a pull request.");
@@ -404,7 +410,10 @@ export async function publish(root: string, p: DriverProfile, s: DriverSession, 
     const pr=await checked.json() as GithubPull;
     requireValue(checked.ok&&pr.number===existing.number&&pr.node_id,"Unable to verify the exact PR node for ready conversion.");
     assertPull(pr,p,s,task.canonicalBranch,head);assertPublished();
-    if(pr.draft===false)return {number:pr.number,revision:head,ready:true,reused:true};
+    if(pr.draft===false) {
+      recordPull(pr);
+      return {number:pr.number,revision:head,ready:true,reused:true};
+    }
     authorizeWrite();
     const f = githubTransport(runtime);
     const markReady = () => f("https://api.github.com/graphql", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ query: "mutation($id:ID!){markPullRequestReadyForReview(input:{pullRequestId:$id}){pullRequest{id}}}", variables: { id: pr.node_id } }) });
@@ -412,6 +421,7 @@ export async function publish(root: string, p: DriverProfile, s: DriverSession, 
     const response = await (runtime.unattended ? runtime.unattended.effect({action:"ready",taskId:s.taskId,revision:head,pullRequestNumber:pr.number}, markReady) : markReady());
     const body = await response.json() as {errors?:unknown}; requireValue(response.ok && !body.errors, "Ready conversion failed; inspect GitHub and retry. No merge was attempted.");
     const after=await candidate(head);assertPublished();requireValue(after?.number===pr.number&&after.draft===false,"Remote PR changed during ready conversion; inspect GitHub before resuming.");
+    recordPull(after);
     return {number:pr.number,revision:head,ready:true,reused:false};
   }
   assertRemote(root,p,runtime,remote);
@@ -440,7 +450,6 @@ export async function publish(root: string, p: DriverProfile, s: DriverSession, 
     authorizeWrite();
   }, runtime.unattended ? action => runtime.unattended!.effect({action:"publish",taskId:s.taskId,revision:head},action) : undefined) : await adapter.ensurePullRequest(request);
   const after=await candidate(head);assertPublished();requireValue(after?.number===result.number,"Canonical PR changed during publication.");
-  observeIntegration(root, p, s, { kind: "pull-request", number: after.number, revision: after.head.sha,
-    status: after.draft ? "draft" : "open", draftKnown: true }, runtime.progress);
+  recordPull(after);
   return result;
 }

@@ -21,7 +21,7 @@ export function integrationObservations(root: string, profile: DriverProfile, se
   const pullUrl = (number: number) => `https://github.com/${profile.repository}/pull/${number}`;
   function read(kind: "pull-request" | "ci") {
     const stored = nativeObject(root, `${driverDirectory(profile)}/reports/${session.sessionId}/integration/${kind}.json`);
-    if (!stored || stored.kind !== kind || stored.repository !== profile.repository || stored.profileHash !== session.profileHash ||
+    if (!stored || (kind === "pull-request" && stored.draftKnown !== true) || stored.kind !== kind || stored.repository !== profile.repository || stored.profileHash !== session.profileHash ||
         stored.sessionId !== session.sessionId || stored.taskId !== session.taskId || stored.runId !== session.request.runId) return null;
     const observedAt = utc(stored.observedAt);
     const sha = revision(stored.revision);
