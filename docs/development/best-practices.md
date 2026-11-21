@@ -36,6 +36,20 @@ not authorize new work, reviews, merges or lifecycle mutations.
   SELF_APPROVAL/ADV-007 and PRE_MERGE_HEAD/ADV-009 in
   [the mutation proof](../ADVERSARIAL_TESTS.md#mutation-proof).
 
+## BP-003 — Test the same wire contract downstream consumers pin
+
+- **Status:** active
+- **Added / latest revision:** 2026-11-20
+- **Rule and scope:** Validate paired positive and negative payloads against the
+  published wire schema. Include route-specific shape and version failures.
+  Assert cross-document identities and exact bytes independently when shape
+  validation alone cannot establish the behavioral promise.
+- **Rationale:** A parallel validator can drift from the pinned artifact.
+  Structural validity alone leaves receipt/gate confusion and whitespace loss
+  undetected.
+- **Evidence:** [Vibez #39](https://github.com/Brain-Crumbs/Vibez/issues/39)
+  and the [manual console conformance cases](../specs/manual-console-v1/fixtures.json).
+
 ## Change history
 
 | Date | ID | Change | Reason | Evidence |
@@ -44,3 +58,4 @@ not authorize new work, reviews, merges or lifecycle mutations.
 | 2026-10-12 | BP-002 | added | Confirm named tests detect two deliberately removed guards | BOOT-034 #36; mutation proof |
 | 2026-10-12 | BP-001 | revised | Link the submitted implementation for reviewable evidence | [PR #72](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/72) |
 | 2026-10-12 | BP-002 | revised | Link the submitted mutation proof implementation | [PR #72](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/72) |
+| 2026-11-20 | BP-003 | added | Validate published transport shapes and independent cross-document promises | [Vibez #39](https://github.com/Brain-Crumbs/Vibez/issues/39) |

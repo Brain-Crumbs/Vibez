@@ -6,6 +6,7 @@ Human-readable architecture and operating documentation introduced by later boot
 
 - [Install and verify Vibez](INSTALL.md) — build a private tarball and run the installed library and executable.
 
+- [Manual console HTTP contract v1](MANUAL_CONSOLE_CONTRACT.md) — versioned loopback protocol and standalone consumer conformance inputs.
 - [CLI setup and commands](CLI.md) — build and operate the local CLI from a Vibez checkout.
 - [ROLE_MODEL.md](ROLE_MODEL.md) — BOOT-002 normative responsibilities, context visibility, prohibited actions, output shape, and approval authority for Developer, QA, Architect, UAT/Product, and Merge Controller roles.
 - [Isolated rehearsal](SEED_REHEARSAL.md) — exercise the inherited gates and packet adapter in a disposable Git repository.
