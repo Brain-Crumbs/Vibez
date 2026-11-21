@@ -1,8 +1,9 @@
 import { existsSync, lstatSync, readFileSync } from "node:fs";
+import { selectNextEligibleTask } from "../task-registry/index.js";
 import type { DriverRuntime } from "../workflow-driver/driver.js";
 import { followSuccessors, scanBoundReply, type DriverReceipt } from "../workflow-driver/inbox.js";
 import { loadSession } from "../workflow-driver/intake.js";
-import { driverDirectory, DriverError, exclusive, hash, read, redact, safePath, stableId, write, writeText } from "../workflow-driver/io.js";
+import { driverDirectory, DriverError, exclusive, git, hash, read, redact, safePath, stableId, write, writeText } from "../workflow-driver/io.js";
 import type { DriverProfile, DriverSession } from "../workflow-driver/model.js";
 import { ConsoleProblem } from "./problem.js";
 import type { ManualConsoleReader } from "./reader.js";
@@ -58,6 +59,30 @@ export class ManualConsoleCommands {
     return existsSync(path) ? read(path) as Command : null;
   }
 
+  async run(sessionId: string) {
+    const { profile, detail } = this.reader.commandSession(sessionId);
+    if (!detail.actions.includes("start")) return detail;
+    const blocker = await this.#startBlocker(profile, detail.summary.taskId, detail.summary.branch);
+    if (!blocker) return detail;
+    return { ...detail, actions: detail.actions.filter(action => action !== "start"), blocker,
+      nextAction: "Inspect the native task selection and checkout, then refresh this run." };
+  }
+
+  async #startBlocker(profile: DriverProfile, taskId: string, branch: string) {
+    try {
+      const services = await this.#host.services?.();
+      if (services) {
+        const selected = selectNextEligibleTask(services.registry, { taskStates: services.taskStates() });
+        if (selected.kind !== "selected" || selected.taskId !== taskId)
+          return { code: "TASK_NOT_ELIGIBLE", message: "Vibez has selected a different task or has no eligible task. Inspect orchestrate next." };
+        if (![profile.integrationTarget, branch].includes(git(this.root, "branch", "--show-current")))
+          return { code: "SOURCE_NOT_READY", message: "Check out the integration target or this task's canonical branch before starting." };
+        return null;
+      }
+    } catch { /* An uncertain native selection cannot authorize a control. */ }
+    return { code: "STATE_UNCERTAIN", message: "The current task eligibility could not be observed. Inspect the configured project in Vibez." };
+  }
+
   async submit(action: Action, target: Target, requestId: string, reply?: { text: string; expectedPacketId: string }) {
     const { profile } = this.reader.commandSession(target.sessionId);
     const command: Command = action === "submit-reply" && reply
@@ -96,6 +121,7 @@ export class ManualConsoleCommands {
     if (active) {
       if (active !== fingerprint)
         throw new ConsoleProblem(409, "conflicting-request", "This request ID is in progress for a different action, target or reply.");
+      if (!this.#readCommand(profile, target.sessionId, requestId)) throw busy();
       return;
     }
     this.#active.set(key, fingerprint);
@@ -116,6 +142,8 @@ export class ManualConsoleCommands {
           } else if (action === "start") {
             if (phase !== "prepared" || current.session.predecessor)
               throw unsupported(current.detail.blocker?.message ?? "Start requires an eligible prepared session.");
+            const blocker = await this.#startBlocker(profile, current.detail.summary.taskId, current.detail.summary.branch);
+            if (blocker) throw unsupported(blocker.message);
           } else if (phase === "blocked" && current.detail.pending.role) {
             throw unsupported(current.detail.blocker?.message ?? "Restore the bound role's source revision before resuming.");
           } else if (phase === "completed" || phase === "active" || phase === "prepared" ||

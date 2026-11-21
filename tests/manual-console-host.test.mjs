@@ -34,7 +34,11 @@ function install(t) {
     join(nodeDir, "..", "lib", "node_modules", "npm", "bin", "npm-cli.js"));
   assert.ok(existsSync(npm), "Set npm_execpath to the installed npm CLI script.");
   const root = mkdtempSync(join(tmpdir(), "vibez console "));
-  t.after(() => rmSync(root, { force: true, recursive: true }));
+  const children = [];
+  t.after(async () => {
+    await Promise.all(children.map(stop => stop()));
+    rmSync(root, { force: true, recursive: true });
+  });
   function call(cwd, file, args, input) {
     const run = spawnSync(process.execPath, [file, ...args], { cwd, input, encoding: "utf8", timeout: 90_000 });
     assert.equal(run.status, 0, run.stderr || run.stdout || run.error?.message);
@@ -91,7 +95,7 @@ function install(t) {
       if (child.exitCode === null && child.signalCode === null) child.kill("SIGTERM");
       await exit;
     };
-    t.after(stop);
+    children.push(stop);
     return { endpoint: found[1], code: found[2], stop };
   }
   function watch(sessionId) {
@@ -103,7 +107,7 @@ function install(t) {
       if (!oneShot && child.exitCode === null && child.signalCode === null) child.kill("SIGTERM");
       await exit;
     };
-    t.after(stop);
+    children.push(stop);
     return stop;
   }
   return { cli, project, start, watch };
@@ -122,7 +126,7 @@ async function watchFor(cli, sessionId, predicate) {
 
 function http(endpoint, path, { method = "GET", headers = {}, body, chunked = false } = {}) {
   return new Promise((resolve, reject) => {
-    const call = request(endpoint + path, { method, headers, agent: false, timeout: 15_000 }, res => {
+    const call = request(endpoint + path, { method, headers, agent: false, timeout: process.platform === "win32" ? 90_000 : 15_000 }, res => {
       let text = "";
       res.setEncoding("utf8");
       res.on("data", part => { text += part; });
@@ -389,7 +393,7 @@ async function connectCommands(start, commands) {
   return { host, send, path, command, capabilities, projectId, headers };
 }
 
-test("packaged console commands scope rejected replies and recover exact receipts across restart", { timeout: 180_000 }, async t => {
+test("packaged console commands scope rejected replies and recover exact receipts across restart", { timeout: 300_000 }, async t => {
   const { cli, project, start } = install(t);
   cli(["init", "--actor-prefix", "operator", "--developer-tools", "read_file,write_file,git_commit",
     "--review-tools", "read_file,run_test", "--enforce-policies", "externally"]);
@@ -401,6 +405,13 @@ test("packaged console commands scope rejected replies and recover exact receipt
   let client = await connectCommands(start, true);
   assert.ok(client.capabilities.includes("submit-reply"));
   assert.equal((await client.command(blocked, "start")).status, 422);
+  const unselected = (await client.send(client.path(sibling))).data.data;
+  assert.equal(unselected.summary.phase, "prepared");
+  assert.equal(unselected.actions.includes("start"), false);
+  assert.equal(unselected.blocker.code, "TASK_NOT_ELIGIBLE");
+  assert.equal((await client.command(sibling, "start")).status, 422);
+  assert.equal(cli(["status", sibling]).status, "PREPARED");
+  assert.ok((await client.send(client.path(first))).data.data.actions.includes("start"));
   const lock = ".vibez/operations/driver/writer.lock";
   put(project, lock, "fixture-held-lock");
   const contention = await client.command(first, "start");
@@ -498,14 +509,17 @@ test("packaged console commands scope rejected replies and recover exact receipt
   assert.equal(cli(["status", first]).sessionId, first);
 });
 
-test("scoped ingress resumes after interrupted storage and an unacknowledged native import", { timeout: 180_000 }, async t => {
+test("scoped ingress resumes after interrupted storage and an unacknowledged native import", { timeout: 300_000 }, async t => {
   const { cli, project, start, watch } = install(t);
   const { hash, stableId } = await import("../dist/workflow-driver/io.js");
   cli(["init", "--actor-prefix", "operator", "--developer-tools", "read_file,write_file,git_commit",
     "--review-tools", "read_file,run_test", "--enforce-policies", "externally"]);
-  put(project, "verify.mjs", `import { readFileSync, writeFileSync } from "node:fs";
+  put(project, "verify.mjs", `import { existsSync, readFileSync, writeFileSync } from "node:fs";
 writeFileSync(".vibez/validation-started", "");
-await new Promise(resolve => setTimeout(resolve, 6000));
+const limit = Date.now() + 45000;
+while (!existsSync(".vibez/validation-release") && Date.now() < limit) {
+  await new Promise(resolve => setTimeout(resolve, 50));
+}
 writeFileSync(".vibez/validation-finished", "");
 process.exitCode = readFileSync("marker.txt", "utf8") === "correct" ? 0 : 1;`);
   git(project, "add", "verify.mjs");
@@ -561,14 +575,23 @@ process.exitCode = readFileSync("marker.txt", "utf8") === "correct" ? 0 : 1;`);
   const advancing = post();
   const began = join(project, ".vibez/validation-started");
   const finished = join(project, ".vibez/validation-finished");
-  for (let attempt = 0; !existsSync(began) && attempt < 80; attempt++) await pause(125);
-  assert.ok(existsSync(began));
-  const active = (await client.send(client.path(first))).data.data;
-  assert.equal(active.summary.phase, "active");
-  assert.equal(active.gate.stage, "developer-validation");
-  assert.equal(existsSync(finished), false, "The listener must answer while a native validator is still running.");
-  const stopWatcher = watch(first);
-  put(project, ".vibez/inbox/responses/concurrent.json", raw);
+  const markerBudgetMs = process.platform === "win32" ? 60_000 : 10_000;
+  const deadline = Date.now() + markerBudgetMs;
+  let replyBeforeProbe;
+  void advancing.then(result => { replyBeforeProbe = result; }, error => { replyBeforeProbe = { error: error.message }; });
+  let stopWatcher;
+  try {
+    while (!existsSync(began) && !replyBeforeProbe && Date.now() < deadline) await pause(125);
+    assert.ok(existsSync(began), "Console validation did not begin: " + JSON.stringify(replyBeforeProbe));
+    const active = (await client.send(client.path(first))).data.data;
+    assert.equal(active.summary.phase, "active");
+    assert.equal(active.gate.stage, "developer-validation");
+    assert.equal(existsSync(finished), false, "The listener must answer while a native validator is still running.");
+    stopWatcher = watch(first);
+    put(project, ".vibez/inbox/responses/concurrent.json", raw);
+  } finally {
+    put(project, ".vibez/validation-release", "");
+  }
   const result = await advancing;
   await stopWatcher();
   rmSync(join(project, ".vibez/inbox/responses/concurrent.json"));

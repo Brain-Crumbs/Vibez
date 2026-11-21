@@ -220,7 +220,7 @@ export async function serveManualConsole(reader: ManualConsoleReader, origin: st
     if (!session || !idPattern.test(session)) throw notFound();
     const historyPage = resource === "history" && method === "GET" && item === undefined;
     if (separator !== -1 && !historyPage) throw notFound();
-    if (resource === undefined && method === "GET") return json(response, 200, envelope("run", reader.run(session)));
+    if (resource === undefined && method === "GET") return json(response, 200, envelope("run", commands ? await commands.run(session) : reader.run(session)));
     if (resource === "packets" && method === "GET" && item && idPattern.test(item) && extra === undefined)
       return json(response, 200, envelope("correspondence", reader.packet(session, item)));
     if (commands && method === "POST" && item === undefined && resource && commandPaths.includes(resource)) {

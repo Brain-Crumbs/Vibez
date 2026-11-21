@@ -59,7 +59,7 @@ accessible in this version.
 Pass `--commands` at launch to let a paired operator start an already
 admitted session, resume an existing attempt and submit one raw JSON object
 or one fenced JSON block. Read capabilities and the run's available actions
-before enabling a control. The host uses the same writer lock as
+before enabling a control. Start is available when native task selection points\nto the prepared attempt and the checkout is on its integration target or\ncanonical branch. The host uses the same writer lock as
 `vibez orchestrate`. On a writer blocker, let the active operation finish
 before retrying. New admission, lock recovery, publication, readiness and
 merge remain trusted CLI operations.
