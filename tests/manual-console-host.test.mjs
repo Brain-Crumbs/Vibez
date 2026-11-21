@@ -341,6 +341,8 @@ test("native reviewer source drift and revision-bound integration snapshots rema
   const config = resolveProjectConfig({ projectRoot: project, configPath: "workflow.json", verifyLocalStorage: () => true });
   const profile = loadProfile(project, config);
   observeIntegration(project, profile, qa, { kind: "pull-request", number: 17, revision: oldHead, status: "draft", draftKnown: true });
+  observeIntegration(project, profile, qa, { kind: "pull-request", number: 17, revision: changed.summary.revision,
+    status: "open", draftKnown: false });
   observeIntegration(project, profile, qa, { kind: "ci", revision: changed.summary.revision, status: "pass" });
   const observed = (await http(host.endpoint, path, { headers })).data.data;
   assert.equal(observed.pullRequest.status, "draft");

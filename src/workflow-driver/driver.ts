@@ -59,9 +59,11 @@ export function observeIntegration(
     const previous = safePath(root, relative);
     if (observation.kind === "pull-request" && !observation.draftKnown && existsSync(previous)) {
       const known = read(previous);
+      // A partial readiness lookup cannot supersede the last fully observed
+      // PR status, even when it returns a newer head. Keep the old provenance.
       if (object(known) && known.profileHash === session.profileHash && known.sessionId === session.sessionId &&
-          known.runId === session.request.runId && known.revision === observation.revision && known.number === observation.number &&
-          known.draftKnown === true) return;
+          known.repository === profile.repository && known.taskId === session.taskId &&
+          known.runId === session.request.runId && known.draftKnown === true) return;
     }
     write(previous, { ...observation, observedAt: now(), sessionId: session.sessionId, taskId: session.taskId,
       runId: session.request.runId, profileHash: session.profileHash, repository: profile.repository });
