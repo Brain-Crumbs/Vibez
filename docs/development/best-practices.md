@@ -50,6 +50,19 @@ not authorize new work, reviews, merges or lifecycle mutations.
 - **Evidence:** [Vibez #39](https://github.com/Brain-Crumbs/Vibez/issues/39)
   and the [manual console conformance cases](../specs/manual-console-v1/fixtures.json).
 
+## BP-004 — Verify read adapters against the owning native state
+
+- **Status:** active
+- **Added / latest revision:** 2026-11-20
+- **Rule and scope:** Start the workflow through the installed native CLI,
+  then query the read adapter with an independent client. Compare packet bytes
+  to the original artifact and compare native records before and after repeated
+  successful and refused requests.
+- **Rationale:** Fixture-only HTTP responses cannot establish that a read path
+  preserves native evidence or serves the same correspondence as the CLI.
+- **Evidence:** [Vibez #40](https://github.com/Brain-Crumbs/Vibez/issues/40)
+  and [the installed HTTP fixture](../../tests/manual-console-host.test.mjs).
+
 ## Change history
 
 | Date | ID | Change | Reason | Evidence |
@@ -59,3 +72,4 @@ not authorize new work, reviews, merges or lifecycle mutations.
 | 2026-10-12 | BP-001 | revised | Link the submitted implementation for reviewable evidence | [PR #72](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/72) |
 | 2026-10-12 | BP-002 | revised | Link the submitted mutation proof implementation | [PR #72](https://github.com/Brain-Crumbs/IPTFantasyFootball/pull/72) |
 | 2026-11-20 | BP-003 | added | Validate published transport shapes and independent cross-document promises | [Vibez #39](https://github.com/Brain-Crumbs/Vibez/issues/39) |
+| 2026-11-20 | BP-004 | added | Establish exact read and native state preservation in a packed consumer | [Vibez #40](https://github.com/Brain-Crumbs/Vibez/issues/40) |
