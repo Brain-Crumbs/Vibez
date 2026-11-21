@@ -198,7 +198,7 @@ test("packaged manual console preserves native CLI state and authenticates scope
     return talk(path, { headers });
   };
   const cap = (await read(base + "/capabilities")).data.data;
-  assert.deepEqual(cap.capabilities, ["run-list", "run-read", "packet-read"]);
+  assert.deepEqual(cap.capabilities, ["run-list", "run-read", "packet-read", "history-read", "historical-packet-read", "receipt-read"]);
   const collection = base + "/p/" + cap.projectId + "/runs";
   const firstPage = (await read(collection + "?limit=1")).data.data;
   assert.equal(firstPage.runs[0].sessionId, first);
@@ -255,6 +255,25 @@ test("packaged manual console preserves native CLI state and authenticates scope
   assert.equal(repaired.packet.kind, "repair");
   assert.equal(repaired.packet.role, "Developer");
 
+  const legacy = await read(runPath + "/history");
+  assert.equal(legacy.status, 200, JSON.stringify(legacy.data));
+  const legacyEvents = legacy.data.data.events;
+  const legacyReceipt = legacyEvents.find(event => event.details.kind === "receipt").details.receipt;
+  assert.equal(legacyReceipt.requestId, null);
+  assert.equal(legacyReceipt.expectedPacketId, waiting.pendingPacket);
+  assert.equal(legacyReceipt.disposition, "rejected");
+  assert.deepEqual((await read(runPath + "/receipts/" + legacyReceipt.receiptId + "/original")).data.data.body,
+    { availability: "available", originalReply: "{", encoding: "utf-8" });
+  const legacyPath = ".vibez/operations/driver/archive/" + digest("{") + ".input.json";
+  rmSync(join(project, legacyPath));
+  assert.equal((await read(runPath + "/receipts/" + legacyReceipt.receiptId + "/original")).data.data.body.reason, "missing");
+  assert.equal((await read(runPath + "/history")).data.data.events.find(event =>
+    event.details.kind === "reply").details.replyAvailability, "unavailable");
+  assert.equal((await read(collection + "/" + sibling + "/receipts/" + legacyReceipt.receiptId + "/original")).status, 404);
+  put(project, legacyPath, { original: "[redacted]" });
+  assert.equal((await read(runPath + "/receipts/" + legacyReceipt.receiptId + "/original")).data.data.body.reason, "redacted");
+  put(project, legacyPath, { original: "{" });
+
   const boundFile = join(project, file);
   rmSync(boundFile);
   assert.equal((await read(rolePath)).data.data.body.reason, "missing");
@@ -304,7 +323,10 @@ test("packaged manual console preserves native CLI state and authenticates scope
   assert.equal(blocked.gate.stage, "developer-validation");
   assert.equal(blocked.gate.outcome, "fail");
   assert.equal(blocked.pending.role, null);
-  assert.equal((await http(restarted.endpoint, rolePath, { headers: newHeaders })).status, 404);
+  const historic = await http(restarted.endpoint, rolePath, { headers: newHeaders });
+  assert.equal(historic.status, 200);
+  assert.equal(historic.data.data.body.originalMarkdown, nativeOriginal);
+  assert.equal(historic.data.data.packet.role, "Developer");
   await restarted.stop();
 });
 
@@ -335,7 +357,7 @@ test("native reviewer source drift and revision-bound integration snapshots rema
   assert.equal(before.summary.phase, "waiting");
   assert.equal(before.blocker, null);
   assert.equal(before.gate.role, "QA");
-  assert.equal((await http(host.endpoint, path + "/history?limit=1", { headers })).status, 422);
+  assert.equal((await http(host.endpoint, path + "/history?limit=1", { headers })).status, 200);
 
   git(project, "commit", "--allow-empty", "-m", "Advance source beyond the reviewer binding");
   const changed = (await http(host.endpoint, path, { headers })).data.data;
@@ -367,6 +389,10 @@ test("native reviewer source drift and revision-bound integration snapshots rema
   assert.equal(observed.ci.status, "pass");
   assert.equal(observed.ci.revision, changed.summary.revision);
   await host.stop();
+  const client = await connectCommands(start, false);
+  const history = await historyEvents(client, sessionId);
+  assert.ok(history.some(event => event.details.kind === "pull-request" && event.details.pullRequest.revision === oldHead));
+  assert.ok(history.some(event => event.details.kind === "ci" && event.details.ci.revision === changed.summary.revision));
 });
 
 async function connectCommands(start, commands) {
@@ -391,6 +417,22 @@ async function connectCommands(start, commands) {
       body: JSON.stringify({ version: 1, kind: action === "replies" ? "replyRequest" : "commandRequest", data }) });
   }
   return { host, send, path, command, capabilities, projectId, headers };
+}
+
+async function historyEvents(client, sessionId, limit = 25) {
+  const events = [];
+  let cursor;
+  do {
+    const query = "?limit=" + limit + (cursor ? "&cursor=" + cursor : "");
+    const page = await client.send(client.path(sessionId) + "/history" + query);
+    assert.equal(page.status, 200, JSON.stringify(page.data));
+    assert.equal(page.data.kind, "history");
+    assert.equal(page.data.data.sessionId, sessionId);
+    events.push(...page.data.data.events);
+    cursor = page.data.data.nextCursor;
+  } while (cursor);
+  assert.equal(new Set(events.map(event => event.eventId)).size, events.length);
+  return events;
 }
 
 test("packaged console commands scope rejected replies and recover exact receipts across restart", { timeout: 300_000 }, async t => {
@@ -477,6 +519,10 @@ test("packaged console commands scope rejected replies and recover exact receipt
   git(project, "add", "marker.txt");
   git(project, "commit", "-m", "Commit fixture marker");
   const fenced = "\x60\x60\x60json\n" + JSON.stringify(valid) + "\n\x60\x60\x60";
+  const oldEvents = await historyEvents(client, first);
+  const historyPath = client.path(first) + "/history?limit=2";
+  const oldPage = (await client.send(historyPath)).data.data;
+  assert.ok(oldPage.nextCursor);
   const key = randomUUID();
   const [left, right] = await Promise.all([reply(fenced, key), reply(fenced, key)]);
   for (const result of [left, right]) assert.ok([200, 202].includes(result.status), JSON.stringify(result.data));
@@ -487,6 +533,8 @@ test("packaged console commands scope rejected replies and recover exact receipt
   const receipt = (await client.send(client.path(first) + "/receipts/" + ref)).data.data;
   assert.equal(receipt.disposition, "accepted");
   assert.equal(receipt.importedPacketId, developer);
+  const nextPage = (await client.send(historyPath + "&cursor=" + oldPage.nextCursor)).data.data;
+  assert.deepEqual(nextPage.events, oldEvents.slice(2, 4), "An existing cursor keeps its snapshot while the native run advances.");
   const gate = (await client.send(client.path(first))).data.data;
   assert.equal(gate.gate.stage, "developer-validation");
   assert.equal(gate.gate.outcome, "fail");
@@ -506,6 +554,26 @@ test("packaged console commands scope rejected replies and recover exact receipt
   assert.equal(readOnly.capabilities.includes("submit-reply"), false);
   assert.equal((await readOnly.command(first, "resume")).status, 422);
   assert.equal((await readOnly.send(readOnly.path(first))).data.data.gate.outcome, "fail");
+  const beforeHistory = snapshot(project);
+  const events = await historyEvents(readOnly, first, 3);
+  const projected = events.find(event => event.details.kind === "receipt" && event.details.receipt.receiptId === ref);
+  assert.deepEqual(projected.details.receipt, receipt);
+  for (const [index, event] of events.entries()) {
+    if (event.details.kind !== "receipt") continue;
+    const earlier = events.findIndex(item => item.details.kind === "reply" && item.details.receiptId === event.details.receipt.receiptId);
+    assert.ok(earlier >= 0 && earlier < index, "A submission precedes its receipt with the same recorded time.");
+    assert.equal(events[earlier].recordedAt, event.recordedAt);
+  }
+  assert.ok(events.some(event => event.details.kind === "receipt" && event.details.receipt.disposition === "rejected"));
+  assert.ok(events.some(event => event.details.kind === "validation-check" && event.details.outcome === "fail"));
+  assert.ok(events.some(event => event.details.kind === "gate" && event.details.gate.stage === "developer-validation"));
+  const originalPath = readOnly.path(first) + "/receipts/" + ref + "/original";
+  assert.equal((await readOnly.send(originalPath)).data.data.body.originalReply, fenced);
+  assert.equal((await readOnly.send(readOnly.path(sibling) + "/receipts/" + ref + "/original")).status, 404);
+  const cursor = (await readOnly.send(readOnly.path(first) + "/history?limit=1")).data.data.nextCursor;
+  assert.equal((await readOnly.send(readOnly.path(sibling) + "/history?cursor=" + cursor)).data.data.code, "invalid-cursor");
+  assert.equal((await readOnly.send(readOnly.path(first).split("/").slice(0, -1).join("/") + "?cursor=" + cursor)).data.data.code, "invalid-cursor");
+  assert.deepEqual(snapshot(project), beforeHistory);
   assert.equal(cli(["status", first]).sessionId, first);
 });
 
@@ -660,6 +728,34 @@ process.exitCode = readFileSync("marker.txt", "utf8") === "correct" ? 0 : 1;`);
   assert.equal(linked.attempt.predecessorAttemptId, first);
   assert.equal(linked.pending.role.role, "Developer");
 
+  const history = await historyEvents(client, first, 4);
+  const linkAt = history.findIndex(event => event.details.kind === "rework");
+  assert.ok(linkAt > 0);
+  assert.deepEqual(history[linkAt].details, { kind: "rework", fromAttemptId: first, toAttemptId: linked.attempt.attemptId });
+  assert.ok(history.some(event => event.details.kind === "finding" && event.details.role === "QA" && event.details.revision === qaHead));
+  assert.ok(history.findIndex(event => event.details.kind === "handoff" &&
+    event.details.packet.packetId === linked.pending.role.packetId) > linkAt);
+  const historicalQa = await client.send(current + "/packets/" + after.pendingPacket);
+  assert.equal(historicalQa.status, 200, JSON.stringify(historicalQa.data));
+  assert.equal(historicalQa.data.data.target.attemptId, first);
+  assert.equal(historicalQa.data.data.packet.revision, qaHead);
+  assert.equal(historicalQa.data.data.body.originalMarkdown,
+    readFileSync(join(project, ".vibez/outbox/" + after.pendingPacket + ".handoff.json.md"), "utf8"));
+  const before = snapshot(project);
   await client.host.stop();
+  const restarted = await connectCommands(start, false);
+  assert.deepEqual(await historyEvents(restarted, first), history);
+  assert.deepEqual((await restarted.send(restarted.path(first))).data.data.pending, linked.pending);
+  assert.equal((await restarted.send(restarted.path(first) + "/packets/" + repairId)).status, 200);
+  assert.deepEqual(snapshot(project), before);
+  const qaMarkdown = ".vibez/outbox/" + after.pendingPacket + ".handoff.json.md";
+  rmSync(join(project, qaMarkdown));
+  const missingQa = (await restarted.send(restarted.path(first) + "/packets/" + after.pendingPacket)).data.data;
+  assert.equal(missingQa.packet.role, "QA");
+  assert.equal(missingQa.packet.revision, qaHead);
+  assert.deepEqual(missingQa.body, { availability: "unavailable", reason: "missing" });
+  put(project, qaMarkdown, historicalQa.data.data.body.originalMarkdown);
+  assert.deepEqual(snapshot(project), before);
+  await restarted.host.stop();
   assert.equal(cli(["resume", first, "--once"]).session.pendingPacket, linked.pending.role.packetId);
 });
