@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, unlinkSync } from "node:fs";
+import { Worker, isMainThread, workerData } from "node:worker_threads";
 import { AgentRunner, type AgentRunRequest } from "../agent-provider/index.js";
 import { FileManualAgentProvider, type LocalAgentPacket } from "../local-agent-adapter/index.js";
 import { SequentialOrchestrationEngine, FileOrchestrationRunStore } from "../orchestration-engine/index.js";
@@ -89,30 +90,53 @@ function observeReadiness(root: string, profile: DriverProfile, session: DriverS
   }
 }
 
+interface ValidationHeartbeat {
+  kind: "vibez.native-validation-heartbeat";
+  lock: string;
+  path: string;
+  scope: { sessionId: string; taskId: string; profileHash: string; runId: string; lockHash: string };
+}
+
+function pulseValidation(heartbeat: ValidationHeartbeat) {
+  try {
+    if (hash(readFileSync(heartbeat.lock, "utf8")) !== heartbeat.scope.lockHash) return;
+    write(heartbeat.path, { ...heartbeat.scope, expiresMs: Date.now() + 4000 });
+  } catch { /* Native validation remains authoritative when observations cannot be recorded. */ }
+}
+
+if (!isMainThread && workerData?.kind === "vibez.native-validation-heartbeat") {
+  const heartbeat: ValidationHeartbeat = workerData;
+  pulseValidation(heartbeat);
+  setInterval(() => pulseValidation(heartbeat), 1000);
+}
+
 async function withObservedValidation<T>(root: string, profile: DriverProfile, session: DriverSession,
   action: () => Promise<T>): Promise<T> {
   const directory = driverDirectory(profile);
-  let lock: string, path: string, lockHash: string;
+  let heartbeat: ValidationHeartbeat;
   try {
-    lock = safePath(root, `${directory}/writer.lock`);
-    path = safePath(root, `${directory}/reports/${session.sessionId}/integration/validation-heartbeat.json`);
-    lockHash = hash(readFileSync(lock, "utf8"));
+    const lock = safePath(root, `${directory}/writer.lock`);
+    const path = safePath(root, `${directory}/reports/${session.sessionId}/integration/validation-heartbeat.json`);
+    heartbeat = { kind: "vibez.native-validation-heartbeat", lock, path, scope: {
+      sessionId: session.sessionId, taskId: session.taskId, profileHash: session.profileHash,
+      runId: session.request.runId, lockHash: hash(readFileSync(lock, "utf8")),
+    } };
   } catch { return action(); }
 
-  function update() {
-    try {
-      if (hash(readFileSync(lock, "utf8")) !== lockHash) return;
-      write(path, { sessionId: session.sessionId, taskId: session.taskId, profileHash: session.profileHash,
-        runId: session.request.runId, lockHash, expiresMs: Date.now() + 4000 });
-    } catch { /* Native validation remains authoritative when observations cannot be recorded. */ }
-  }
-  update();
-  const timer = setInterval(update, 1000);
+  pulseValidation(heartbeat);
+  let worker: Worker | undefined;
+  try {
+    // Native command validators can block this thread in spawnSync. A
+    // process-owned worker keeps the scoped heartbeat current during that call.
+    worker = new Worker(new URL(import.meta.url), { workerData: heartbeat, env: {} });
+    worker.on("error", () => { /* The initial heartbeat expires if the worker stops. */ });
+  } catch { /* A failed observer cannot stop the owning validator. */ }
   try { return await action(); }
   finally {
-    clearInterval(timer);
     try {
-      if (hash(readFileSync(lock, "utf8")) === lockHash && existsSync(path)) unlinkSync(path);
+      await worker?.terminate();
+      if (hash(readFileSync(heartbeat.lock, "utf8")) === heartbeat.scope.lockHash && existsSync(heartbeat.path))
+        unlinkSync(heartbeat.path);
     } catch { /* Expiration invalidates a heartbeat left behind after interruption. */ }
   }
 }

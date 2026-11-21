@@ -160,7 +160,8 @@ export class ManualConsoleReader {
     const stageRecords = ((journal?.values.stages as OrchestrationStageRecord[] | undefined) ?? result?.stages) ?? [];
     const { role, repair, replyToPacketId, diagnostic } = pendingPackets(root, profile, session);
     const staleRole = role !== null && !this.#actionableRole(branch, sourceRevision, role.ref.role, role.ref.revision, session);
-    const failure = journal?.lastFailure?.code === "WAITING_INPUT" && role && !staleRole ? undefined : journal?.lastFailure;
+    const roleInputIsObsolete = (role !== null && !staleRole) || journal?.pendingStage === "dev-validation";
+    const failure = journal?.lastFailure?.code === "WAITING_INPUT" && roleInputIsObsolete ? undefined : journal?.lastFailure;
     const writer = ["writer.lock", "writer-recovery.lock"].some(name => existsSync(safePath(root, `${driverDirectory(profile)}/${name}`)));
 
     const done = state?.currentState === "DONE" && state.history.at(-1);

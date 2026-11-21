@@ -40,3 +40,13 @@ declare module "node:fs" {
   export function fstatSync(fd: number): { size: number; nlink: number; ino: number; dev: number; mtimeMs: number; isFile(): boolean };
   export function readSync(fd: number, bytes: Uint8Array, offset: number, length: number, position: number | null): number;
 }
+
+declare module "node:worker_threads" {
+  export const isMainThread: boolean;
+  export const workerData: any;
+  export class Worker {
+    constructor(filename: URL, options: { workerData: unknown; env: Record<string, string> });
+    on(event: "error", listener: (error: Error) => void): void;
+    terminate(): Promise<number>;
+  }
+}
