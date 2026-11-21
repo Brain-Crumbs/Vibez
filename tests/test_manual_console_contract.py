@@ -2,13 +2,43 @@
 
 import hashlib
 import json
+import re
 import unittest
+from datetime import datetime
 from pathlib import Path
 
-from jsonschema import Draft202012Validator
+from urllib.parse import urlsplit
+
+from jsonschema import Draft202012Validator, FormatChecker
 
 
 SPEC = Path(__file__).resolve().parents[1] / "docs/specs/manual-console-v1"
+
+# Plain jsonschema can silently ignore optional formats. Supply the v1 UTC
+# timestamp and HTTPS URI checks explicitly in every conformance environment.
+FORMATS = FormatChecker()
+
+
+@FORMATS.checks("date-time", raises=ValueError)
+def is_calendar_time(value):
+    if not isinstance(value, str):
+        return True
+    datetime.fromisoformat(value)
+    return True
+
+
+@FORMATS.checks("uri", raises=ValueError)
+def is_https_uri(value):
+    if not isinstance(value, str):
+        return True
+    parts = urlsplit(value)
+    labels = (parts.hostname or "").rstrip(".").split(".")
+    return (
+        parts.scheme == "https"
+        and all(re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", label) for label in labels)
+        and (parts.port is None or 1 <= parts.port <= 65535)
+        and re.search(r"%(?![0-9a-fA-F]{2})", value) is None
+    )
 
 
 class ManualConsoleContractTest(unittest.TestCase):
@@ -18,7 +48,7 @@ class ManualConsoleContractTest(unittest.TestCase):
         cls.manifest = json.loads((SPEC / "fixtures.json").read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(schema)
         cls.validator = Draft202012Validator(
-            schema, format_checker=Draft202012Validator.FORMAT_CHECKER
+            schema, format_checker=FORMATS
         )
         cls.fixtures = {case["id"]: case for case in cls.manifest["fixtures"]}
         cls.definitions = schema["$defs"]
@@ -48,7 +78,9 @@ class ManualConsoleContractTest(unittest.TestCase):
         expected = (
             "# Developer handoff\r\n\r\nCopy exactly.  \r\n\r\n"
             "```json\r\n"
-            '{"packetId":"packet-dev","role":"Developer","revision":"'
+            '{"packetId":"'
+            + ("d" * 64)
+            + '","role":"Developer","revision":"'
             + ("a" * 40)
             + '","toolPolicy":{"allowed":["read_file"],"network":"none"},'
             '"responseTemplate":{"status":"<outcome>"},"label":"café Δ 🙂"}'
@@ -92,7 +124,17 @@ class ManualConsoleContractTest(unittest.TestCase):
         self.assertEqual(rejected["requestId"], fenced["requestId"])
         self.assertEqual(rejected["expectedPacketId"], fenced["expectedPacketId"])
         self.assertEqual(rejected["expectedPacketId"], repair["role"]["packetId"])
-        self.assertEqual(rejected["repairPacketId"], repair["repair"]["packetId"])
+        self.assertEqual(rejected["repairPacketId"], repair["repair"]["packet"]["packetId"])
+        self.assertEqual(repair["repair"]["replyToPacketId"], rejected["expectedPacketId"])
+        repair_record = self.payload("repair-correspondence")
+        self.assertEqual(repair_record["packet"], repair["repair"]["packet"])
+        repair_bytes = repair_record["body"]["originalMarkdown"].encode("utf-8")
+        self.assertIn(b"original packet.  \r\n", repair_bytes)
+        self.assertEqual(hashlib.sha256(repair_bytes).hexdigest(), repair_record["body"]["sha256"])
+        native_result = json.loads(request["replyText"])
+        self.assertEqual(native_result["packetId"], receipt["importedPacketId"])
+        self.assertEqual(native_result["revisionIdentity"], self.payload("waiting")["summary"]["revision"])
+        self.assertEqual(native_result["runId"], self.payload("waiting")["attempt"]["nativeRunId"])
         self.assertIsNone(rejected["importedPacketId"])
         self.assertEqual(self.payload("redacted-reply")["body"]["reason"], "redacted")
         self.assertEqual(self.payload("validation-failed")["gate"]["outcome"], "fail")
@@ -118,6 +160,13 @@ class ManualConsoleContractTest(unittest.TestCase):
                 self.assertEqual(receipt["target"]["sessionId"], history["sessionId"])
                 self.assertEqual(receipt["target"]["attemptId"], event["attemptId"])
                 self.assertEqual(receipt["expectedPacketId"], detail["expectedPacketId"])
+        check = next(event for event in events if event["details"]["kind"] == "validation-check")
+        gate = next(event for event in events if event["details"]["kind"] == "gate")
+        self.assertEqual(check["attemptId"], gate["attemptId"])
+        self.assertEqual(check["details"]["revision"], gate["details"]["gate"]["revision"])
+        failed_check = self.payload("validation-check-failed")["events"][0]["details"]
+        self.assertEqual(failed_check["outcome"], self.payload("validation-failed")["gate"]["outcome"])
+        self.assertNotEqual(check["details"]["evidenceId"], failed_check["evidenceId"])
         link = next(event["details"] for event in events if event["details"]["kind"] == "rework")
         self.assertEqual(link["fromAttemptId"], rework["attempt"]["predecessorAttemptId"])
         self.assertEqual(link["toAttemptId"], rework["summary"]["currentAttemptId"])

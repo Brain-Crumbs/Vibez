@@ -19,6 +19,15 @@ in memory for the browser tab. A reload or host restart can require re-pairing.
 Bookmark only the project and stable session IDs. Reconnection restores native
 state on those IDs.
 
+Before sending a code or token, the consumer must accept only the literal
+`http://127.0.0.1:<port>` with an explicit decimal port from 1 through 65535.
+Reject aliases, alternate address spellings, userinfo, paths, queries and
+fragments. Keep that exact origin for the life of the bearer and build all
+resource URLs locally from the route table. Do not accept response-supplied
+origins or follow redirects, including on discovery and pairing. Use
+`redirect: "error"` for browser fetches. A port/endpoint change clears the
+bearer and requires a new pairing.
+
 Generate 32 cryptographically random bytes for each pairing code and token,
 encoded as unpadded base64url. A pairing code expires after five minutes, can be
 consumed once, and must be scoped to this host's checkout and profile. Rotate it
@@ -115,16 +124,25 @@ a caller-generated UUIDv4 `requestId`. A reply also includes
 `expectedPacketId` and `replyText`. The target IDs must agree with the route
 and the current attempt for a new operation. The expected packet must belong
 to that attempt and be the pending role packet or its active diagnostic repair
-packet. A correct role reply may still target the role packet while a repair
-packet is available. A repair response targets its repair packet. Keep any
-packet identity found inside the reply separate from the trusted association
-supplied with the request.
+packet. A pending repair identifies the displayed `packet` and the separate
+`replyToPacketId`. When the driver asks for a corrected role result, this is
+the original role packet. For a typed diagnostic response, it is the repair
+packet itself. Apply the template from the original Markdown. A correct role
+reply remains valid when a repair preview is present. Keep any packet identity
+found inside the reply separate from the trusted association in the request.
 
 Accept the exact raw JSON text or one fenced JSON block through the existing
 driver parser. Carry the intended target and expected packet in an additive,
 durable submission correlation before exposing bytes to the shared inbox.
 Process under the native writer lock. Never let a bound response be deferred to
-a different waiting session. Malformed text and wrong packet, role, run or
+a different waiting session. Ingress deduplication includes the project,
+profile, attempt, expected packet, and exact input bytes. A global byte hash
+alone is insufficient for bound ingress. A rejection in another target cannot
+settle a bound request or consume an unbound CLI inbox entry with the same
+bytes. Keep bound rejection evidence separate from the CLI's global
+input-hash archive. A native result already imported for the same packet can
+be reused through the native accepted fence, only after verifying its original
+binding. Malformed text and wrong packet, role, run or
 revision fields produce a rejected import receipt for the correct target with
 a safe diagnostic after the request is admitted. The correct pending packet
 remains available. An obsolete explicit target or expected packet at admission is
@@ -169,7 +187,32 @@ on `run` and `history`; a successful import may later yield a failed gate.
 `observedAt` records the successful scoped read in UTC. A recorded event's
 timestamp is its original native time when available. A run snapshot reports
 the native phase, gate, actionable blocker, next action, current revision and
-pending correspondence independently. For PR and CI, use independent
+pending correspondence independently. Use the same evidence to project phase
+and action hints on CLI-originated and console-originated runs.
+
+| Phase | First applicable native condition |
+| --- | --- |
+| `completed` | The attempt has a controller-confirmed final `DONE` lifecycle and merge evidence for that task. |
+| `rework` | Native review or recovery requires legal rework, or the reconciled linked successor is prepared but has yet to start. A browser may submit only an offered driver diagnostic response. |
+| `waiting` | A current, unconsumed role packet is actionable. A correction diagnostic can coexist with the role. Project `awaiting-role` from its bound role. |
+| `blocked` | The driver stopped at a failed/blocked validator, review, authorization, or externally resolved gate, or the native evidence cannot establish a usable phase. Preserve known outcomes and safe diagnostics. |
+| `active` | Native evidence identifies an in-flight stage for that attempt. Use `running` for its known stage. |
+| `prepared` | The bound first attempt has a prepared intake/selection and has never begun execution. |
+
+A diagnostic can persist a native session tag of `WAITING` after the workflow
+has stopped. A diagnostic ID or that tag alone establishes neither an
+actionable role nor a running stage. Inspect the attempt's result, latest
+native lifecycle/evidence, and any pending packet and its accepted fence.
+Use the current observed stage result for `gate.state: "observed"` and reserve
+`idle` for snapshots without established gate activity. Native validation
+maps to `developer-validation`, the three review gates to `qa-review`,
+`architecture-review`, and `uat-review`, and the controlled merge result to
+`completion`. Use native publication, CI and readiness evidence for their
+corresponding stages. A global writer held by another operation can withhold
+mutations and supply a blocker even while the current role is readable. When
+the host cannot prove an action is available, omit it.
+
+For PR and CI, use independent
 `unknown` or `observed` states. An observed result includes its own observation
 time and exact revision. Preserve an older observation as such, even when
 the checkout is at another revision. Render it as older when revisions differ.
@@ -188,7 +231,11 @@ independent records without a common sequence, use recorded time and stable
 event ID to break ties. Place events with no trustworthy timestamp according
 to native causal order where available, otherwise after the dated records in
 stable ID order. Preserve event IDs across equivalent reads and service
-restart. Link rework to both attempts. Page tokens are opaque, authenticated
+restart. Link rework to both attempts. Include a `validation-check` entry for each resolved
+native validator result. Use its evidence outcome (PASS, FAIL or BLOCKED), the
+original revision/required flag where recorded, a stable scoped evidence ID
+and a safe diagnostic. Surface both the individual checks and the aggregate
+gate when present. Page tokens are opaque, authenticated
 and bound to scope, route and stable page boundary. Use a stable snapshot per
 pagination sequence, so new events appear on a fresh sequence. A malformed or
 expired cursor returns 400 with `invalid-cursor`. List order is task ID then
@@ -240,8 +287,12 @@ Vibez package installation. Pin the verified MR-001 merge SHA and content
 SHA-256s in the consumer. Do not pin a moving branch or version label alone.
 Each fixture names its schema definition, expected validity and payload. For
 a browser validator, use JSON Schema Draft 2020-12 with date-time/URI format
-checks and bind the expected definition to the route. The fixture text,
-identifiers and credentials are synthetic. The in-repository reproduction is
+checks and bind the expected definition to the route. Wire timestamps are ASCII UTC
+RFC 3339 calendar times with a terminal `Z`, seconds from 00 through 59, and
+optional 1–9 fractional digits. Links are HTTPS URIs with an ASCII hostname,
+valid optional port and percent escapes. The fixture text, identifiers and
+credentials are synthetic. The replies model the transport and cannot be
+replayed against a live driver session. The in-repository reproduction is
 `python -m unittest discover -s tests -p 'test_manual_console_contract.py'`
 after installing `schemas/requirements.txt`.
 

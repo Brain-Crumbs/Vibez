@@ -214,7 +214,7 @@
           },
           "pending": {
             "role": {
-              "packetId": "packet-dev",
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
               "kind": "role",
               "role": "Developer",
               "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -321,16 +321,19 @@
           },
           "pending": {
             "role": {
-              "packetId": "packet-dev",
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
               "kind": "role",
               "role": "Developer",
               "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
             },
             "repair": {
-              "packetId": "repair-1",
-              "kind": "repair",
-              "role": "Developer",
-              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "packet": {
+                "packetId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                "kind": "repair",
+                "role": "Developer",
+                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "replyToPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
             }
           },
           "blocker": {
@@ -597,7 +600,7 @@
             },
             "pending": {
               "role": {
-                "packetId": "packet-dev",
+                "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
                 "kind": "role",
                 "role": "Developer",
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -653,7 +656,7 @@
             },
             "pending": {
               "role": {
-                "packetId": "packet-dev",
+                "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
                 "kind": "role",
                 "role": "Developer",
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -720,8 +723,8 @@
             "attemptId": "session-one"
           },
           "requestId": "00000000-0000-4000-8000-000000000002",
-          "expectedPacketId": "packet-dev",
-          "replyText": "{\n  \"packetId\": \"packet-dev\",\n  \"example\": \"Δ\"\n}\n"
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "replyText": "{\n  \"schemaId\": \"ipt.local-agent-result\",\n  \"schemaVersion\": \"1.0.0\",\n  \"packetId\": \"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\n  \"providerId\": \"local-manual-agent\",\n  \"taskId\": \"DEMO-001\",\n  \"role\": \"Developer\",\n  \"revisionIdentity\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"runId\": \"native-one\",\n  \"actorId\": \"example-developer\",\n  \"contextIdentity\": \"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\n  \"inputIdentity\": \"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\n  \"status\": \"COMPLETED\",\n  \"result\": {\n    \"runId\": \"native-one\",\n    \"providerId\": \"local-manual-agent\",\n    \"taskId\": \"DEMO-001\",\n    \"role\": \"Developer\",\n    \"revisionIdentity\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n    \"outcome\": \"PASS\",\n    \"details\": {\n      \"implementationSummary\": \"Created the synthetic output.\",\n      \"changedSurfaces\": [\n        \"example.txt\"\n      ],\n      \"acceptanceCriteriaEvidence\": [\n        \"Verified synthetic marker.\"\n      ],\n      \"validationChecks\": [\n        \"Fixture only.\"\n      ],\n      \"knownLimitationsAssumptionsRisks\": [\n        \"Synthetic transport sample.\"\n      ]\n    },\n    \"findings\": [],\n    \"evidenceRefs\": [],\n    \"occurredAt\": \"2026-11-20T16:02:00Z\"\n  }\n}\n"
         }
       },
       "valid": true
@@ -739,7 +742,7 @@
             "attemptId": "session-one"
           },
           "requestId": "00000000-0000-4000-8000-000000000001",
-          "expectedPacketId": "packet-dev",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
           "replyText": "```json\r\n{\"packetId\":\"wrong-packet\"}\r\n```\r\n"
         }
       },
@@ -758,7 +761,7 @@
             "attemptId": "session-one"
           },
           "requestId": "00000000-0000-4000-8000-000000000001",
-          "expectedPacketId": "packet-dev",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
           "replyText": "not JSON"
         }
       },
@@ -896,8 +899,8 @@
           },
           "receiptId": "receipt-accepted",
           "requestId": "00000000-0000-4000-8000-000000000002",
-          "expectedPacketId": "packet-dev",
-          "importedPacketId": "packet-dev",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "importedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
           "disposition": "accepted",
           "recordedAt": "2026-11-20T16:02:00Z",
           "diagnostic": null,
@@ -921,8 +924,8 @@
           },
           "receiptId": "receipt-native-reuse",
           "requestId": null,
-          "expectedPacketId": "packet-dev",
-          "importedPacketId": "packet-dev",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "importedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
           "disposition": "reused",
           "recordedAt": "2026-11-20T16:02:00Z",
           "diagnostic": null,
@@ -946,7 +949,7 @@
           },
           "receiptId": "receipt-rejected",
           "requestId": "00000000-0000-4000-8000-000000000001",
-          "expectedPacketId": "packet-dev",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
           "importedPacketId": null,
           "disposition": "rejected",
           "recordedAt": "2026-11-20T16:01:00Z",
@@ -954,7 +957,7 @@
             "code": "REJECTED_INPUT",
             "message": "Correct the role reply using the original pending handoff."
           },
-          "repairPacketId": "repair-1",
+          "repairPacketId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
           "nextAction": "Paste a corrected reply or use the repair handoff."
         }
       },
@@ -976,7 +979,7 @@
           "body": {
             "availability": "available",
             "encoding": "utf-8",
-            "originalReply": "{\n  \"packetId\": \"packet-dev\",\n  \"example\": \"Δ\"\n}\n"
+            "originalReply": "{\n  \"schemaId\": \"ipt.local-agent-result\",\n  \"schemaVersion\": \"1.0.0\",\n  \"packetId\": \"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\n  \"providerId\": \"local-manual-agent\",\n  \"taskId\": \"DEMO-001\",\n  \"role\": \"Developer\",\n  \"revisionIdentity\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"runId\": \"native-one\",\n  \"actorId\": \"example-developer\",\n  \"contextIdentity\": \"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\n  \"inputIdentity\": \"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\n  \"status\": \"COMPLETED\",\n  \"result\": {\n    \"runId\": \"native-one\",\n    \"providerId\": \"local-manual-agent\",\n    \"taskId\": \"DEMO-001\",\n    \"role\": \"Developer\",\n    \"revisionIdentity\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n    \"outcome\": \"PASS\",\n    \"details\": {\n      \"implementationSummary\": \"Created the synthetic output.\",\n      \"changedSurfaces\": [\n        \"example.txt\"\n      ],\n      \"acceptanceCriteriaEvidence\": [\n        \"Verified synthetic marker.\"\n      ],\n      \"validationChecks\": [\n        \"Fixture only.\"\n      ],\n      \"knownLimitationsAssumptionsRisks\": [\n        \"Synthetic transport sample.\"\n      ]\n    },\n    \"findings\": [],\n    \"evidenceRefs\": [],\n    \"occurredAt\": \"2026-11-20T16:02:00Z\"\n  }\n}\n"
           }
         }
       },
@@ -1016,7 +1019,7 @@
             "attemptId": "session-one"
           },
           "packet": {
-            "packetId": "packet-dev",
+            "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
             "kind": "role",
             "role": "Developer",
             "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -1024,8 +1027,8 @@
           "body": {
             "availability": "available",
             "encoding": "utf-8",
-            "originalMarkdown": "# Developer handoff\r\n\r\nCopy exactly.  \r\n\r\n```json\r\n{\"packetId\":\"packet-dev\",\"role\":\"Developer\",\"revision\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"toolPolicy\":{\"allowed\":[\"read_file\"],\"network\":\"none\"},\"responseTemplate\":{\"status\":\"<outcome>\"},\"label\":\"café Δ 🙂\"}\r\n```\r\n",
-            "sha256": "27bc7faffd44705e96707ccc41a48e1f44e312d53fdadd77247725258c33bbeb"
+            "originalMarkdown": "# Developer handoff\r\n\r\nCopy exactly.  \r\n\r\n```json\r\n{\"packetId\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"role\":\"Developer\",\"revision\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"toolPolicy\":{\"allowed\":[\"read_file\"],\"network\":\"none\"},\"responseTemplate\":{\"status\":\"<outcome>\"},\"label\":\"café Δ 🙂\"}\r\n```\r\n",
+            "sha256": "a4db2b849106ef49b41413fb7398da109df4daa069de56866ebb9ec0c44bbcef"
           }
         }
       },
@@ -1104,7 +1107,7 @@
               "details": {
                 "kind": "handoff",
                 "packet": {
-                  "packetId": "packet-dev",
+                  "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
                   "kind": "role",
                   "role": "Developer",
                   "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -1117,7 +1120,7 @@
               "recordedAt": "2026-11-20T16:01:00Z",
               "details": {
                 "kind": "reply",
-                "expectedPacketId": "packet-dev",
+                "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
                 "receiptId": "receipt-rejected",
                 "replyAvailability": "unavailable"
               }
@@ -1136,7 +1139,7 @@
                   },
                   "receiptId": "receipt-rejected",
                   "requestId": "00000000-0000-4000-8000-000000000001",
-                  "expectedPacketId": "packet-dev",
+                  "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
                   "importedPacketId": null,
                   "disposition": "rejected",
                   "recordedAt": "2026-11-20T16:01:00Z",
@@ -1144,7 +1147,7 @@
                     "code": "REJECTED_INPUT",
                     "message": "Correct the role reply using the original pending handoff."
                   },
-                  "repairPacketId": "repair-1",
+                  "repairPacketId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
                   "nextAction": "Paste a corrected reply or use the repair handoff."
                 }
               }
@@ -1156,7 +1159,7 @@
               "details": {
                 "kind": "handoff",
                 "packet": {
-                  "packetId": "repair-1",
+                  "packetId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
                   "kind": "repair",
                   "role": "Developer",
                   "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -1169,7 +1172,7 @@
               "recordedAt": "2026-11-20T16:02:00Z",
               "details": {
                 "kind": "reply",
-                "expectedPacketId": "packet-dev",
+                "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
                 "receiptId": "receipt-accepted",
                 "replyAvailability": "available"
               }
@@ -1188,14 +1191,28 @@
                   },
                   "receiptId": "receipt-accepted",
                   "requestId": "00000000-0000-4000-8000-000000000002",
-                  "expectedPacketId": "packet-dev",
-                  "importedPacketId": "packet-dev",
+                  "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                  "importedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
                   "disposition": "accepted",
                   "recordedAt": "2026-11-20T16:02:00Z",
                   "diagnostic": null,
                   "repairPacketId": null,
                   "nextAction": "Inspect the subsequent gate."
                 }
+              }
+            },
+            {
+              "eventId": "event-validator-build",
+              "attemptId": "session-one",
+              "recordedAt": "2026-11-20T16:02:00Z",
+              "details": {
+                "kind": "validation-check",
+                "validatorId": "repository:build",
+                "outcome": "pass",
+                "required": true,
+                "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "evidenceId": "validator-build-evidence-one",
+                "diagnostic": null
               }
             },
             {
@@ -1284,7 +1301,7 @@
           },
           "pending": {
             "role": {
-              "packetId": "packet-dev",
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
               "kind": "role",
               "role": "Developer",
               "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -1337,7 +1354,7 @@
             "attemptId": "session-one"
           },
           "requestId": "00000000-0000-4000-8000-000000000002",
-          "expectedPacketId": "packet-dev",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
           "replyText": "{\n  \"packetId\": \"packet-dev\",\n  \"example\": \"Δ\"\n}\n"
         }
       },
@@ -1356,7 +1373,7 @@
             "attemptId": "session-one"
           },
           "requestId": "00000000-0000-4000-8000-000000000002",
-          "expectedPacketId": "packet-dev",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
           "replyText": {
             "text": "{\n  \"packetId\": \"packet-dev\",\n  \"example\": \"Δ\"\n}\n"
           }
@@ -1411,7 +1428,7 @@
           },
           "pending": {
             "role": {
-              "packetId": "packet-dev",
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
               "kind": "role",
               "role": "Developer",
               "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -1464,7 +1481,7 @@
           },
           "pending": {
             "role": {
-              "packetId": "repair-1",
+              "packetId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
               "kind": "repair",
               "role": "Developer",
               "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -1501,7 +1518,7 @@
           },
           "receiptId": "receipt-accepted",
           "requestId": "00000000-0000-4000-8000-000000000002",
-          "expectedPacketId": "packet-dev",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
           "importedPacketId": null,
           "disposition": "accepted",
           "recordedAt": "2026-11-20T16:02:00Z",
@@ -1571,7 +1588,7 @@
             "attemptId": "session-one"
           },
           "packet": {
-            "packetId": "packet-dev",
+            "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
             "kind": "role",
             "role": "Developer",
             "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -1579,7 +1596,7 @@
           "body": {
             "availability": "unavailable",
             "reason": "missing",
-            "originalMarkdown": "# Developer handoff\r\n\r\nCopy exactly.  \r\n\r\n```json\r\n{\"packetId\":\"packet-dev\",\"role\":\"Developer\",\"revision\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"toolPolicy\":{\"allowed\":[\"read_file\"],\"network\":\"none\"},\"responseTemplate\":{\"status\":\"<outcome>\"},\"label\":\"café Δ 🙂\"}\r\n```\r\n"
+            "originalMarkdown": "# Developer handoff\r\n\r\nCopy exactly.  \r\n\r\n```json\r\n{\"packetId\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"role\":\"Developer\",\"revision\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"toolPolicy\":{\"allowed\":[\"read_file\"],\"network\":\"none\"},\"responseTemplate\":{\"status\":\"<outcome>\"},\"label\":\"café Δ 🙂\"}\r\n```\r\n"
           }
         }
       },
@@ -1599,8 +1616,8 @@
           },
           "receiptId": "receipt-accepted",
           "requestId": "00000000-0000-4000-8000-000000000002",
-          "expectedPacketId": "packet-dev",
-          "importedPacketId": "packet-dev",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "importedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
           "disposition": "accepted",
           "recordedAt": "2026-11-20T16:02:00Z",
           "diagnostic": null,
@@ -1650,7 +1667,7 @@
           },
           "pending": {
             "role": {
-              "packetId": "packet-dev",
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
               "kind": "role",
               "role": "Developer",
               "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -1705,13 +1722,251 @@
           },
           "receiptId": "receipt-accepted",
           "requestId": "00000000-0000-4000-8000-000000000002",
-          "expectedPacketId": "packet-dev",
-          "importedPacketId": "packet-dev",
+          "expectedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "importedPacketId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
           "disposition": "accepted",
           "recordedAt": "2026-11-20T16:02:00Z",
           "diagnostic": null,
           "repairPacketId": null,
           "nextAction": "Inspect the subsequent gate."
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "repair-correspondence",
+      "definition": "correspondenceEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "correspondence",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one"
+          },
+          "packet": {
+            "packetId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "kind": "repair",
+            "role": "Developer",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "body": {
+            "availability": "available",
+            "encoding": "utf-8",
+            "originalMarkdown": "# Workflow repair handoff\r\n\r\nReturn a corrected raw role result for the original packet.  \r\n\r\n```json\r\n{\"packetId\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"originalPacketId\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"responseTemplate\":{\"schemaId\":\"ipt.local-agent-result\",\"schemaVersion\":\"1.0.0\",\"packetId\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"providerId\":\"local-manual-agent\",\"taskId\":\"DEMO-001\",\"role\":\"Developer\",\"revisionIdentity\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"runId\":\"native-one\",\"actorId\":\"example-developer\",\"contextIdentity\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"inputIdentity\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\"}}\r\n```\r\n",
+            "sha256": "72fb740d13bf48c812da626a217c376adbc8e38ef17b2efb4dfaf1c563f61ed2"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "validation-check-failed",
+      "definition": "historyEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "history",
+        "data": {
+          "projectId": "vibez-local-example",
+          "sessionId": "session-one",
+          "observedAt": "2026-11-20T16:02:00Z",
+          "nextCursor": null,
+          "events": [
+            {
+              "eventId": "event-validator-fail",
+              "attemptId": "session-one",
+              "recordedAt": "2026-11-20T16:02:00Z",
+              "details": {
+                "kind": "validation-check",
+                "validatorId": "repository:build",
+                "outcome": "fail",
+                "required": true,
+                "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "evidenceId": "validator-build-failed-evidence",
+                "diagnostic": {
+                  "code": "CHECK_FAILED",
+                  "message": "The build check failed. Inspect the validation evidence."
+                }
+              }
+            }
+          ]
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "impossible-date",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "waiting",
+            "observedAt": "2026-02-31T00:00:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "awaiting-role",
+            "role": "Developer"
+          },
+          "pending": {
+            "role": {
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "kind": "role",
+              "role": "Developer",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Copy the Developer handoff and submit the reply.",
+          "actions": [
+            "read-packet",
+            "submit-reply"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "non-ascii-date",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https://github.com/example/project/issues/42",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "waiting",
+            "observedAt": "２０２６-11-20T16:00:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "awaiting-role",
+            "role": "Developer"
+          },
+          "pending": {
+            "role": {
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "kind": "role",
+              "role": "Developer",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Copy the Developer handoff and submit the reply.",
+          "actions": [
+            "read-packet",
+            "submit-reply"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-https-uri",
+      "definition": "runEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "run",
+        "data": {
+          "summary": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "currentAttemptId": "session-one",
+            "taskId": "DEMO-001",
+            "issueUrl": "https:// not-a-url",
+            "checkoutLabel": "Example checkout",
+            "branch": "feature/demo-001",
+            "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "phase": "waiting",
+            "observedAt": "2026-11-20T16:00:00Z"
+          },
+          "attempt": {
+            "attemptId": "session-one",
+            "predecessorAttemptId": null,
+            "nativeRunId": "native-one"
+          },
+          "gate": {
+            "state": "awaiting-role",
+            "role": "Developer"
+          },
+          "pending": {
+            "role": {
+              "packetId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "kind": "role",
+              "role": "Developer",
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "repair": null
+          },
+          "blocker": null,
+          "nextAction": "Copy the Developer handoff and submit the reply.",
+          "actions": [
+            "read-packet",
+            "submit-reply"
+          ],
+          "pullRequest": {
+            "state": "unknown"
+          },
+          "ci": {
+            "state": "unknown"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "trailing-newline-identifier",
+      "definition": "commandRequestEnvelope",
+      "payload": {
+        "version": 1,
+        "kind": "commandRequest",
+        "data": {
+          "target": {
+            "projectId": "vibez-local-example",
+            "sessionId": "session-one",
+            "attemptId": "session-one\n"
+          },
+          "requestId": "00000000-0000-4000-8000-000000000003"
         }
       },
       "valid": false
