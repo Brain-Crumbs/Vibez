@@ -1,0 +1,63 @@
+{
+  "schemaId": "ipt.task",
+  "schemaVersion": "1.0.0",
+  "taskId": "MR-002",
+  "title": "[MR-002] Serve authorized run status and original handoffs from a local Vibez host",
+  "objective": "Serve authorized run state and exact current correspondence for one configured Vibez checkout.",
+  "inScope": [
+    "Implement the opt-in loopback-only read host and v1 pairing, capability discovery, run listing and status detail.",
+    "Project native sessions and eligible current correspondence through scoped opaque IDs. Supply installed operator instructions and HTTP/CLI parity, immutable read and denial tests."
+  ],
+  "outOfScope": [
+    "Browser work, workflow commands, historical packet access, live Developer-to-QA acceptance, new task admission, and browser publication or merge."
+  ],
+  "dependencies": [
+    "MR-001"
+  ],
+  "canonicalBranch": "feat/mr-002-manual-console-read-host",
+  "allowedPaths": [
+    "src/manual-console/**",
+    "src/cli/cli.ts",
+    "src/cli/standalone.ts",
+    "src/cli/node-runtime.d.ts",
+    "src/project-services/index.ts",
+    "src/workflow-driver/io.ts",
+    "src/workflow-driver/intake.ts",
+    "src/workflow-driver/inbox.ts",
+    "src/workflow-driver/driver.ts",
+    "src/cli/orchestrate.ts",
+    "package.json",
+    "docs/README.md",
+    "docs/MANUAL_CONSOLE_HOST.md",
+    "docs/MANUAL_CONSOLE_CONTRACT.md",
+    "docs/development/best-practices.md",
+    "tests/manual-console-host.test.mjs",
+    "tasks/definitions/mr-002.task.json",
+    "requirements/mr-002.requirement.json",
+    "migration/admissions/mr-002.json"
+  ],
+  "requirements": [
+    "MR-002-R1"
+  ],
+  "acceptanceCriteria": [
+    "MR-002.1: In a clean installed consumer, inspect a real CLI-started run over HTTP and return the exact current role or repair correspondence bytes. Repeated status/list/copy observations leave native gates and handoffs untouched.",
+    "MR-002.2: Enforce loopback listener, exact Host and browser origin, expiring operator pairing, scoped project/profile/session and bound packet identity, request/response limits and safe artifact resolution.",
+    "MR-002.3: Distinguish missing, offline, unsupported, prepared and blocked states. Advertise only enabled read capabilities and expose known gate, revision and PR/CI provenance without guessing."
+  ],
+  "validationPlan": [
+    "Run the Vibez README checks and the packaged independent HTTP client test against a disposable native CLI-started run.",
+    "Check v1 schema conformance, native state immutability, cross-project/session and untrusted origin denial, safe artifact resolution, exact Markdown and listener-stop CLI compatibility."
+  ],
+  "affectedContracts": [
+    "control-plane.workflow-driver",
+    "control-plane.cli-shell",
+    "control-plane.status-reporting"
+  ],
+  "requiredReviewRoles": [
+    "Developer",
+    "QA",
+    "Architect",
+    "UAT/Product",
+    "MergeController"
+  ]
+}
