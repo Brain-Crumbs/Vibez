@@ -23,6 +23,7 @@ import { successorId } from "./inbox.js";
 import type { DriverProfile, DriverSession } from "./model.js";
 
 export interface DriverRuntime {
+  manualConsole?: boolean;
   operations?: import("./operations.js").WorkflowOperations | undefined;
   /** Trusted configured host only; issue text and manual responses cannot supply these capabilities. */
   unattended?: {
@@ -324,6 +325,7 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
         return observed;
       } },
       controlledMerge: { merge: async (input: Parameters<typeof merge.merge>[0]) => {
+        requireValue(!runtime.manualConsole, "Controlled integration requires the Vibez CLI with explicit host authority.", "MERGE_AUTHORIZATION_REQUIRED");
         if (!intent) {
           const head = clean(root), ready = await readiness.evaluate({ taskId: s.taskId });
           runtime.unattended?.check();

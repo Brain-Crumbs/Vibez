@@ -1,6 +1,6 @@
 # Installed manual console host
 
-The manual console host serves run status and exact current handoffs for one
+The manual console host serves run status, exact current handoffs and optional commands for one
 configured Vibez checkout. It uses the [manual console v1 wire contract](MANUAL_CONSOLE_CONTRACT.md)
 and the same session, exchange, orchestration and evidence records as
 `vibez orchestrate`.
@@ -54,20 +54,35 @@ with missing, unsupported or oversized artifacts still return an explicit
 body availability state. Only current role and repair packets are
 accessible in this version.
 
-Use the CLI for start, resume, reply import, rework and publication. The
-v1 capability response advertises the enabled read operations. Pairing
-grants access to those reads for this checkout. Status polls, failed requests
-and copying leave native records untouched. Reads return the observed state
-while the CLI is active. After a connection failure, retain the last
-verified snapshot and its original observation time as described in the
-contract.
+## Run commands
+
+Pass `--commands` at launch to let a paired operator start an already
+admitted session, resume an existing attempt and submit one raw JSON object
+or one fenced JSON block. Read capabilities and the run's available actions
+before enabling a control. Start is available when native task selection points\nto the prepared attempt and the checkout is on its integration target or\ncanonical branch. The host uses the same writer lock as
+`vibez orchestrate`. On a writer blocker, let the active operation finish
+before retrying. New admission, lock recovery, publication, readiness and
+merge remain trusted CLI operations.
+
+Submit the stable run and attempt IDs, the expected packet and a caller
+generated UUIDv4 request ID. Keep the same request ID and identical JSON
+intent when retrying a lost response. The host journals the selected attempt
+and expected packet before it imports the reply. A reply submitted to one
+attempt stays with that attempt, including when its text is malformed or names
+another packet. Use the request route to check whether the operation finished. Retry the
+identical POST if reconciliation is still pending after a restart.
+After rejection, read the diagnostic or repair and submit the corrected reply
+with a new request ID. A receipt records import only. Poll the run for the
+subsequent validation, review or handoff.
 
 ## Stop and verify rollback
 
-Stop the host with Ctrl+C. Reopen the same session with
+Stop the host with Ctrl+C and wait for accepted in-flight HTTP operations to drain. Restart without `--commands` to disable commands. Reopen the same session with
 `vibez orchestrate status SESSION --project CHECKOUT`. The CLI uses the same
-profile, native journals and handoffs. No console-specific runtime migration
-or data cleanup is needed.
+profile, native journals and handoffs. The driver keeps native inbox and receipt history. Preserve the additive
+command correlations and bound reply archive under the configured driver directory.
+A compatible CLI can inspect and resume native sessions with commands disabled.
+Re-enable a compatible host to reconcile any original request left pending.
 
 From a source checkout, run `npm run build` and
 `node --test tests/manual-console-host.test.mjs` to pack and install Vibez in disposable directories and check the real CLI and HTTP

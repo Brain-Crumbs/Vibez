@@ -44,9 +44,12 @@ declare module "node:fs" {
 declare module "node:worker_threads" {
   export const isMainThread: boolean;
   export const workerData: any;
+  export const parentPort: { postMessage(value: unknown): void } | null;
   export class Worker {
-    constructor(filename: URL, options: { workerData: unknown; env: Record<string, string> });
+    constructor(filename: URL, options: { workerData: unknown; env?: Record<string, string> });
     on(event: "error", listener: (error: Error) => void): void;
+    once(event: "message", listener: (value: unknown) => void): void;
+    once(event: "exit", listener: (code: number) => void): void;
     terminate(): Promise<number>;
   }
 }

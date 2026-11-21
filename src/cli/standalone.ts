@@ -1,14 +1,54 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { isMainThread, parentPort, Worker, workerData } from "node:worker_threads";
 import { createProjectServices, npmValidatorCommands } from "../project-services/index.js";
 import { GitHubControlledMergePullRequestOperations } from "../controlled-merge/index.js";
 import { GitHubCiStatusOperations, GitHubMergeReadinessPullRequestOperations } from "../merge-readiness/index.js";
 import { GitHubPullRequestOperations } from "../pr-lifecycle/index.js";
 import { resolveProjectConfig } from "../project-config/index.js";
-import { reconcileRegistration } from "../workflow-driver/intake.js";
+import { loadSession, reconcileRegistration } from "../workflow-driver/intake.js";
+import { ManualConsoleCommands } from "../manual-console/commands.js";
 import { ManualConsoleReader } from "../manual-console/reader.js";
 import { serveManualConsole } from "../manual-console/server.js";
-import { DriverError, redact, requireValue } from "../workflow-driver/io.js";
+import { step } from "../workflow-driver/driver.js";
+import type { DriverSession } from "../workflow-driver/model.js";
+import { driverDirectory, DriverError, hash, redact, requireValue, safePath } from "../workflow-driver/io.js";
+
+interface ConsoleStep {
+  kind: "manual-console-step";
+  args: readonly string[];
+  sessionId: string;
+  profileHash: string;
+  writerHash: string;
+}
+
+type StepResult = Pick<DriverSession, "pendingPacket" | "diagnosticId">;
+
+function writerHash(root: string, directory: string) {
+  return hash(readFileSync(safePath(root, directory + "/writer.lock"), "utf8"));
+}
+
+function runConsoleStep(work: ConsoleStep): Promise<StepResult> {
+  return new Promise((resolveStep, reject) => {
+    // Native validators run synchronously inside this worker. The listener
+    // retains the writer lock while its own event loop serves scoped reads.
+    const worker = new Worker(new URL(import.meta.url), { workerData: work });
+    let result: StepResult | undefined;
+    worker.once("message", value => { result = value as StepResult; });
+    worker.on("error", () => { result = undefined; });
+    worker.once("exit", code => {
+      if (code === 0 && result) resolveStep(result);
+      else reject(new DriverError("DRIVER_ERROR", "The console worker stopped before confirming the native operation."));
+    });
+  });
+}
+
+if (!isMainThread && workerData?.kind === "manual-console-step") {
+  const work: ConsoleStep = workerData;
+  void runConfiguredDriver(work.args, new AbortController().signal, () => {}, work).catch(() => {
+    process.exitCode = 1;
+  });
+}
 
 /** Standalone npm host. Custom executor/provider policies continue to use ProjectHost. */
 export async function runStandaloneCli(argv: readonly string[], signal: AbortSignal, progress: (message: string) => void) {
@@ -29,10 +69,10 @@ export async function runStandaloneCli(argv: readonly string[], signal: AbortSig
   }
 }
 
-async function runConfiguredDriver(argv: readonly string[], signal: AbortSignal, progress: (message: string) => void) {
+async function runConfiguredDriver(argv: readonly string[], signal: AbortSignal, progress: (message: string) => void, work?: ConsoleStep) {
   const scoped = argv.filter(arg => arg !== "--json");
   const consoleHost = scoped[0] === "manual-console";
-  const consoleUsage = "vibez manual-console --project CHECKOUT --origin http://127.0.0.1:5173 [--port PORT]";
+  const consoleUsage = "vibez manual-console --project CHECKOUT --origin http://127.0.0.1:5173 [--port PORT] [--commands]";
   if (consoleHost && scoped.length === 2 && ["help", "--help", "-h"].includes(scoped[1]!))
     return { exitCode: 0 as const, stdout: consoleUsage + "\n", stderr: "" };
   if (!consoleHost && (scoped[0] !== "orchestrate" || scoped.length === 1 || ["help", "--help", "-h"].includes(scoped[1]!))) return null;
@@ -55,6 +95,8 @@ async function runConfiguredDriver(argv: readonly string[], signal: AbortSignal,
   const configPath = selectedConfig ?? "vibez.config.json";
   if (!consoleHost && !project && !selectedConfig && !existsSync(join(projectRoot, configPath))) return null;
 
+  const consoleCommands = consoleHost && args.includes("--commands");
+  if (consoleCommands) args.splice(args.indexOf("--commands"), 1);
   const ntfs = args.includes("--local-ntfs");
   if (ntfs) args.splice(args.indexOf("--local-ntfs"), 1);
   if (consoleHost) requireValue(args.length === 1 && project && consoleOrigin &&
@@ -95,11 +137,26 @@ async function runConfiguredDriver(argv: readonly string[], signal: AbortSignal,
       merge: new GitHubControlledMergePullRequestOperations({ ...options, fetchImpl }),
     },
     authorizePublication: request => credentialed && request.repository === repository && (scoped[1] === "publish" || scoped[1] === "ready"),
-    authorizeMerge: request => credentialed && mergeAuthorization === `${request.repository}#${request.number}@${request.expectedHeadSha}`,
-    authorizeRecovery: request => (process.env.IPT_RECOVERY_ADMIN_ACTORS ?? "").split(",").includes(request.actorId),
+    authorizeMerge: request => !consoleHost && credentialed && mergeAuthorization === `${request.repository}#${request.number}@${request.expectedHeadSha}`,
+    authorizeRecovery: request => !consoleHost && (process.env.IPT_RECOVERY_ADMIN_ACTORS ?? "").split(",").includes(request.actorId),
   });
   if (consoleHost) {
-    await serveManualConsole(new ManualConsoleReader(services.config), consoleOrigin!, Number(consolePort), signal, progress);
+    const reader = new ManualConsoleReader(services.config, consoleCommands);
+    const runtime = { services: services.driverForCurrentRevision, ...(token ? { token } : {}) };
+    if (work) {
+      const profile = reader.checkScope();
+      requireValue(consoleCommands && hash(profile) === work.profileHash &&
+        writerHash(projectRoot, driverDirectory(profile)) === work.writerHash,
+        "Console work requires the original profile and native writer.");
+      const session = loadSession(projectRoot, profile, work.sessionId);
+      const { pendingPacket, diagnosticId } = await step(projectRoot, profile, session, { ...runtime, manualConsole: true });
+      parentPort?.postMessage({ pendingPacket, diagnosticId });
+      return null;
+    }
+    const commands = consoleCommands ? new ManualConsoleCommands(projectRoot, reader, runtime, (profile, session) =>
+      runConsoleStep({ kind: "manual-console-step", args: argv, sessionId: session.sessionId, profileHash: hash(profile),
+        writerHash: writerHash(projectRoot, driverDirectory(profile)) })) : undefined;
+    await serveManualConsole(reader, consoleOrigin!, Number(consolePort), signal, progress, commands);
     return { exitCode: 0 as const, stdout: "", stderr: "" };
   }
   return services.cli(args, signal, {

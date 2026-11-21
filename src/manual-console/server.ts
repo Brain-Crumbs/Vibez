@@ -1,6 +1,8 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import type { ManualConsoleReader } from "./reader.js";
+import { opaqueIdPattern as idPattern, replyBytes, requestIdPattern, type ManualConsoleCommands } from "./commands.js";
+import { object, redact } from "../workflow-driver/io.js";
 import { ConsoleProblem } from "./problem.js";
 
 const protocol = "vibez.manual-console";
@@ -9,7 +11,6 @@ const loopback = "127.0.0.1";
 const utf8 = new TextEncoder();
 const minute = 60_000;
 const codePattern = /^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$/;
-const idPattern = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 const pageSize = 25;
 
 const invalid = () => new ConsoleProblem(400, "invalid-request", "Check the request path, query, or JSON envelope.");
@@ -45,28 +46,40 @@ function allowedOrigin(origin: string): boolean {
   } catch { return false; }
 }
 
-async function readCode(request: IncomingMessage): Promise<string> {
-  const limit = 64 * 1024;
+async function readEnvelope(request: IncomingMessage, kind: string, limit = 64 * 1024) {
+  const tooLarge = () => new ConsoleProblem(413, "payload-too-large", "The request exceeds the host byte limit.");
   const length = single(request, "content-length");
-  if (length !== undefined && Number(length) > limit)
-    throw new ConsoleProblem(413, "payload-too-large", "The pairing request exceeds the host limit.");
+  if (length !== undefined && Number(length) > limit) throw tooLarge();
   if (single(request, "content-encoding") !== undefined ||
       !/^application\/json(?:;\s*charset=utf-8)?$/i.test(single(request, "content-type") ?? "")) throw invalid();
-  const bytes = new Uint8Array(limit);
+  const chunks: Uint8Array[] = [];
   let used = 0;
   for await (const chunk of request.iterator({ destroyOnReturn: false })) {
-    if (used + chunk.byteLength > limit)
-      throw new ConsoleProblem(413, "payload-too-large", "The pairing request exceeds the host limit.");
-    bytes.set(chunk, used);
     used += chunk.byteLength;
+    if (used > limit) throw tooLarge();
+    chunks.push(chunk);
+  }
+  const bytes = new Uint8Array(used);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
   }
   try {
-    const value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes.subarray(0, used)));
-    if (Object.keys(value).length === 3 && value.version === 1 && value.kind === "pairingRequest" &&
-        value.data && Object.keys(value.data).length === 1 &&
-        typeof value.data.code === "string" && codePattern.test(value.data.code)) return value.data.code;
+    const value: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    if (object(value) && Object.keys(value).length === 3 && value.version === 1 && value.kind === kind &&
+        object(value.data)) return value.data;
   } catch { throw invalid(); }
   throw invalid();
+}
+
+const commandPaths = ["start", "resume", "replies"];
+const commandCapabilities = ["start", "resume", "submit-reply", "request-lookup", "receipt-read"];
+function commandPreflight(path: string, projectId: string) {
+  const [empty, namespace, major, projects, project, runs, session, action, ...tail] = path.split("/");
+  return empty === "" && namespace === "manual-console" && major === "v1" && projects === "p" &&
+    project === projectId && runs === "runs" && session && idPattern.test(session) && !!action &&
+    commandPaths.includes(action) && tail.length === 0;
 }
 
 type RunSummary = ReturnType<ManualConsoleReader["list"]>[number];
@@ -112,7 +125,7 @@ function runPage(operator: Operator, reader: ManualConsoleReader, query: URLSear
 }
 
 export async function serveManualConsole(reader: ManualConsoleReader, origin: string, port: number, signal: AbortSignal,
-  announce: (message: string) => void): Promise<void> {
+  announce: (message: string) => void, commands?: ManualConsoleCommands): Promise<void> {
   if (!allowedOrigin(origin)) throw new Error("Supply one canonical HTTP loopback browser origin.");
   if (signal.aborted) return;
   reader.checkScope();
@@ -142,7 +155,7 @@ export async function serveManualConsole(reader: ManualConsoleReader, origin: st
     if (method === "OPTIONS") {
       const requestedMethod = single(request, "access-control-request-method");
       const headers = (single(request, "access-control-request-headers") ?? "").toLowerCase().split(",").map(h => h.trim()).filter(Boolean);
-      if (browser === undefined || (requestedMethod !== "GET" && !(requestedMethod === "POST" && path === prefix + "/operator-session")) ||
+      if (browser === undefined || (requestedMethod !== "GET" && !(requestedMethod === "POST" && (path === prefix + "/operator-session" || (commands && commandPreflight(path, reader.projectId))))) ||
           headers.some(h => h !== "authorization" && h !== "content-type")) throw invalid();
       response.setHeader("Access-Control-Allow-Methods", requestedMethod);
       response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
@@ -165,7 +178,11 @@ export async function serveManualConsole(reader: ManualConsoleReader, origin: st
       if (failures.length >= 5)
         throw new ConsoleProblem(429, "rate-limited", "Wait before trying to pair again.", minute - (now - failures[0]!));
       let code: string;
-      try { code = await readCode(request); }
+      try {
+        const body = await readEnvelope(request, "pairingRequest");
+        if (Object.keys(body).length !== 1 || typeof body.code !== "string" || !codePattern.test(body.code)) throw invalid();
+        code = body.code;
+      }
       catch (error) {
         if (failures.length < 5) failures.push(Date.now());
         throw error;
@@ -194,7 +211,7 @@ export async function serveManualConsole(reader: ManualConsoleReader, origin: st
     if (route === "/capabilities" && method === "GET" && separator === -1) {
       reader.checkScope();
       return json(response, 200, envelope("capabilities", { projectId: reader.projectId, checkoutLabel: reader.checkoutLabel,
-        capabilities: ["run-list", "run-read", "packet-read"], pollAfterMs: 1000 }));
+        capabilities: ["run-list", "run-read", "packet-read", ...(commands ? commandCapabilities : [])], pollAfterMs: 1000 }));
     }
     const [, p, project, collection, session, resource, item, extra, ...tail] = route.split("/");
     if (p !== "p" || project !== reader.projectId || collection !== "runs" || tail.length) throw notFound();
@@ -203,10 +220,43 @@ export async function serveManualConsole(reader: ManualConsoleReader, origin: st
     if (!session || !idPattern.test(session)) throw notFound();
     const historyPage = resource === "history" && method === "GET" && item === undefined;
     if (separator !== -1 && !historyPage) throw notFound();
-    if (resource === undefined && method === "GET") return json(response, 200, envelope("run", reader.run(session)));
+    if (resource === undefined && method === "GET") return json(response, 200, envelope("run", commands ? await commands.run(session) : reader.run(session)));
     if (resource === "packets" && method === "GET" && item && idPattern.test(item) && extra === undefined)
       return json(response, 200, envelope("correspondence", reader.packet(session, item)));
-    if ((method === "POST" && item === undefined && ["start", "resume", "replies"].includes(resource ?? "")) ||
+    if (commands && method === "POST" && item === undefined && resource && commandPaths.includes(resource)) {
+      if (signal.aborted) throw new ConsoleProblem(503, "temporarily-unavailable", "The local host is draining.", 1000);
+      const reply = resource === "replies";
+      const body = await readEnvelope(request, reply ? "replyRequest" : "commandRequest", reply ? 32 * 1024 * 1024 : undefined);
+      if (Date.now() >= operator.expires) throw unauthorized();
+      const target = body.target;
+      const requestId = body.requestId;
+      if (Object.keys(body).length !== (reply ? 4 : 2) || !object(target) || Object.keys(target).length !== 3 ||
+          target.projectId !== project || target.sessionId !== session ||
+          typeof target.attemptId !== "string" || !idPattern.test(target.attemptId) ||
+          typeof requestId !== "string" || !requestIdPattern.test(requestId)) throw invalid();
+      const scope = { projectId: project, sessionId: session, attemptId: target.attemptId };
+      let view;
+      if (reply) {
+        if (typeof body.expectedPacketId !== "string" || !idPattern.test(body.expectedPacketId) || typeof body.replyText !== "string") throw invalid();
+        if (utf8.encode(body.replyText).byteLength > replyBytes)
+          throw new ConsoleProblem(413, "payload-too-large", "The decoded reply exceeds 4 MiB.");
+        if (body.replyText.includes(operator.token) || body.replyText.includes(authorization ?? operator.token) ||
+            redact(body.replyText) !== body.replyText || /[\uD800-\uDFFF]/u.test(body.replyText)) throw invalid();
+        if (signal.aborted) throw new ConsoleProblem(503, "temporarily-unavailable", "The local host is draining.", 1000);
+        view = await commands.submit("submit-reply", scope, requestId, { text: body.replyText, expectedPacketId: body.expectedPacketId });
+      } else {
+        if (signal.aborted) throw new ConsoleProblem(503, "temporarily-unavailable", "The local host is draining.", 1000);
+        view = await commands.submit(resource === "start" ? "start" : "resume", scope, requestId);
+      }
+      return json(response, view.operation.state === "pending" ? 202 : 200, envelope("operationView", view));
+    }
+    if (commands && method === "GET" && item && extra === undefined) {
+      if (resource === "requests" && requestIdPattern.test(item))
+        return json(response, 200, envelope("operationView", await commands.lookup(session, item)));
+      if (resource === "receipts" && idPattern.test(item))
+        return json(response, 200, envelope("receipt", commands.receipt(session, item)));
+    }
+    if ((method === "POST" && item === undefined && commandPaths.includes(resource ?? "")) ||
         (method === "GET" && (historyPage ||
           (item && idPattern.test(item) && ((resource === "requests" && extra === undefined) ||
             (resource === "receipts" && (extra === undefined || extra === "original"))))))) {
@@ -220,7 +270,7 @@ export async function serveManualConsole(reader: ManualConsoleReader, origin: st
     void handle(request, response).catch(error => {
       response.setHeader("Connection", "close");
       const problem = error instanceof ConsoleProblem ? error :
-        new ConsoleProblem(500, "internal-error", "The local host could not complete the read.");
+        new ConsoleProblem(500, "internal-error", "The local host could not complete the operation.");
       json(response, problem.status, envelope("problem", {
         code: problem.code, message: problem.message, retryAfterMs: problem.retryAfterMs,
       }));

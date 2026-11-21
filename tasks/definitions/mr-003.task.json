@@ -1,0 +1,57 @@
+{
+  "schemaId": "ipt.task",
+  "schemaVersion": "1.0.0",
+  "taskId": "MR-003",
+  "title": "[MR-003] Start, resume and import manual replies through the shared Vibez writer",
+  "objective": "Advance eligible manual console sessions with native writer coordination and durable bound receipts.",
+  "inScope": [
+    "Authorized start, resume, reply import and receipt recovery over the v1 contract.",
+    "Native writer coordination, additive submission correlation, CLI interoperability, compatibility and rollback."
+  ],
+  "outOfScope": [
+    "New task admission, unattended execution, browser-granted publication, approval, lock recovery and merge, history UI."
+  ],
+  "dependencies": [
+    "MR-002"
+  ],
+  "canonicalBranch": "feat/mr-003-manual-console-commands",
+  "allowedPaths": [
+    "src/manual-console/**",
+    "src/workflow-driver/**",
+    "src/cli/cli.ts",
+    "src/cli/standalone.ts",
+    "src/cli/node-runtime.d.ts",
+    "src/cli/orchestrate.ts",
+    "src/project-services/index.ts",
+    "docs/MANUAL_CONSOLE_*.md",
+    "docs/development/best-practices.md",
+    "tests/manual-console*.test.mjs",
+    "tasks/definitions/mr-003.task.json",
+    "requirements/mr-003.requirement.json",
+    "migration/admissions/mr-003.json"
+  ],
+  "requirements": [
+    "MR-003-R1"
+  ],
+  "acceptanceCriteria": [
+    "MR-003.1: Route raw JSON or a single fenced block through the native importer. Keep malformed, multiple-block, wrong-run, wrong-role and stale replies associated with the selected intent. Rejection preserves the selected and sibling pending handoffs.",
+    "MR-003.2: Reconcile double-clicks, lost responses, interrupted inbox delivery, host restart and concurrent CLI/UI operations using the shared writer and durable keys. Record one accepted judgment and at most one successor handoff. Reject changed intent under a reused key.",
+    "MR-003.3: Authorize start/resume for eligible prepared native sessions. Surface admission, writer and revision blockers. Keep successful import and subsequent gate outcomes distinct. Deny browser publication, approval, lock recovery and merge."
+  ],
+  "validationPlan": [
+    "Run all repository checks and real native driver HTTP integration for negative bindings, durable replay, interrupted delivery, CLI watch and writer contention.",
+    "Verify command disable/drain and continued CLI inspection and resume without modifying history."
+  ],
+  "affectedContracts": [
+    "control-plane.workflow-driver",
+    "control-plane.cli-shell",
+    "control-plane.status-reporting"
+  ],
+  "requiredReviewRoles": [
+    "Developer",
+    "QA",
+    "Architect",
+    "UAT/Product",
+    "MergeController"
+  ]
+}
