@@ -57,7 +57,7 @@ function install(t) {
   const config = get(installed, "examples/alpha/vibez.config.json");
   config.providers.credentials = [];
   config.project.repository = "fixture-owner/fixture-repo";
-  put(project, "workflow.json", config);
+  put(project, "settings/workflow.json", config);
   put(project, "work/tasks/.gitkeep", "");
   put(project, "work/contracts/.gitkeep", "");
   put(project, "work/policy.json", {});
@@ -74,7 +74,7 @@ function install(t) {
   git(project, "remote", "add", "origin", "https://github.com/fixture-owner/fixture-repo.git");
   git(project, "add", ".");
   git(project, "commit", "-m", "Configure console fixture");
-  const selection = ["--project", project, "--config", "workflow.json", "--npm-cli", npm,
+  const selection = ["--project", project, "--config", "settings/workflow.json", "--npm-cli", npm,
     ...(process.platform === "win32" ? ["--local-ntfs"] : [])];
   const cli = (args, input) => JSON.parse(call(tools, entry, ["--json", "orchestrate", ...args, ...selection], input)).data;
   async function start(commands = false) {
@@ -393,7 +393,7 @@ test("native reviewer source drift and revision-bound integration snapshots rema
   const { loadProfile } = await import("../dist/workflow-driver/intake.js");
   const { resolveProjectConfig } = await import("../dist/project-config/index.js");
   const { observeIntegration } = await import("../dist/workflow-driver/driver.js");
-  const config = resolveProjectConfig({ projectRoot: project, configPath: "workflow.json", verifyLocalStorage: () => true });
+  const config = resolveProjectConfig({ projectRoot: project, configPath: "settings/workflow.json", verifyLocalStorage: () => true });
   const profile = loadProfile(project, config);
   observeIntegration(project, profile, qa, { kind: "pull-request", number: 17, revision: oldHead, status: "draft", draftKnown: true });
   observeIntegration(project, profile, qa, { kind: "pull-request", number: 17, revision: changed.summary.revision,

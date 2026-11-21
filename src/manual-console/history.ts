@@ -53,7 +53,7 @@ export async function runHistory(config: ResolvedProjectConfig, profile: DriverP
   const first = lineage[0]!;
   const root = config.projectRoot;
   const audit = await readProjectAudit({ repositoryRoot: root,
-    config: { configPath: relative(root, config.configPath), verifyLocalStorage: () => { config.assertStorage(); return true; } },
+    config: { configPath: relative(root, config.configPath).replaceAll("\\", "/"), verifyLocalStorage: () => { config.assertStorage(); return true; } },
   }, first.taskId).catch(() => null);
   const events: OrderedEvent[] = [];
   for (const [index, session] of lineage.entries()) {
