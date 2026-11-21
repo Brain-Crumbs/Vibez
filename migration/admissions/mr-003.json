@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "taskId": "MR-003",
+  "repository": "Brain-Crumbs/Vibez",
+  "issue": "https://github.com/Brain-Crumbs/Vibez/issues/41",
+  "issueUpdatedAt": "2026-11-21T00:28:10Z",
+  "issueBodySha256": "f2d46d8d50425b8da8bd59d6fa1fc74e0b40034cd7b9a103dab92d0f7e688d69",
+  "parentEpic": "https://github.com/Brain-Crumbs/Homebase/issues/22",
+  "parentEpicUpdatedAt": "2026-11-21T04:07:03Z",
+  "integrationBase": "dc9e4778f95ece290cce2795238fdbe6adae836f",
+  "canonicalBranch": "feat/mr-003-manual-console-commands",
+  "prerequisites": [
+    {
+      "taskId": "MR-002",
+      "issue": "https://github.com/Brain-Crumbs/Vibez/issues/40",
+      "pr": "https://github.com/Brain-Crumbs/Vibez/pull/44",
+      "reviewedHead": "a4b83c897a97717df702dc5e4a5db2081d79c688",
+      "merge": "dc9e4778f95ece290cce2795238fdbe6adae836f",
+      "nativeState": "DONE",
+      "nativeMergeEvidence": "MR-002::merge@1",
+      "nativeMergeEvidenceSha256": "bab665ad9dbc759d46c0bb8464f95f718dbc8ec5a9b4af600b7dad417d0072ea",
+      "exactHeadCi": "https://github.com/Brain-Crumbs/Vibez/actions/runs/44858832285"
+    }
+  ],
+  "historicalPrerequisite": {
+    "taskId": "MIG-003",
+    "issue": "https://github.com/Brain-Crumbs/Vibez/issues/3",
+    "pr": "https://github.com/Brain-Crumbs/Vibez/pull/15",
+    "reviewedHead": "dd0c6a9f4396d0e9a89756d177c7477eea71b369",
+    "merge": "16a73b8071f5b9ef390d08504e325b779af291fe",
+    "sealedCommit": "fdebe9111ce7aa004566c4068a2c15a9a95ab00c",
+    "receipt": "migration/admissions/mig-003.json",
+    "exactHeadCi": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42867995876",
+    "mainCi": "https://github.com/Brain-Crumbs/Vibez/actions/runs/42869658896",
+    "reviewReportSha256": {
+      "QA": "29fb6acfe2e11a15b6426bb419b56cb3725caa0818c56bd0d2028d1b7c56e0db",
+      "Architect": "304a16ba1d0f7d210ec176a3f84e10a0ca8d55bafd2730aca430e09e004411ee",
+      "UAT/Product": "1e214dfdc930206d864248d68e2e233a795b84576a664960147b1f21365fcec9"
+    },
+    "rationale": "The seed merge and seal are ancestors of current main. MIG-003 is retained as historical operating evidence without synthesizing a native task."
+  },
+  "dependencyProjection": {
+    "native": [
+      "MR-002"
+    ],
+    "external": [],
+    "historical": [
+      "MIG-003"
+    ]
+  },
+  "definition": {
+    "path": "tasks/definitions/mr-003.task.json",
+    "sha256": "fa94988e7ba643d0c7b0527d6499d9969adcb162753a0e02747ce578527c04c9"
+  },
+  "requirement": {
+    "path": "requirements/mr-003.requirement.json",
+    "sha256": "90cf0f89ec39703dcca28a8cf2f302cb879de085a2ef453ba479e5d2ea23f1d1"
+  },
+  "observedAt": "2026-11-21T20:29:34.221350+00:00",
+  "admissionReview": {
+    "role": "Architect",
+    "outcome": "PASS",
+    "reviewedReceiptSha256": "96491f52e7428cfdaccf1da2e2c7b15ae9302bc409778cb90c0547767f6e147a",
+    "scope": "Independent source and staged record binding, full registry DAG, MR-002 native DONE and PR merge evidence, seed ancestry, and eligibility withheld in MERGED-only negative case."
+  }
+}
