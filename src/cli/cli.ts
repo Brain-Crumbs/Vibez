@@ -8,7 +8,7 @@ async function main(): Promise<number> {
   const controller = new AbortController();
   const interrupt = () => controller.abort();
   const args = process.argv.slice(2);
-  const manualRun = args.filter((arg) => arg !== "--json").slice(0, 2).join(" ") === "manual run" || args.filter(arg => arg !== "--json")[0] === "orchestrate";
+  const manualRun = args.filter((arg) => arg !== "--json").slice(0, 2).join(" ") === "manual run" || ["orchestrate", "manual-console"].includes(args.filter(arg => arg !== "--json")[0] ?? "");
   if (manualRun) {
     process.on("SIGINT", interrupt);
     process.on("SIGTERM", interrupt);

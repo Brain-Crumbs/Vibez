@@ -16,3 +16,5 @@ Human-readable architecture and operating documentation introduced by later boot
 Root governance is defined by [operating instructions](../AGENTS.md) and the [constitution](../CONSTITUTION.md). The [seed record](../migration/SEED_EXPORT.md) links the historical authority.
 
 Documentation in this directory describes current contracts or boundaries only. It must not be interpreted as implementation of later schemas, review executors, orchestration, or merge-control automation.
+
+- [Installed manual console host](MANUAL_CONSOLE_HOST.md)

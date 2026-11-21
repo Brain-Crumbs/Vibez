@@ -1,0 +1,17 @@
+{
+  "schemaId": "ipt.requirement",
+  "schemaVersion": "1.0.0",
+  "requirementId": "MR-002-R1",
+  "taskId": "MR-002",
+  "statement": "Serve authorized run state and exact current correspondence for one configured Vibez checkout.",
+  "acceptanceCriteria": [
+    "MR-002.1: In a clean installed consumer, inspect a real CLI-started run over HTTP and return the exact current role or repair correspondence bytes. Repeated status/list/copy observations leave native gates and handoffs untouched.",
+    "MR-002.2: Enforce loopback listener, exact Host and browser origin, expiring operator pairing, scoped project/profile/session and bound packet identity, request/response limits and safe artifact resolution.",
+    "MR-002.3: Distinguish missing, offline, unsupported, prepared and blocked states. Advertise only enabled read capabilities and expose known gate, revision and PR/CI provenance without guessing."
+  ],
+  "sourceRefs": [
+    "https://github.com/Brain-Crumbs/Vibez/issues/40",
+    "https://github.com/Brain-Crumbs/Homebase/issues/22",
+    "sha256:e21601e8ec9ee4aabdd40fb1556fd65b990fc0196a6aadffb87394240efe466d"
+  ]
+}

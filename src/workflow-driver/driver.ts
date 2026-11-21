@@ -1,4 +1,5 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, unlinkSync } from "node:fs";
+import { Worker, isMainThread, workerData } from "node:worker_threads";
 import { AgentRunner, type AgentRunRequest } from "../agent-provider/index.js";
 import { FileManualAgentProvider, type LocalAgentPacket } from "../local-agent-adapter/index.js";
 import { SequentialOrchestrationEngine, FileOrchestrationRunStore } from "../orchestration-engine/index.js";
@@ -8,7 +9,7 @@ import { createLocalQaReviewGate } from "../qa-review/index.js";
 import { createLocalArchitectureReviewGate } from "../architecture-review/index.js";
 import { createLocalUatReviewGate } from "../uat-review/index.js";
 import { createLocalReviewReworkGate } from "../review-rework/index.js";
-import { createLocalMergeReadinessPolicyEngine, type FetchLike } from "../merge-readiness/index.js";
+import { createLocalMergeReadinessPolicyEngine, type EvaluateMergeReadinessResult, type FetchLike } from "../merge-readiness/index.js";
 import { createLocalControlledMergeController } from "../controlled-merge/index.js";
 import { createLocalPullRequestLifecycleAdapter } from "../pr-lifecycle/index.js";
 import { createLocalWorkflowDiagnostics } from "../workflow-diagnostics/index.js";
@@ -45,6 +46,101 @@ function observe(root:string,p:DriverProfile,s:DriverSession,event:string,revisi
   const path=safePath(root,`${driverDirectory(p)}/reports/${s.sessionId}/${hash(snapshot)}.json`);
   if(!existsSync(path))write(path,{...snapshot,observedAt:now()},true);
 }
+/** Optional read-side snapshot of a provider result already observed by the native driver. */
+export type DriverIntegrationObservation =
+  | { kind: "pull-request"; number: number; revision: string; status: "draft" | "open"; draftKnown: boolean }
+  | { kind: "ci"; revision: string; status: "pending" | "pass" | "fail" | "blocked" };
+
+export function observeIntegration(
+  root: string, profile: DriverProfile, session: DriverSession, observation: DriverIntegrationObservation,
+  progress?: DriverRuntime["progress"],
+): void {
+  try {
+    const relative = `${driverDirectory(profile)}/reports/${session.sessionId}/integration/${observation.kind}.json`;
+    const previous = safePath(root, relative);
+    if (observation.kind === "pull-request" && !observation.draftKnown && existsSync(previous)) {
+      const known = read(previous);
+      // A partial readiness lookup cannot supersede the last fully observed
+      // PR status, even when it returns a newer head. Keep the old provenance.
+      if (object(known) && known.profileHash === session.profileHash && known.sessionId === session.sessionId &&
+          known.repository === profile.repository && known.taskId === session.taskId &&
+          known.runId === session.request.runId && known.draftKnown === true) return;
+    }
+    write(previous, { ...observation, observedAt: now(), sessionId: session.sessionId, taskId: session.taskId,
+      runId: session.request.runId, profileHash: session.profileHash, repository: profile.repository });
+  } catch {
+    // A projection snapshot must not change the completed provider operation.
+    progress?.("Run integration status could not be saved. Native workflow state is unchanged.");
+  }
+}
+
+function observeReadiness(root: string, profile: DriverProfile, session: DriverSession, result: EvaluateMergeReadinessResult,
+  progress?: DriverRuntime["progress"]) {
+  const observed = result.reasons.filter(item => item.code === "CI_CHECK_NOT_SUCCESSFUL");
+  const status = observed.some(item => item.condition === "failed") ? "fail" :
+    observed.some(item => item.condition === "missing") ? "blocked" :
+    observed.some(item => item.observedStatus === "in_progress" || item.observedStatus === "queued") ? "pending" :
+    observed.length ? "blocked" : "pass";
+  observeIntegration(root, profile, session, { kind: "ci", revision: result.revision, status }, progress);
+  if (result.pullRequestNumber !== null) {
+    const outside = result.reasons.find(item => item.code === "PULL_REQUEST_HEAD_MISMATCH");
+    const revision = outside ? outside.revisionIdentity : result.revision;
+    if (revision) observeIntegration(root, profile, session,
+      { kind: "pull-request", revision, number: result.pullRequestNumber, status: "open", draftKnown: false }, progress);
+  }
+}
+
+interface ValidationHeartbeat {
+  kind: "vibez.native-validation-heartbeat";
+  lock: string;
+  path: string;
+  scope: { sessionId: string; taskId: string; profileHash: string; runId: string; lockHash: string };
+}
+
+function pulseValidation(heartbeat: ValidationHeartbeat) {
+  try {
+    if (hash(readFileSync(heartbeat.lock, "utf8")) !== heartbeat.scope.lockHash) return;
+    write(heartbeat.path, { ...heartbeat.scope, expiresMs: Date.now() + 4000 });
+  } catch { /* Native validation remains authoritative when observations cannot be recorded. */ }
+}
+
+if (!isMainThread && workerData?.kind === "vibez.native-validation-heartbeat") {
+  const heartbeat: ValidationHeartbeat = workerData;
+  pulseValidation(heartbeat);
+  setInterval(() => pulseValidation(heartbeat), 1000);
+}
+
+async function withObservedValidation<T>(root: string, profile: DriverProfile, session: DriverSession,
+  action: () => Promise<T>): Promise<T> {
+  const directory = driverDirectory(profile);
+  let heartbeat: ValidationHeartbeat;
+  try {
+    const lock = safePath(root, `${directory}/writer.lock`);
+    const path = safePath(root, `${directory}/reports/${session.sessionId}/integration/validation-heartbeat.json`);
+    heartbeat = { kind: "vibez.native-validation-heartbeat", lock, path, scope: {
+      sessionId: session.sessionId, taskId: session.taskId, profileHash: session.profileHash,
+      runId: session.request.runId, lockHash: hash(readFileSync(lock, "utf8")),
+    } };
+  } catch { return action(); }
+
+  pulseValidation(heartbeat);
+  let worker: Worker | undefined;
+  try {
+    // Native command validators can block this thread in spawnSync. A
+    // process-owned worker keeps the scoped heartbeat current during that call.
+    worker = new Worker(new URL(import.meta.url), { workerData: heartbeat, env: {} });
+    worker.on("error", () => { /* The initial heartbeat expires if the worker stops. */ });
+  } catch { /* A failed observer cannot stop the owning validator. */ }
+  try { return await action(); }
+  finally {
+    try {
+      await worker?.terminate();
+      if (hash(readFileSync(heartbeat.lock, "utf8")) === heartbeat.scope.lockHash && existsSync(heartbeat.path))
+        unlinkSync(heartbeat.path);
+    } catch { /* Expiration invalidates a heartbeat left behind after interruption. */ }
+  }
+}
+
 interface GithubPull {
   number:number; node_id?:string; title:string; body:string; draft:boolean; state:string;
   merged?:boolean; merged_at?:string|null;
@@ -213,15 +309,20 @@ export async function step(root: string, p: DriverProfile, s: DriverSession, run
       runtime.unattended?.check(); return runtime.unattended ? runtime.unattended.effect(operation, action) : Promise.resolve(action());
     };
     const driverHooks = { developerStart: { start: (input: Parameters<typeof start.start>[0]) => effect({action:"start",taskId:s.taskId,revision:clean(root)}, () => runtime.unattended ? configured!.startWithin(runtime.unattended.taskIds,{...input,authorizedTaskId:s.taskId}) : start.start({...input, authorizedTaskId:s.taskId})) },
-      developerValidation: { validate: (input: Parameters<typeof validation.validate>[0]) => { runtime.unattended?.check(); const before=clean(root);if(!runtime.unattended)requireValue(s.developerPacket&&accepted(s.developerPacket).role==="Developer","Developer validation requires the original accepted response and its source fence.");return validation.validate({...input,...(runtime.signal?{signal:runtime.signal}:{}),routeFirstReview:true,commandEnvironment:validatorEnvironment(),assertSource:revision=>{
+      developerValidation: { validate: (input: Parameters<typeof validation.validate>[0]) => { runtime.unattended?.check(); const before=clean(root);if(!runtime.unattended)requireValue(s.developerPacket&&accepted(s.developerPacket).role==="Developer","Developer validation requires the original accepted response and its source fence.");return withObservedValidation(root, p, s, () => validation.validate({...input,...(runtime.signal?{signal:runtime.signal}:{}),routeFirstReview:true,commandEnvironment:validatorEnvironment(),assertSource:revision=>{
         runtime.unattended?.check();
         requireValue(revision===before&&git(root,"branch","--show-current")===task.canonicalBranch,"Validation must stay on the exact canonical source.");clean(root,before);
-      }}); } },
+      }})); } },
       qaReview: { ...reviewGate(qa), review: (input: Parameters<typeof qa.review>[0]) => effect({action:"review",taskId:s.taskId,revision:clean(root),role:"QA",principal:p.roleActors.QA},()=>reviewGate(qa).review(input)) },
       architectureReview: { ...reviewGate(architecture), review: (input: Parameters<typeof architecture.review>[0]) => effect({action:"review",taskId:s.taskId,revision:clean(root),role:"Architect",principal:p.roleActors.Architect},()=>reviewGate(architecture).review(input)) },
       uatReview: { ...reviewGate(uat), review: (input: Parameters<typeof uat.review>[0]) => effect({action:"review",taskId:s.taskId,revision:clean(root),role:"UAT/Product",principal:p.roleActors["UAT/Product"]},()=>reviewGate(uat).review(input)) },
       reviewRework: { enterRework: (input: Parameters<typeof rework.enterRework>[0]) => effect({action:"rework",taskId:s.taskId,revision:clean(root)},()=>rework.enterRework(input)) },
-      mergeReadiness: { evaluate: async (input: Parameters<typeof readiness.evaluate>[0]) => { clean(root); return readiness.evaluate(input); } },
+      mergeReadiness: { evaluate: async (input: Parameters<typeof readiness.evaluate>[0]) => {
+        clean(root);
+        const observed = await readiness.evaluate(input);
+        observeReadiness(root, p, s, observed, runtime.progress);
+        return observed;
+      } },
       controlledMerge: { merge: async (input: Parameters<typeof merge.merge>[0]) => {
         if (!intent) {
           const head = clean(root), ready = await readiness.evaluate({ taskId: s.taskId });
@@ -322,6 +423,11 @@ export async function publish(root: string, p: DriverProfile, s: DriverSession, 
     if (configured) requireValue(configured.authorizePublication(s.taskId, head),
       "Host authorization for the exact task and source is required for publication or ready conversion.", "PUBLICATION_AUTHORIZATION_REQUIRED");
   };
+  const recordPull = (pr: GithubPull) => {
+    if (typeof pr.draft === "boolean")
+      observeIntegration(root, p, s, { kind: "pull-request", number: pr.number, revision: pr.head.sha,
+        status: pr.draft ? "draft" : "open", draftKnown: true }, runtime.progress);
+  };
   const existing=await candidate();authorizeWrite();
   if (ready) {
     requireValue(existing,"Publish the canonical draft first; ready never creates a pull request.");
@@ -330,7 +436,10 @@ export async function publish(root: string, p: DriverProfile, s: DriverSession, 
     const pr=await checked.json() as GithubPull;
     requireValue(checked.ok&&pr.number===existing.number&&pr.node_id,"Unable to verify the exact PR node for ready conversion.");
     assertPull(pr,p,s,task.canonicalBranch,head);assertPublished();
-    if(pr.draft===false)return {number:pr.number,revision:head,ready:true,reused:true};
+    if(pr.draft===false) {
+      recordPull(pr);
+      return {number:pr.number,revision:head,ready:true,reused:true};
+    }
     authorizeWrite();
     const f = githubTransport(runtime);
     const markReady = () => f("https://api.github.com/graphql", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ query: "mutation($id:ID!){markPullRequestReadyForReview(input:{pullRequestId:$id}){pullRequest{id}}}", variables: { id: pr.node_id } }) });
@@ -338,6 +447,7 @@ export async function publish(root: string, p: DriverProfile, s: DriverSession, 
     const response = await (runtime.unattended ? runtime.unattended.effect({action:"ready",taskId:s.taskId,revision:head,pullRequestNumber:pr.number}, markReady) : markReady());
     const body = await response.json() as {errors?:unknown}; requireValue(response.ok && !body.errors, "Ready conversion failed; inspect GitHub and retry. No merge was attempted.");
     const after=await candidate(head);assertPublished();requireValue(after?.number===pr.number&&after.draft===false,"Remote PR changed during ready conversion; inspect GitHub before resuming.");
+    recordPull(after);
     return {number:pr.number,revision:head,ready:true,reused:false};
   }
   assertRemote(root,p,runtime,remote);
@@ -366,5 +476,6 @@ export async function publish(root: string, p: DriverProfile, s: DriverSession, 
     authorizeWrite();
   }, runtime.unattended ? action => runtime.unattended!.effect({action:"publish",taskId:s.taskId,revision:head},action) : undefined) : await adapter.ensurePullRequest(request);
   const after=await candidate(head);assertPublished();requireValue(after?.number===result.number,"Canonical PR changed during publication.");
+  recordPull(after);
   return result;
 }
