@@ -1,0 +1,51 @@
+{
+  "schemaId": "ipt.task",
+  "schemaVersion": "1.0.0",
+  "taskId": "MR-001",
+  "title": "[MR-001] Define the versioned manual-console contract and conformance examples",
+  "objective": "Publish a testable v1 loopback manual-run console contract for Vibez and Homebase.",
+  "inScope": [
+    "Trace native workflow driver, service and audit evidence provenance and identify correlation gaps.",
+    "Specify v1 HTTP operations and scoped authorization for one configured checkout with already-admitted tasks.",
+    "Publish standalone JSON Schema, browser-readable fixtures, validation tests and compatibility guidance."
+  ],
+  "outOfScope": [
+    "Implementing the transport or browser UI, new task admission from the console, unattended execution and browser-granted publication or merge."
+  ],
+  "dependencies": [],
+  "canonicalBranch": "feat/mr-001-manual-console-contract",
+  "allowedPaths": [
+    "tasks/definitions/mr-001.task.json",
+    "requirements/mr-001.requirement.json",
+    "migration/admissions/mr-001.json",
+    "docs/README.md",
+    "docs/MANUAL_CONSOLE_CONTRACT.md",
+    "docs/development/best-practices.md",
+    "docs/specs/manual-console-v1/**",
+    "tests/test_manual_console_contract.py"
+  ],
+  "requirements": [
+    "MR-001-R1"
+  ],
+  "acceptanceCriteria": [
+    "MR-001.1: Validate versioned good and bad examples for waiting, blocked, disconnected/last-observed, accepted/reused/rejected, validation failure, rework and completion. Separate receipt, gate and host actions.",
+    "MR-001.2: Preserve exact original Markdown and stable project/session/attempt/packet, role, revision and receipt references across reads, with explicit historical-body and PR/CI unknown states.",
+    "MR-001.3: Define scoping, versions, limits, session setup, polling, retries and uncertain outcomes. Provide independently consumable conformance inputs and pinning and compatibility/rollback guidance."
+  ],
+  "validationPlan": [
+    "Run all Vibez README checks, focused manual driver and JSON Schema conformance and independent QA, Architecture and UAT/Product review of the final committed head.",
+    "Test unsupported versions, missing or mismatched bindings, invalid shapes, cross-record correlation, unknown observations and multiline Markdown equality.",
+    "Check representative request/response pairs and verify rollback leaves native CLI history and package behavior intact."
+  ],
+  "affectedContracts": [
+    "control-plane.workflow-driver",
+    "control-plane.cli-shell"
+  ],
+  "requiredReviewRoles": [
+    "Developer",
+    "QA",
+    "Architect",
+    "UAT/Product",
+    "MergeController"
+  ]
+}
