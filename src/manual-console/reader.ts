@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { FileDeveloperStartStateStore } from "../dev-start/index.js";
 import { FileEvidenceStore } from "../evidence-store/index.js";
-import { FileOrchestrationRunStore, type OrchestrationRunJournal, type OrchestrationStageRecord } from "../orchestration-engine/index.js";
+import { FileOrchestrationRunStore, type OrchestrationStageRecord } from "../orchestration-engine/index.js";
 import type { ResolvedProjectConfig } from "../project-config/index.js";
 import { successorId } from "../workflow-driver/inbox.js";
 import { bindProfile, loadProfile, loadSession, sessionPath } from "../workflow-driver/intake.js";
@@ -9,6 +9,7 @@ import { driverDirectory, files, git, hash, object, orchestrationDirectory, reda
 import type { DriverProfile, DriverSession } from "../workflow-driver/model.js";
 import { pendingPackets, readOriginal, revision } from "./artifacts.js";
 import { ConsoleProblem } from "./problem.js";
+import { integrationObservations, validationIsActive } from "./observations.js";
 
 const nativeId = /^[a-f0-9-]{36}$/;
 const stages = {
@@ -17,31 +18,13 @@ const stages = {
   "uat-review": "uat-review", "review-rework": "rework", "merge-readiness": "merge-readiness",
   "controlled-merge": "completion",
 } as const;
-const activeStages = {
-  "developer-agent": "assignment", "qa-agent": "qa-review", "architecture-agent": "architecture-review", "uat-agent": "uat-review",
-  ...stages,
-} as const;
-type Phase = "prepared" | "waiting" | "active" | "blocked" | "rework" | "completed";
+type Phase = "prepared" | "active" | "waiting" | "blocked" | "rework" | "completed";
 const notFound = () => new ConsoleProblem(404, "not-found", "The requested resource is unavailable.");
 const unavailable = () => new ConsoleProblem(503, "temporarily-unavailable", "Restore the original configured project and driver profile, then retry.", 1000);
 const compare = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
-const unknown = { state: "unknown" } as const;
-
-function utc(input: unknown) {
-  if (typeof input !== "string" || !Number.isFinite(Date.parse(input))) return null;
-  const value = new Date(input).toISOString();
-  return /^\d{4}-/.test(value) ? value : null;
-}
 function stageFor(name: string | undefined) {
   return name && Object.hasOwn(stages, name) ? stages[name as keyof typeof stages] : undefined;
 }
-function completedObservation(journal: OrchestrationRunJournal | null, stages: readonly OrchestrationStageRecord[]) {
-  const result = journal?.values["merge-readiness"];
-  const observedAt = utc([...stages].reverse().find(stage => stage.stage === "merge-readiness")?.finishedAt);
-  if (!object(result) || !observedAt || !revision(result.revision)) return null;
-  return { result, observedAt, revision: result.revision as string };
-}
-
 export class ManualConsoleReader {
   readonly projectId: string;
   readonly checkoutLabel: string;
@@ -121,6 +104,19 @@ export class ManualConsoleReader {
     return { code: safeCode, message: safeMessage || "Inspect this run with the Vibez CLI." };
   }
 
+  #actionableRole(branch: string, head: string | null, role: string | null, packetRevision: string | null, session: DriverSession) {
+    if (!head || !packetRevision) return false;
+    const root = this.#root;
+    try {
+      if (git(root, "branch", "--show-current") !== branch ||
+          git(root, "rev-parse", "--verify", "HEAD") !== head ||
+          hash(JSON.parse(git(root, "show", `${head}:${session.definitionPath}`))) !== session.definitionHash) return false;
+      if (role !== "Developer") return head === packetRevision;
+      git(root, "merge-base", "--is-ancestor", packetRevision, head);
+      return true;
+    } catch { return false; }
+  }
+
   #view(profile: DriverProfile, first: DriverSession, observedAt: string) {
     const root = this.#root;
     let session = first;
@@ -163,72 +159,69 @@ export class ManualConsoleReader {
     const result = session.result?.runId === session.request.runId && session.result.taskId === session.taskId ? session.result : null;
     const stageRecords = ((journal?.values.stages as OrchestrationStageRecord[] | undefined) ?? result?.stages) ?? [];
     const { role, repair, replyToPacketId, diagnostic } = pendingPackets(root, profile, session);
+    const staleRole = role !== null && !this.#actionableRole(branch, sourceRevision, role.ref.role, role.ref.revision, session);
+    const failure = journal?.lastFailure?.code === "WAITING_INPUT" && role && !staleRole ? undefined : journal?.lastFailure;
     const writer = ["writer.lock", "writer-recovery.lock"].some(name => existsSync(safePath(root, `${driverDirectory(profile)}/${name}`)));
 
     const done = state?.currentState === "DONE" && state.history.at(-1);
     const doneForRun = done && done.runId === `${session.request.runId}::controlled-merge`;
     const evidence = doneForRun && new FileEvidenceStore(safePath(root, profile.storage!.evidence), { readOnly: true })
       .getCurrent(`${session.taskId}::merge`);
-    const merged = evidence && evidence.payload.schemaId === "ipt.merge-evidence" && evidence.payload.taskId === session.taskId &&
-      evidence.payload.revisionIdentity === done.revisionIdentity && `${evidence.lineageId}@${evidence.sequence}` === done.evidenceRef ?
-      evidence.payload : null;
+    const completion = evidence ? evidence.payload : null;
+    const mergeHead = revision(completion?.revisionIdentity);
+    const merged = evidence && completion?.schemaId === "ipt.merge-evidence" && completion.taskId === session.taskId &&
+      mergeHead && mergeHead === done.revisionIdentity && `${evidence.lineageId}@${evidence.sequence}` === done.evidenceRef &&
+      typeof completion.recordedAt === "string" && typeof completion.pullRequestNumber === "number" &&
+      Number.isSafeInteger(completion.pullRequestNumber) && completion.pullRequestNumber > 0 ?
+      { recordedAt: completion.recordedAt, revisionIdentity: mergeHead, pullRequestNumber: completion.pullRequestNumber } : null;
     const rework = state?.currentState === "REWORK_REQUIRED" ||
       (session.predecessor !== null && session.status === "PREPARED" && !journal);
     const blockedDependency = session.status === "PREPARED" && dependencies.find(id => lifecycle(id)?.currentState !== "DONE");
-    const stage = journal?.pendingStage && activeStages[journal.pendingStage];
-    const active = writer && stage && !journal?.lastFailure && !diagnostic;
-    const phase: Phase = merged ? "completed" : rework ? "rework" : role ? "waiting" :
-      diagnostic || blockedDependency || result?.stopped || journal?.lastFailure ? "blocked" :
-      active ? "active" : session.status === "PREPARED" && !journal ? "prepared" : "blocked";
+    const validationActive = journal?.pendingStage === "dev-validation" && validationIsActive(root, profile, session);
+    const phase: Phase = merged ? "completed" : rework ? "rework" : role && !staleRole ? "waiting" :
+      validationActive ? "active" : staleRole || diagnostic || blockedDependency || result?.stopped || failure ? "blocked" :
+      session.status === "PREPARED" && !journal ? "prepared" : "blocked";
 
     const stopped = result?.stopped;
-    const reason = diagnostic ? this.#diagnostic(diagnostic.code, diagnostic.message) :
+    const usableDiagnostic = diagnostic?.code === "WAITING_INPUT" && role && !staleRole ? null : diagnostic;
+    const reason = validationActive ? null : staleRole ? this.#diagnostic("STALE_ROLE_SOURCE", "Restore the bound task branch and revision, then inspect or resume this attempt with Vibez.") :
+      usableDiagnostic ? this.#diagnostic(usableDiagnostic.code, usableDiagnostic.message) :
       stopped ? this.#diagnostic("WORKFLOW_STOPPED", stopped.reason) :
-      journal?.lastFailure ? this.#diagnostic(journal.lastFailure.code, journal.lastFailure.message) :
+      failure ? this.#diagnostic(failure.code, failure.message) :
       blockedDependency ? this.#diagnostic("DEPENDENCY_NOT_DONE", `Wait for ${blockedDependency} to complete in Vibez.`) :
-      writer && !active ? this.#diagnostic("WRITER_BUSY", "A Vibez writer holds the checkout. Inspect or resume it from the CLI.") :
+      writer ? this.#diagnostic("WRITER_BUSY", "A Vibez writer holds the checkout. Inspect or resume it from the CLI.") :
       phase === "blocked" ? this.#diagnostic("STATE_UNCERTAIN", "Inspect this attempt with the Vibez CLI before retrying.") : null;
     const observedStage = [...stageRecords].reverse().find(item => item.stage === stopped?.stage && stageFor(item.stage)) ??
       [...stageRecords].reverse().find(item => stageFor(item.stage));
     const stageName = stageFor(observedStage?.stage);
     const gateEvent = observedStage && state?.history.slice().reverse().find(event => event.runId === observedStage.runId);
-    const gate = phase === "waiting" && role?.ref.role ? { state: "awaiting-role", role: role.ref.role } :
-      phase === "active" && stage ? { state: "running", stage } :
+    const gate = phase === "active" ? { state: "running", stage: "developer-validation" } :
+      phase === "waiting" && role?.ref.role ? { state: "awaiting-role", role: role.ref.role } :
       stageName && observedStage ? { state: "observed", stage: stageName, outcome: observedStage.outcome.toLowerCase(),
         revision: revision(gateEvent?.revisionIdentity), diagnostic: observedStage.outcome === "PASS" ? null : reason } :
       { state: "idle" };
 
-    const completedAt = utc(merged?.recordedAt);
-    const pullRequest = merged && completedAt ? { state: "observed", status: "merged", observedAt: completedAt,
-      revision: merged.revisionIdentity, url: `https://github.com/${profile.repository}/pull/${merged.pullRequestNumber}` } : unknown;
-    const readiness = completedObservation(journal, stageRecords);
-    // A native successful readiness check had exact-head CI. A failed aggregate
-    // readiness check can include unrelated blockers, so report only explicit CI outcomes.
-    const reasons = Array.isArray(readiness?.result.reasons) ? readiness.result.reasons.filter(object) : [];
-    const failedChecks = reasons.filter(item => item.code === "CI_CHECK_NOT_SUCCESSFUL");
-    const ciStatus = readiness?.result.ready === true ? "pass" : failedChecks.some(item => item.condition === "failed") ? "fail" :
-      failedChecks.some(item => item.observedStatus === "in_progress" || item.observedStatus === "queued") ? "pending" :
-      failedChecks.length ? "blocked" : null;
-    const ci = readiness && ciStatus ? { state: "observed", status: ciStatus, observedAt: readiness.observedAt,
-      revision: readiness.revision, url: null } : unknown;
+    const { pullRequest, ci } = integrationObservations(root, profile, session, merged);
+    const registeredRevision = session.status === "PREPARED" && !journal ? revision(session.registrationRevision) : null;
 
     const nextAction = phase === "waiting" ? "Copy the current handoff into a fresh role session and return the reply through the Vibez CLI inbox." :
+      phase === "active" ? "Wait for Vibez to finish developer validation." :
       phase === "prepared" ? "Start this prepared session from the Vibez CLI." :
       phase === "rework" ? "Inspect the recorded review and continue through Vibez CLI rework." :
       phase === "blocked" ? (stopped ? this.#diagnostic("WORKFLOW_STOPPED", stopped.remediation).message : "Resolve the blocker in Vibez and refresh this run.") : null;
     return {
-      role: phase === "waiting" ? role : null, repair: phase === "completed" ? null : repair,
+      role: phase === "waiting" || staleRole ? role : null, repair: phase === "completed" ? null : repair,
       detail: {
         summary: {
           projectId: this.projectId, sessionId: first.sessionId, currentAttemptId: session.sessionId, observedAt,
           taskId: session.taskId, issueUrl: `https://github.com/${profile.repository}/issues/${session.issueNumber}`,
-          checkoutLabel: this.checkoutLabel, branch, revision: sourceRevision ?? revision(session.registrationRevision), phase,
+          checkoutLabel: this.checkoutLabel, branch, revision: sourceRevision ?? registeredRevision, phase,
         },
         attempt: { attemptId: session.sessionId, predecessorAttemptId: session.predecessor, nativeRunId: journal?.runId ?? null },
         gate, blocker: phase === "completed" ? null : reason, nextAction,
-        pending: { role: phase === "waiting" ? role?.ref ?? null : null,
+        pending: { role: phase === "waiting" || staleRole ? role?.ref ?? null : null,
           repair: repair && replyToPacketId && phase !== "completed" ? { packet: repair.ref, replyToPacketId } : null },
-        actions: (phase === "waiting" && role) || (repair && phase !== "completed") ? ["read-packet"] : [],
+        actions: ((phase === "waiting" || staleRole) && role) || (repair && phase !== "completed") ? ["read-packet"] : [],
         pullRequest, ci,
       },
     };

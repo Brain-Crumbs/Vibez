@@ -5,7 +5,7 @@ import { once } from "node:events";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync } from "node:fs";
 import { request } from "node:http";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { setTimeout as pause } from "node:timers/promises";
 import { test } from "node:test";
 import { git, get, markdown, put, response, sourceRoot } from "./helpers/driver-fixture.mjs";
@@ -28,8 +28,11 @@ function snapshot(root) {
 }
 
 function install(t) {
-  const npm = process.env.npm_execpath;
-  assert.ok(npm, "Run this test with npm run test:manual-console.");
+  const nodeDir = dirname(process.execPath);
+  const npm = process.env.npm_execpath ?? (process.platform === "win32" ?
+    join(nodeDir, "node_modules", "npm", "bin", "npm-cli.js") :
+    join(nodeDir, "..", "lib", "node_modules", "npm", "bin", "npm-cli.js"));
+  assert.ok(existsSync(npm), "Set npm_execpath to the installed npm CLI script.");
   const root = mkdtempSync(join(tmpdir(), "vibez console "));
   t.after(() => rmSync(root, { force: true, recursive: true }));
   function call(cwd, file, args, input) {
@@ -96,6 +99,15 @@ function install(t) {
 
 // Independent HTTP client. In particular it can send Host, Origin and chunked bytes
 // without fetch rewriting them. Pairing material is never included in assertions/logs.
+async function watchFor(cli, sessionId, predicate) {
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const data = cli(["watch", sessionId, "--once"]);
+    if (predicate(data.session, data)) return data.session;
+    await pause(650);
+  }
+  assert.fail("The CLI did not produce the expected observation within the polling budget.");
+}
+
 function http(endpoint, path, { method = "GET", headers = {}, body, chunked = false } = {}) {
   return new Promise((resolve, reject) => {
     const call = request(endpoint + path, { method, headers, agent: false, timeout: 15_000 }, res => {
@@ -217,10 +229,7 @@ test("packaged manual console preserves native CLI state and authenticates scope
 
   put(project, file, nativeOriginal);
   put(project, ".vibez/inbox/responses/invalid.json", "{");
-  cli(["watch", first, "--once"]);
-  await pause(750);
-  const repair = cli(["watch", first, "--once"]).session;
-  assert.ok(repair.diagnosticId);
+  const repair = await watchFor(cli, first, session => session.diagnosticId);
   const afterRepair = (await read(runPath)).data.data;
   assert.equal(afterRepair.summary.phase, "waiting");
   assert.equal(afterRepair.pending.repair.replyToPacketId, waiting.pendingPacket);
@@ -271,9 +280,7 @@ test("packaged manual console preserves native CLI state and authenticates scope
   git(project, "commit", "-m", "Set fixture marker");
   const nativePacket = get(project, file.slice(0, -3)).packet;
   put(project, ".vibez/inbox/responses/valid.json", response(nativePacket));
-  cli(["watch", first, "--once"]);
-  await pause(750);
-  const stopped = cli(["watch", first, "--once"]).session;
+  const stopped = await watchFor(cli, first, session => session.result?.finalLifecycleState === "DEV_VALIDATION_FAILED");
   assert.equal(stopped.result?.finalLifecycleState, "DEV_VALIDATION_FAILED");
   const blocked = (await http(restarted.endpoint, runPath, { headers: newHeaders })).data.data;
   assert.equal(blocked.summary.phase, "blocked");
@@ -283,4 +290,63 @@ test("packaged manual console preserves native CLI state and authenticates scope
   assert.equal(blocked.pending.role, null);
   assert.equal((await http(restarted.endpoint, rolePath, { headers: newHeaders })).status, 404);
   await restarted.stop();
+});
+
+test("native reviewer source drift and revision-bound integration snapshots remain visible", { timeout: 180_000 }, async t => {
+  const { cli, project, start } = install(t);
+  cli(["init", "--actor-prefix", "operator", "--developer-tools", "read_file,write_file,git_commit",
+    "--review-tools", "read_file,run_test", "--enforce-policies", "externally"]);
+  const sessionId = cli(["prepare", "--stdin"], markdown()).sessionId;
+  const developer = cli(["run", sessionId]).session;
+  const developerPacket = get(project, `.vibez/outbox/${developer.pendingPacket}.handoff.json`).packet;
+  put(project, "marker.txt", "correct");
+  git(project, "add", "marker.txt");
+  git(project, "commit", "-m", "Complete fixture implementation");
+  put(project, ".vibez/inbox/responses/developer.json", response(developerPacket));
+  const qa = await watchFor(cli, sessionId, session => session.pendingPacket && session.pendingPacket !== developer.pendingPacket);
+  const qaPacket = get(project, `.vibez/outbox/${qa.pendingPacket}.handoff.json`).packet;
+  assert.equal(qaPacket.role, "QA");
+  const oldHead = git(project, "rev-parse", "HEAD");
+  const host = await start();
+  const paired = await http(host.endpoint, base + "/operator-session", { method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ version: 1, kind: "pairingRequest", data: { code: host.code } }) });
+  assert.equal(paired.status, 200);
+  const headers = { Authorization: "Bearer " + paired.data.data.token };
+  const cap = (await http(host.endpoint, base + "/capabilities", { headers })).data.data;
+  const path = base + "/p/" + cap.projectId + "/runs/" + sessionId;
+  const before = (await http(host.endpoint, path, { headers })).data.data;
+  assert.equal(before.summary.phase, "waiting");
+  assert.equal(before.blocker, null);
+  assert.equal(before.gate.role, "QA");
+  assert.equal((await http(host.endpoint, path + "/history?limit=1", { headers })).status, 422);
+
+  git(project, "commit", "--allow-empty", "-m", "Advance source beyond the reviewer binding");
+  const changed = (await http(host.endpoint, path, { headers })).data.data;
+  assert.equal(changed.summary.phase, "blocked");
+  assert.equal(changed.blocker.code, "STALE_ROLE_SOURCE");
+  assert.equal(changed.pending.role.revision, oldHead);
+  assert.notEqual(changed.summary.revision, oldHead);
+  put(project, ".vibez/inbox/responses/qa.json", response(qaPacket));
+  const refused = await watchFor(cli, sessionId, (_session, data) =>
+    data.receipts.some(receipt => receipt.packetId === qa.pendingPacket && receipt.status === "REJECTED"));
+  assert.equal(refused.pendingPacket, qa.pendingPacket);
+
+  // Supply a synthetic provider observation through the native producer while
+  // the installed listener reads the same scoped store. The old PR head remains
+  // independently attributable alongside successful CI for the current head.
+  const { loadProfile } = await import("../dist/workflow-driver/intake.js");
+  const { resolveProjectConfig } = await import("../dist/project-config/index.js");
+  const { observeIntegration } = await import("../dist/workflow-driver/driver.js");
+  const config = resolveProjectConfig({ projectRoot: project, configPath: "workflow.json", verifyLocalStorage: () => true });
+  const profile = loadProfile(project, config);
+  observeIntegration(project, profile, qa, { kind: "pull-request", number: 17, revision: oldHead, status: "draft", draftKnown: true });
+  observeIntegration(project, profile, qa, { kind: "ci", revision: changed.summary.revision, status: "pass" });
+  const observed = (await http(host.endpoint, path, { headers })).data.data;
+  assert.equal(observed.pullRequest.status, "draft");
+  assert.equal(observed.pullRequest.revision, oldHead);
+  assert.equal(observed.pullRequest.url, "https://github.com/fixture-owner/fixture-repo/pull/17");
+  assert.equal(observed.ci.status, "pass");
+  assert.equal(observed.ci.revision, changed.summary.revision);
+  await host.stop();
 });

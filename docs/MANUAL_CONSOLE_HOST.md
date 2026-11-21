@@ -69,6 +69,6 @@ Stop the host with Ctrl+C. Reopen the same session with
 profile, native journals and handoffs. No console-specific runtime migration
 or data cleanup is needed.
 
-Run `npm run test:manual-console` from a source checkout to build, pack and
-install Vibez in disposable directories and check the real CLI and HTTP
+From a source checkout, run `npm run build` and
+`node --test tests/manual-console-host.test.mjs` to pack and install Vibez in disposable directories and check the real CLI and HTTP
 paths with an independent client.

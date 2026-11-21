@@ -73,7 +73,6 @@ export function pendingPackets(root: string, profile: DriverProfile, session: Dr
             taskContext.taskId === session.taskId && taskContext.issueNumber === session.issueNumber &&
             taskContext.runId === session.request.runId && taskContext.definitionHash === session.definitionHash &&
             hash({ projectRoot, profileHash, sessionId, intakeId, revision: boundRevision, code, message, taskContext }) === repairId) {
-          diagnostic = data;
           const template = data.responseTemplate;
           if (object(template)) {
             const corrected = template.schemaId === "ipt.local-agent-result" &&
@@ -83,6 +82,7 @@ export function pendingPackets(root: string, profile: DriverProfile, session: Dr
               template.projectRoot === root && template.profileHash === session.profileHash &&
               template.sessionId === session.sessionId && (template.action === "recheck" || template.action === "rework");
             if (corrected || driverReply) {
+              diagnostic = data;
               repair = { ref: { kind: "repair", packetId: repairId, role: corrected ? role!.ref.role : null,
                 revision: revision(boundRevision) }, relativePath: `${path}.md`, expected: data,
                 ...(corrected ? { originalHandoff: role!.expected! } : {}) };
