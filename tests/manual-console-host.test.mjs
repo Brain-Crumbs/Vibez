@@ -57,7 +57,7 @@ function install(t) {
   const config = get(installed, "examples/alpha/vibez.config.json");
   config.providers.credentials = [];
   config.project.repository = "fixture-owner/fixture-repo";
-  put(project, "workflow.json", config);
+  put(project, "settings/workflow.json", config);
   put(project, "work/tasks/.gitkeep", "");
   put(project, "work/contracts/.gitkeep", "");
   put(project, "work/policy.json", {});
@@ -74,7 +74,7 @@ function install(t) {
   git(project, "remote", "add", "origin", "https://github.com/fixture-owner/fixture-repo.git");
   git(project, "add", ".");
   git(project, "commit", "-m", "Configure console fixture");
-  const selection = ["--project", project, "--config", "workflow.json", "--npm-cli", npm,
+  const selection = ["--project", project, "--config", "settings/workflow.json", "--npm-cli", npm,
     ...(process.platform === "win32" ? ["--local-ntfs"] : [])];
   const cli = (args, input) => JSON.parse(call(tools, entry, ["--json", "orchestrate", ...args, ...selection], input)).data;
   async function start(commands = false) {
@@ -198,7 +198,7 @@ test("packaged manual console preserves native CLI state and authenticates scope
     return talk(path, { headers });
   };
   const cap = (await read(base + "/capabilities")).data.data;
-  assert.deepEqual(cap.capabilities, ["run-list", "run-read", "packet-read"]);
+  assert.deepEqual(cap.capabilities, ["run-list", "run-read", "packet-read", "history-read", "historical-packet-read", "receipt-read"]);
   const collection = base + "/p/" + cap.projectId + "/runs";
   const firstPage = (await read(collection + "?limit=1")).data.data;
   assert.equal(firstPage.runs[0].sessionId, first);
@@ -255,6 +255,32 @@ test("packaged manual console preserves native CLI state and authenticates scope
   assert.equal(repaired.packet.kind, "repair");
   assert.equal(repaired.packet.role, "Developer");
 
+  const legacy = await read(runPath + "/history");
+  assert.equal(legacy.status, 200, JSON.stringify(legacy.data));
+  const legacyEvents = legacy.data.data.events;
+  const legacyReceipt = legacyEvents.find(event => event.details.kind === "receipt").details.receipt;
+  assert.equal(legacyReceipt.requestId, null);
+  assert.equal(legacyReceipt.expectedPacketId, waiting.pendingPacket);
+  assert.equal(legacyReceipt.disposition, "rejected");
+  assert.deepEqual((await read(runPath + "/receipts/" + legacyReceipt.receiptId + "/original")).data.data.body,
+    { availability: "available", originalReply: "{", encoding: "utf-8" });
+  const companion = file.slice(0, -3);
+  const companionText = readFileSync(join(project, companion), "utf8");
+  rmSync(join(project, companion));
+  assert.deepEqual((await read(runPath + "/receipts/" + legacyReceipt.receiptId)).data.data, legacyReceipt);
+  assert.ok((await read(runPath + "/history")).data.data.events.some(event =>
+    event.details.kind === "receipt" && event.details.receipt.receiptId === legacyReceipt.receiptId));
+  put(project, companion, companionText);
+  const legacyPath = ".vibez/operations/driver/archive/" + digest("{") + ".input.json";
+  rmSync(join(project, legacyPath));
+  assert.equal((await read(runPath + "/receipts/" + legacyReceipt.receiptId + "/original")).data.data.body.reason, "missing");
+  assert.equal((await read(runPath + "/history")).data.data.events.find(event =>
+    event.details.kind === "reply").details.replyAvailability, "unavailable");
+  assert.equal((await read(collection + "/" + sibling + "/receipts/" + legacyReceipt.receiptId + "/original")).status, 404);
+  put(project, legacyPath, { original: "[redacted]" });
+  assert.equal((await read(runPath + "/receipts/" + legacyReceipt.receiptId + "/original")).data.data.body.reason, "redacted");
+  put(project, legacyPath, { original: "{" });
+
   const boundFile = join(project, file);
   rmSync(boundFile);
   assert.equal((await read(rolePath)).data.data.body.reason, "missing");
@@ -304,7 +330,20 @@ test("packaged manual console preserves native CLI state and authenticates scope
   assert.equal(blocked.gate.stage, "developer-validation");
   assert.equal(blocked.gate.outcome, "fail");
   assert.equal(blocked.pending.role, null);
-  assert.equal((await http(restarted.endpoint, rolePath, { headers: newHeaders })).status, 404);
+  const historic = await http(restarted.endpoint, rolePath, { headers: newHeaders });
+  assert.equal(historic.status, 200);
+  assert.equal(historic.data.data.body.originalMarkdown, nativeOriginal);
+  assert.equal(historic.data.data.packet.role, "Developer");
+  const lifecycleFile = ".vibez/state/lifecycle/DEMO-001.lifecycle.json";
+  const lifecycleText = readFileSync(join(project, lifecycleFile), "utf8");
+  const oldState = JSON.parse(lifecycleText);
+  oldState.history.push(null);
+  put(project, lifecycleFile, oldState);
+  const legacyCorrupt = await http(restarted.endpoint, runPath + "/history", { headers: newHeaders });
+  assert.equal(legacyCorrupt.status, 200, JSON.stringify(legacyCorrupt.data));
+  assert.ok(legacyCorrupt.data.data.events.some(event =>
+    event.details.kind === "receipt" && event.details.receipt.receiptId === legacyReceipt.receiptId));
+  put(project, lifecycleFile, lifecycleText);
   await restarted.stop();
 });
 
@@ -335,7 +374,7 @@ test("native reviewer source drift and revision-bound integration snapshots rema
   assert.equal(before.summary.phase, "waiting");
   assert.equal(before.blocker, null);
   assert.equal(before.gate.role, "QA");
-  assert.equal((await http(host.endpoint, path + "/history?limit=1", { headers })).status, 422);
+  assert.equal((await http(host.endpoint, path + "/history?limit=1", { headers })).status, 200);
 
   git(project, "commit", "--allow-empty", "-m", "Advance source beyond the reviewer binding");
   const changed = (await http(host.endpoint, path, { headers })).data.data;
@@ -354,7 +393,7 @@ test("native reviewer source drift and revision-bound integration snapshots rema
   const { loadProfile } = await import("../dist/workflow-driver/intake.js");
   const { resolveProjectConfig } = await import("../dist/project-config/index.js");
   const { observeIntegration } = await import("../dist/workflow-driver/driver.js");
-  const config = resolveProjectConfig({ projectRoot: project, configPath: "workflow.json", verifyLocalStorage: () => true });
+  const config = resolveProjectConfig({ projectRoot: project, configPath: "settings/workflow.json", verifyLocalStorage: () => true });
   const profile = loadProfile(project, config);
   observeIntegration(project, profile, qa, { kind: "pull-request", number: 17, revision: oldHead, status: "draft", draftKnown: true });
   observeIntegration(project, profile, qa, { kind: "pull-request", number: 17, revision: changed.summary.revision,
@@ -367,6 +406,10 @@ test("native reviewer source drift and revision-bound integration snapshots rema
   assert.equal(observed.ci.status, "pass");
   assert.equal(observed.ci.revision, changed.summary.revision);
   await host.stop();
+  const client = await connectCommands(start, false);
+  const history = await historyEvents(client, sessionId);
+  assert.ok(history.some(event => event.details.kind === "pull-request" && event.details.pullRequest.revision === oldHead));
+  assert.ok(history.some(event => event.details.kind === "ci" && event.details.ci.revision === changed.summary.revision));
 });
 
 async function connectCommands(start, commands) {
@@ -391,6 +434,22 @@ async function connectCommands(start, commands) {
       body: JSON.stringify({ version: 1, kind: action === "replies" ? "replyRequest" : "commandRequest", data }) });
   }
   return { host, send, path, command, capabilities, projectId, headers };
+}
+
+async function historyEvents(client, sessionId, limit = 25) {
+  const events = [];
+  let cursor;
+  do {
+    const query = "?limit=" + limit + (cursor ? "&cursor=" + cursor : "");
+    const page = await client.send(client.path(sessionId) + "/history" + query);
+    assert.equal(page.status, 200, JSON.stringify(page.data));
+    assert.equal(page.data.kind, "history");
+    assert.equal(page.data.data.sessionId, sessionId);
+    events.push(...page.data.data.events);
+    cursor = page.data.data.nextCursor;
+  } while (cursor);
+  assert.equal(new Set(events.map(event => event.eventId)).size, events.length);
+  return events;
 }
 
 test("packaged console commands scope rejected replies and recover exact receipts across restart", { timeout: 300_000 }, async t => {
@@ -477,6 +536,10 @@ test("packaged console commands scope rejected replies and recover exact receipt
   git(project, "add", "marker.txt");
   git(project, "commit", "-m", "Commit fixture marker");
   const fenced = "\x60\x60\x60json\n" + JSON.stringify(valid) + "\n\x60\x60\x60";
+  const oldEvents = await historyEvents(client, first);
+  const historyPath = client.path(first) + "/history?limit=2";
+  const oldPage = (await client.send(historyPath)).data.data;
+  assert.ok(oldPage.nextCursor);
   const key = randomUUID();
   const [left, right] = await Promise.all([reply(fenced, key), reply(fenced, key)]);
   for (const result of [left, right]) assert.ok([200, 202].includes(result.status), JSON.stringify(result.data));
@@ -487,6 +550,8 @@ test("packaged console commands scope rejected replies and recover exact receipt
   const receipt = (await client.send(client.path(first) + "/receipts/" + ref)).data.data;
   assert.equal(receipt.disposition, "accepted");
   assert.equal(receipt.importedPacketId, developer);
+  const nextPage = (await client.send(historyPath + "&cursor=" + oldPage.nextCursor)).data.data;
+  assert.deepEqual(nextPage.events, oldEvents.slice(2, 4), "An existing cursor keeps its snapshot while the native run advances.");
   const gate = (await client.send(client.path(first))).data.data;
   assert.equal(gate.gate.stage, "developer-validation");
   assert.equal(gate.gate.outcome, "fail");
@@ -506,6 +571,72 @@ test("packaged console commands scope rejected replies and recover exact receipt
   assert.equal(readOnly.capabilities.includes("submit-reply"), false);
   assert.equal((await readOnly.command(first, "resume")).status, 422);
   assert.equal((await readOnly.send(readOnly.path(first))).data.data.gate.outcome, "fail");
+  const beforeHistory = snapshot(project);
+  const events = await historyEvents(readOnly, first, 3);
+  const projected = events.find(event => event.details.kind === "receipt" && event.details.receipt.receiptId === ref);
+  assert.deepEqual(projected.details.receipt, receipt);
+  for (const [index, event] of events.entries()) {
+    if (event.details.kind !== "receipt") continue;
+    const earlier = events.findIndex(item => item.details.kind === "reply" && item.details.receiptId === event.details.receipt.receiptId);
+    assert.ok(earlier >= 0 && earlier < index, "A submission without a timestamp still precedes its native receipt.");
+    assert.equal(events[earlier].recordedAt, null);
+  }
+  assert.ok(events.some(event => event.details.kind === "receipt" && event.details.receipt.disposition === "rejected"));
+  assert.ok(events.some(event => event.details.kind === "validation-check" && event.details.outcome === "fail" && event.details.required === true));
+  assert.ok(events.some(event => event.details.kind === "gate" && event.details.gate.stage === "developer-validation"));
+  const originalPath = readOnly.path(first) + "/receipts/" + ref + "/original";
+  assert.equal((await readOnly.send(originalPath)).data.data.body.originalReply, fenced);
+  assert.equal((await readOnly.send(readOnly.path(sibling) + "/receipts/" + ref + "/original")).status, 404);
+  const cursor = (await readOnly.send(readOnly.path(first) + "/history?limit=1")).data.data.nextCursor;
+  assert.equal((await readOnly.send(readOnly.path(sibling) + "/history?cursor=" + cursor)).data.data.code, "invalid-cursor");
+  assert.equal((await readOnly.send(readOnly.path(first).split("/").slice(0, -1).join("/") + "?cursor=" + cursor)).data.data.code, "invalid-cursor");
+  const layout = get(project, ".vibez/operations/driver/profile.json").storage;
+  const checks = readdirSync(join(project, layout.evidence)).filter(name => name.startsWith("DEMO-001_003a_003avalidator"));
+  const failPath = checks.map(name => layout.evidence + "/" + name + "/0000001.json")
+    .find(name => get(project, name).payload.outcome === "FAIL");
+  assert.ok(failPath, "The installed native runner must record a failing validator.");
+  const originalCheck = readFileSync(join(project, failPath), "utf8");
+  const editedCheck = JSON.parse(originalCheck);
+  editedCheck.payload.outcome = "PASS";
+  for (const check of editedCheck.payload.checks) check.outcome = "PASS";
+  put(project, failPath, editedCheck);
+  const withoutTamper = await historyEvents(readOnly, first);
+  assert.ok(!withoutTamper.some(event => event.details.kind === "validation-check" &&
+    event.details.validatorId === editedCheck.payload.validatorId), "Audit-rejected evidence must not become a historical result.");
+  assert.ok(withoutTamper.some(event => event.details.kind === "gate" && event.details.gate.outcome === "fail"));
+  put(project, failPath, originalCheck);
+  const rejected = events.filter(event => event.details.kind === "receipt" &&
+    event.details.receipt.disposition === "rejected").slice(0, 2);
+  assert.equal(rejected.length, 2);
+  const tiedAt = rejected[0].recordedAt;
+  const consoleDirectory = layout.driver + "/console";
+  const boundArchive = layout.driver + "/archive/bound";
+  const originals = new Map();
+  try {
+    for (const event of rejected) {
+      const { receiptId, requestId } = event.details.receipt;
+      const directory = readdirSync(join(project, consoleDirectory)).map(name => consoleDirectory + "/" + name)
+        .find(name => existsSync(join(project, name, receiptId + ".receipt.json")));
+      assert.ok(directory);
+      const storedPath = directory + "/" + receiptId + ".receipt.json";
+      const inputHash = get(project, directory + "/" + requestId + ".request.json").inputHash;
+      const nativePath = readdirSync(join(project, boundArchive)).filter(name => name.endsWith(".receipt.json"))
+        .map(name => boundArchive + "/" + name).find(name => get(project, name).inputHash === inputHash);
+      assert.ok(nativePath);
+      for (const [location, field] of [[storedPath, "recordedAt"], [nativePath, "occurredAt"]]) {
+        const original = readFileSync(join(project, location), "utf8");
+        originals.set(location, original);
+        put(project, location, { ...JSON.parse(original), [field]: tiedAt });
+      }
+    }
+    const ids = rejected.map(event => event.eventId).sort();
+    const tied = (await historyEvents(readOnly, first)).filter(event => ids.includes(event.eventId));
+    assert.deepEqual(tied.map(event => event.recordedAt), [tiedAt, tiedAt]);
+    assert.deepEqual(tied.map(event => event.eventId), ids, "Independent native timestamp ties use stable event IDs.");
+  } finally {
+    for (const [location, original] of originals) put(project, location, original);
+  }
+  assert.deepEqual(snapshot(project), beforeHistory);
   assert.equal(cli(["status", first]).sessionId, first);
 });
 
@@ -660,6 +791,54 @@ process.exitCode = readFileSync("marker.txt", "utf8") === "correct" ? 0 : 1;`);
   assert.equal(linked.attempt.predecessorAttemptId, first);
   assert.equal(linked.pending.role.role, "Developer");
 
+  const history = await historyEvents(client, first, 4);
+  const linkAt = history.findIndex(event => event.details.kind === "rework");
+  assert.ok(linkAt > 0);
+  assert.deepEqual(history[linkAt].details, { kind: "rework", fromAttemptId: first, toAttemptId: linked.attempt.attemptId });
+  const qaGate = history.find(event => event.details.kind === "gate" && event.details.gate.stage === "qa-review");
+  assert.equal(qaGate.details.gate.revision, qaHead);
+  const findingAt = history.findIndex(event => event.details.kind === "finding" &&
+    event.details.role === "QA" && event.details.revision === qaHead);
+  const qaReceiptAt = history.findIndex(event => event.details.kind === "receipt" && event.details.receipt.receiptId === qaReceipt.receiptId);
+  assert.ok(qaReceiptAt >= 0 && findingAt > qaReceiptAt);
+  const firstState = cli(["status", first]);
+  const layout = get(project, ".vibez/operations/driver/profile.json").storage;
+  const firstRecord = layout.driver + "/sessions/" + first + ".json";
+  const journalFile = layout.orchestration + "/" + digest(firstState.request.idempotencyKey) + ".run.json";
+  const savedJournal = readFileSync(join(project, journalFile), "utf8");
+  const savedSession = readFileSync(join(project, firstRecord), "utf8");
+  const olderSession = JSON.parse(savedSession);
+  olderSession.result.stages = [];
+  put(project, firstRecord, olderSession);
+  rmSync(join(project, journalFile));
+  const restoredGate = (await historyEvents(client, first)).find(event => event.eventId === qaGate.eventId);
+  assert.equal(restoredGate.details.gate.revision, qaHead);
+  assert.equal(restoredGate.details.gate.outcome, "fail");
+  put(project, journalFile, savedJournal);
+  put(project, firstRecord, savedSession);
+  assert.ok(history.findIndex(event => event.details.kind === "handoff" &&
+    event.details.packet.packetId === linked.pending.role.packetId) > linkAt);
+  const historicalQa = await client.send(current + "/packets/" + after.pendingPacket);
+  assert.equal(historicalQa.status, 200, JSON.stringify(historicalQa.data));
+  assert.equal(historicalQa.data.data.target.attemptId, first);
+  assert.equal(historicalQa.data.data.packet.revision, qaHead);
+  assert.equal(historicalQa.data.data.body.originalMarkdown,
+    readFileSync(join(project, ".vibez/outbox/" + after.pendingPacket + ".handoff.json.md"), "utf8"));
+  const before = snapshot(project);
   await client.host.stop();
+  const restarted = await connectCommands(start, false);
+  assert.deepEqual(await historyEvents(restarted, first), history);
+  assert.deepEqual((await restarted.send(restarted.path(first))).data.data.pending, linked.pending);
+  assert.equal((await restarted.send(restarted.path(first) + "/packets/" + repairId)).status, 200);
+  assert.deepEqual(snapshot(project), before);
+  const qaMarkdown = ".vibez/outbox/" + after.pendingPacket + ".handoff.json.md";
+  rmSync(join(project, qaMarkdown));
+  const missingQa = (await restarted.send(restarted.path(first) + "/packets/" + after.pendingPacket)).data.data;
+  assert.equal(missingQa.packet.role, "QA");
+  assert.equal(missingQa.packet.revision, qaHead);
+  assert.deepEqual(missingQa.body, { availability: "unavailable", reason: "missing" });
+  put(project, qaMarkdown, historicalQa.data.data.body.originalMarkdown);
+  assert.deepEqual(snapshot(project), before);
+  await restarted.host.stop();
   assert.equal(cli(["resume", first, "--once"]).session.pendingPacket, linked.pending.role.packetId);
 });

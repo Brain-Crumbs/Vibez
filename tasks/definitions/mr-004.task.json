@@ -1,0 +1,51 @@
+{
+  "schemaId": "ipt.task",
+  "schemaVersion": "1.0.0",
+  "taskId": "MR-004",
+  "title": "[MR-004] Reconstruct ordered manual-run history and scoped historical correspondence",
+  "objective": "Reconstruct read-only manual run history with scoped original correspondence.",
+  "inScope": [
+    "Native CLI and console evidence projected into ordered v1 history and authorized original bodies.",
+    "Restart, legacy gaps, lineage, access control and read-only rollback."
+  ],
+  "outOfScope": [
+    "Homebase UI, new task admission, unattended execution, publication or merge from the browser."
+  ],
+  "dependencies": [
+    "MR-003"
+  ],
+  "canonicalBranch": "feat/mr-004-manual-console-history",
+  "allowedPaths": [
+    "src/manual-console/**",
+    "src/history/**",
+    "docs/MANUAL_CONSOLE_*.md",
+    "docs/development/best-practices.md",
+    "tests/manual-console*.test.mjs",
+    "tasks/definitions/mr-004.task.json",
+    "requirements/mr-004.requirement.json",
+    "migration/admissions/mr-004.json"
+  ],
+  "requirements": [
+    "MR-004-R1"
+  ],
+  "acceptanceCriteria": [
+    "MR-004.1: Restart restores stable ordered history, handoffs, submissions, receipts, validation, review, recorded integration observations and linked attempts.",
+    "MR-004.2: Preserve recorded role and revision and safely authorize original text with accurate availability.",
+    "MR-004.3: Legacy CLI sessions remain readable with honest gaps and read-only native evidence."
+  ],
+  "validationPlan": [
+    "Run all repository checks and installed native HTTP history tests with CLI and console runs, accepted and rejected replies, restart, rework, ties, missing legacy evidence, denied reads and rollback."
+  ],
+  "affectedContracts": [
+    "control-plane.workflow-driver",
+    "control-plane.cli-shell",
+    "control-plane.status-reporting"
+  ],
+  "requiredReviewRoles": [
+    "Developer",
+    "QA",
+    "Architect",
+    "UAT/Product",
+    "MergeController"
+  ]
+}

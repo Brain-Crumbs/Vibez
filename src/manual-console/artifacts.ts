@@ -5,7 +5,7 @@ import { FileManualAgentProvider } from "../local-agent-adapter/index.js";
 import { driverDirectory, hash, object, read, safePath, validate } from "../workflow-driver/io.js";
 import type { DriverProfile, DriverSession } from "../workflow-driver/model.js";
 
-const packetId = /^[a-f0-9]{64}$/;
+export const packetId = /^[a-f0-9]{64}$/;
 export const revision = (value: unknown) =>
   typeof value === "string" && /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/.test(value) ? value : null;
 
@@ -96,8 +96,7 @@ export function pendingPackets(root: string, profile: DriverProfile, session: Dr
   return { role, repair, replyToPacketId, diagnostic };
 }
 
-function originalBytes(root: string, path: string): Uint8Array | Unavailable {
-  const limit = 8 * 1024 * 1024;
+export function originalBytes(root: string, path: string, limit = 8 * 1024 * 1024): Uint8Array | Unavailable {
   type Identity = ReturnType<typeof fstatSync>;
   let fd: number | undefined;
   try {

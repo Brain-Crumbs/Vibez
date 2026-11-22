@@ -51,15 +51,18 @@ Request the displayed packet ID from that run's `/packets/ID` endpoint.
 The response includes the exact Markdown string and SHA-256 when the
 original artifact is available. Copy the decoded string. Known packets
 with missing, unsupported or oversized artifacts still return an explicit
-body availability state. Only current role and repair packets are
-accessible in this version.
+body availability state. The same packet route is available for historical
+handoffs under the original root session. A historical packet remains bound to
+its original attempt, role and revision.
 
 ## Run commands
 
 Pass `--commands` at launch to let a paired operator start an already
 admitted session, resume an existing attempt and submit one raw JSON object
 or one fenced JSON block. Read capabilities and the run's available actions
-before enabling a control. Start is available when native task selection points\nto the prepared attempt and the checkout is on its integration target or\ncanonical branch. The host uses the same writer lock as
+before enabling a control. Start is available when native task selection points
+to the prepared attempt and the checkout is on its integration target or
+canonical branch. The host uses the same writer lock as
 `vibez orchestrate`. On a writer blocker, let the active operation finish
 before retrying. New admission, lock recovery, publication, readiness and
 merge remain trusted CLI operations.
@@ -75,14 +78,34 @@ After rejection, read the diagnostic or repair and submit the corrected reply
 with a new request ID. A receipt records import only. Poll the run for the
 subsequent validation, review or handoff.
 
+## Reopen history
+
+Read the run's `/history` route with the same project and root session IDs.
+It returns oldest-first entries for native handoffs, replies, receipts, validator
+checks, gates, reviewer findings, integration observations and linked rework.
+Follow the opaque cursor until it is null. Start a fresh read to see newer
+events. Cursors expire and a restarted host requires pairing again. Event IDs
+and attempt links derive from native records and survive a restart.
+
+Read a receipt by ID, or append `/original` for its exact available reply.
+The host retains receipt and diagnostic information if the original is missing,
+redacted, unsafe, or oversized. Older CLI imports without trustworthy attempt
+binding are omitted. Older packets may have no recorded role, revision or time.
+Historical correspondence remains readable with command routes disabled.
+
 ## Stop and verify rollback
 
 Stop the host with Ctrl+C and wait for accepted in-flight HTTP operations to drain. Restart without `--commands` to disable commands. Reopen the same session with
-`vibez orchestrate status SESSION --project CHECKOUT`. The CLI uses the same
-profile, native journals and handoffs. The driver keeps native inbox and receipt history. Preserve the additive
+`vibez orchestrate status SESSION --project CHECKOUT`. For linked rework, the root ID
+selects the lineage. Use `status CURRENT_ATTEMPT` to inspect its successor
+without advancing it, or `resume ROOT --once` to continue through the CLI.
+The CLI uses the same profile, native journals and handoffs. The driver keeps native inbox and receipt history. Preserve the additive
 command correlations and bound reply archive under the configured driver directory.
 A compatible CLI can inspect and resume native sessions with commands disabled.
 Re-enable a compatible host to reconcile any original request left pending.
+History has no derived on-disk index to migrate. A previous compatible host or
+the CLI can read the native evidence immediately after rollback. Keep the
+original runtime directories and archives in place.
 
 From a source checkout, run `npm run build` and
 `node --test tests/manual-console-host.test.mjs` to pack and install Vibez in disposable directories and check the real CLI and HTTP

@@ -9,22 +9,15 @@ import { driverDirectory, files, git, hash, object, orchestrationDirectory, reda
 import type { DriverProfile, DriverSession } from "../workflow-driver/model.js";
 import { pendingPackets, readOriginal, revision } from "./artifacts.js";
 import { ConsoleProblem } from "./problem.js";
+import { stageFor } from "./history-gates.js";
+import { attemptCorrespondence, runHistory } from "./history.js";
 import { integrationObservations, validationIsActive } from "./observations.js";
 
 const nativeId = /^[a-f0-9-]{36}$/;
-const stages = {
-  "developer-start": "assignment", "dev-validation": "developer-validation",
-  "qa-review": "qa-review", "architecture-review": "architecture-review",
-  "uat-review": "uat-review", "review-rework": "rework", "merge-readiness": "merge-readiness",
-  "controlled-merge": "completion",
-} as const;
 type Phase = "prepared" | "active" | "waiting" | "blocked" | "rework" | "completed";
 const notFound = () => new ConsoleProblem(404, "not-found", "The requested resource is unavailable.");
 const unavailable = () => new ConsoleProblem(503, "temporarily-unavailable", "Restore the original configured project and driver profile, then retry.", 1000);
 const compare = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
-function stageFor(name: string | undefined) {
-  return name && Object.hasOwn(stages, name) ? stages[name as keyof typeof stages] : undefined;
-}
 export class ManualConsoleReader {
   readonly projectId: string;
   readonly checkoutLabel: string;
@@ -74,7 +67,18 @@ export class ManualConsoleReader {
     const root = this.#rootSession(profile, sessionId);
     const current = this.#view(profile, root, new Date().toISOString());
     const packet = [current.role, current.repair].find(record => record?.ref.packetId === id);
-    if (!packet) throw notFound();
+    if (!packet) {
+      for (const attempt of this.#lineage(profile, root)) {
+        const { target, packets } = attemptCorrespondence(this.config, profile, sessionId, attempt);
+        const historical = packets.get(id)?.packet;
+        if (historical) {
+          const body = readOriginal(this.#root, historical);
+          this.checkScope();
+          return { target, packet: historical.ref, body };
+        }
+      }
+      throw notFound();
+    }
     const body = readOriginal(this.#root, packet);
     // A separate CLI process can import a result while we read the file.
     const rechecked = this.#view(this.checkScope(), this.#rootSession(profile, sessionId), new Date().toISOString());
@@ -123,9 +127,10 @@ export class ManualConsoleReader {
     } catch { return false; }
   }
 
-  #view(profile: DriverProfile, first: DriverSession, observedAt: string) {
+  #lineage(profile: DriverProfile, first: DriverSession) {
     const root = this.#root;
     let session = first;
+    const lineage = [first];
     for (let count = 0; ; count++) {
       const nextId = successorId(session.sessionId);
       if (!existsSync(sessionPath(root, profile, nextId))) break;
@@ -135,9 +140,33 @@ export class ManualConsoleReader {
           next.registrationRevision !== first.registrationRevision || next.request.ownerId !== first.request.ownerId ||
           next.request.assignmentKey !== first.request.idempotencyKey || next.request.assignmentRunId !== first.request.runId)
         throw unavailable();
+      lineage.push(next);
       session = next;
     }
+    return lineage;
+  }
 
+  async history(id: string) {
+    const profile = this.checkScope();
+    const lineage = this.#lineage(profile, this.#rootSession(profile, id));
+    const rows = await runHistory(this.config, profile, lineage);
+    this.checkScope();
+    return rows;
+  }
+
+  historyReceipt(sessionId: string, id: string, original: boolean) {
+    const profile = this.checkScope();
+    for (const attempt of this.#lineage(profile, this.#rootSession(profile, sessionId))) {
+      const item = attemptCorrespondence(this.config, profile, sessionId, attempt).receipts()
+        .find(record => record.receipt.receiptId === id);
+      if (item) return original ? { target: item.receipt.target, receiptId: id, body: item.body() } : item.receipt;
+    }
+    throw notFound();
+  }
+
+  #view(profile: DriverProfile, first: DriverSession, observedAt: string) {
+    const root = this.#root;
+    const session = this.#lineage(profile, first).at(-1)!;
     let branch: string;
     let dependencies: string[];
     try {

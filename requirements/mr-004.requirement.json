@@ -1,0 +1,17 @@
+{
+  "schemaId": "ipt.requirement",
+  "schemaVersion": "1.0.0",
+  "requirementId": "MR-004-R1",
+  "taskId": "MR-004",
+  "statement": "Reconstruct read-only manual run history with scoped original correspondence.",
+  "acceptanceCriteria": [
+    "MR-004.1: Restart restores stable ordered history, handoffs, submissions, receipts, validation, review, recorded integration observations and linked attempts.",
+    "MR-004.2: Preserve recorded role and revision and safely authorize original text with accurate availability.",
+    "MR-004.3: Legacy CLI sessions remain readable with honest gaps and read-only native evidence."
+  ],
+  "sourceRefs": [
+    "https://github.com/Brain-Crumbs/Vibez/issues/42",
+    "https://github.com/Brain-Crumbs/Homebase/issues/22",
+    "sha256:c50f4252a91bc1ae2257078214fdc60fb28841fc43d4989f99d288aedfaf9fe7"
+  ]
+}

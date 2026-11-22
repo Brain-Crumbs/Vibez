@@ -5,6 +5,7 @@ import { followSuccessors, scanBoundReply, type DriverReceipt } from "../workflo
 import { loadSession } from "../workflow-driver/intake.js";
 import { driverDirectory, DriverError, exclusive, git, hash, read, redact, safePath, stableId, write, writeText } from "../workflow-driver/io.js";
 import type { DriverProfile, DriverSession } from "../workflow-driver/model.js";
+import { consoleRecordDirectory, rejectedReplyDiagnostic, replyBytes } from "./scope.js";
 import { ConsoleProblem } from "./problem.js";
 import type { ManualConsoleReader } from "./reader.js";
 
@@ -14,9 +15,6 @@ const busy = () => new ConsoleProblem(409, "writer-busy", "Another Vibez writer 
 const unsupported = (message: string) => new ConsoleProblem(422, "unsupported-action", message);
 const unavailable = () => new ConsoleProblem(503, "temporarily-unavailable", "Retry the original request ID after restoring project storage.", 1000);
 
-export const requestIdPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}(?![\s\S])/;
-export const opaqueIdPattern = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}(?![\s\S])/;
-export const replyBytes = 4 * 1024 * 1024;
 
 type Action = "start" | "resume" | "submit-reply";
 type Target = { projectId: string; sessionId: string; attemptId: string };
@@ -40,8 +38,7 @@ export class ManualConsoleCommands {
   }
 
   #file(profile: DriverProfile, sessionId: string, name: string) {
-    const scope = hash({ profile: hash(profile), projectId: this.reader.projectId, sessionId });
-    return safePath(this.root, driverDirectory(profile) + "/console/" + scope + "/" + name);
+    return safePath(this.root, consoleRecordDirectory(profile, this.reader.projectId, sessionId) + "/" + name);
   }
 
   #operation(profile: DriverProfile, command: Command): Operation {
@@ -104,13 +101,6 @@ export class ManualConsoleCommands {
     const command = this.#readCommand(profile, sessionId, requestId);
     if (!command) throw missing();
     return this.#view(profile, command, true);
-  }
-
-  receipt(sessionId: string, receiptId: string) {
-    const { profile } = this.reader.commandSession(sessionId);
-    const path = this.#file(profile, sessionId, receiptId + ".receipt.json");
-    if (!existsSync(path)) throw missing();
-    return read(path);
   }
 
   async #advance(profile: DriverProfile, command: Command, replayed: boolean, text?: string) {
@@ -229,7 +219,7 @@ export class ManualConsoleCommands {
       target, receiptId, requestId, expectedPacketId,
       importedPacketId: rejected ? null : receipt.packetId, disposition: receipt.status.toLowerCase(),
       recordedAt: receipt.occurredAt,
-      diagnostic: rejected ? { code: "REJECTED_INPUT", message: "The reply did not match the bound handoff. Check the repair correspondence and submit a correction with a new request ID." } : null,
+      diagnostic: rejected ? rejectedReplyDiagnostic : null,
       repairPacketId: rejected ? repairPacketId : null,
       nextAction: receipt.nextAction.slice(0, 2048),
     }, true);

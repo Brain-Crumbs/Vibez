@@ -1,7 +1,8 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import type { ManualConsoleReader } from "./reader.js";
-import { opaqueIdPattern as idPattern, replyBytes, requestIdPattern, type ManualConsoleCommands } from "./commands.js";
+import type { ManualConsoleCommands } from "./commands.js";
+import { opaqueIdPattern as idPattern, replyBytes, requestIdPattern } from "./scope.js";
 import { object, redact } from "../workflow-driver/io.js";
 import { ConsoleProblem } from "./problem.js";
 
@@ -16,7 +17,7 @@ const pageSize = 25;
 const invalid = () => new ConsoleProblem(400, "invalid-request", "Check the request path, query, or JSON envelope.");
 const unauthorized = () => new ConsoleProblem(401, "unauthorized", "Pair with the local host again.");
 const notFound = () => new ConsoleProblem(404, "not-found", "The requested resource is unavailable.");
-const invalidCursor = () => new ConsoleProblem(400, "invalid-cursor", "Restart the run listing without a cursor.");
+const invalidCursor = () => new ConsoleProblem(400, "invalid-cursor", "Restart the requested listing without a cursor.");
 
 function single(request: IncomingMessage, header: string): string | undefined {
   const values = request.headersDistinct[header];
@@ -74,7 +75,7 @@ async function readEnvelope(request: IncomingMessage, kind: string, limit = 64 *
 }
 
 const commandPaths = ["start", "resume", "replies"];
-const commandCapabilities = ["start", "resume", "submit-reply", "request-lookup", "receipt-read"];
+const commandCapabilities = ["start", "resume", "submit-reply", "request-lookup"];
 function commandPreflight(path: string, projectId: string) {
   const [empty, namespace, major, projects, project, runs, session, action, ...tail] = path.split("/");
   return empty === "" && namespace === "manual-console" && major === "v1" && projects === "p" &&
@@ -82,7 +83,6 @@ function commandPreflight(path: string, projectId: string) {
     commandPaths.includes(action) && tail.length === 0;
 }
 
-type RunSummary = ReturnType<ManualConsoleReader["list"]>[number];
 interface Operator {
   token: string;
   expires: number;
@@ -90,13 +90,16 @@ interface Operator {
   cursors: Map<string, Page>;
 }
 interface Page {
-  rows: RunSummary[];
+  rows: object[];
+  scope: string;
+  observedAt: string;
   position: number;
   limit: number;
   expires: number;
-  next?: string;
+  next?: string | undefined;
 }
-function runPage(operator: Operator, reader: ManualConsoleReader, query: URLSearchParams) {
+async function scopedPage(operator: Operator, reader: ManualConsoleReader, scope: string, query: URLSearchParams,
+  read: () => object[] | Promise<object[]>) {
   if ([...query.keys()].some(key => key !== "limit" && key !== "cursor") ||
       query.getAll("limit").length > 1 || query.getAll("cursor").length > 1) throw invalid();
   const length = query.get("limit");
@@ -107,21 +110,22 @@ function runPage(operator: Operator, reader: ManualConsoleReader, query: URLSear
   let page: Page;
   if (token !== null) {
     const saved = operator.cursors.get(token);
-    if (!saved || (length !== null && Number(length) !== saved.limit)) throw invalidCursor();
+    if (!saved || saved.scope !== scope || (length !== null && Number(length) !== saved.limit)) throw invalidCursor();
     reader.checkScope();
     page = saved;
   } else {
-    page = { rows: reader.list(), position: 0, limit: length === null ? pageSize : Number(length), expires: now + 5 * minute };
+    const rows = await read();
+    page = { rows, scope, observedAt: new Date().toISOString(), position: 0,
+      limit: length === null ? pageSize : Number(length), expires: Date.now() + 5 * minute };
   }
-  const runs = page.rows.slice(page.position, page.position + page.limit);
-  const position = page.position + runs.length;
+  const rows = page.rows.slice(page.position, page.position + page.limit);
+  const position = page.position + rows.length;
   if (position < page.rows.length && (!page.next || !operator.cursors.has(page.next))) {
     if (operator.cursors.size >= 64) operator.cursors.delete(operator.cursors.keys().next().value!);
     page.next = secret();
-    operator.cursors.set(page.next, { rows: page.rows, position, limit: page.limit, expires: page.expires });
+    operator.cursors.set(page.next, { ...page, position, next: undefined });
   }
-  return { projectId: reader.projectId, observedAt: runs[0]?.observedAt ?? new Date(now).toISOString(),
-    runs, nextCursor: page.next ?? null };
+  return { observedAt: page.observedAt, rows, nextCursor: page.next ?? null };
 }
 
 export async function serveManualConsole(reader: ManualConsoleReader, origin: string, port: number, signal: AbortSignal,
@@ -211,15 +215,24 @@ export async function serveManualConsole(reader: ManualConsoleReader, origin: st
     if (route === "/capabilities" && method === "GET" && separator === -1) {
       reader.checkScope();
       return json(response, 200, envelope("capabilities", { projectId: reader.projectId, checkoutLabel: reader.checkoutLabel,
-        capabilities: ["run-list", "run-read", "packet-read", ...(commands ? commandCapabilities : [])], pollAfterMs: 1000 }));
+        capabilities: ["run-list", "run-read", "packet-read", "history-read", "historical-packet-read", "receipt-read", ...(commands ? commandCapabilities : [])], pollAfterMs: 1000 }));
     }
     const [, p, project, collection, session, resource, item, extra, ...tail] = route.split("/");
     if (p !== "p" || project !== reader.projectId || collection !== "runs" || tail.length) throw notFound();
-    if (session === undefined && method === "GET")
-      return json(response, 200, envelope("runList", runPage(operator, reader, new URLSearchParams(query))));
+    if (session === undefined && method === "GET") {
+      const { rows, ...page } = await scopedPage(operator, reader, route, new URLSearchParams(query), () => reader.list());
+      return json(response, 200, envelope("runList", { projectId: project, ...page, runs: rows }));
+    }
     if (!session || !idPattern.test(session)) throw notFound();
     const historyPage = resource === "history" && method === "GET" && item === undefined;
     if (separator !== -1 && !historyPage) throw notFound();
+    if (historyPage) {
+      const { rows, ...page } = await scopedPage(operator, reader, route, new URLSearchParams(query), () => reader.history(session));
+      return json(response, 200, envelope("history", { projectId: project, sessionId: session, ...page, events: rows }));
+    }
+    if (method === "GET" && resource === "receipts" && item && idPattern.test(item) && (extra === undefined || extra === "original"))
+      return json(response, 200, envelope(extra === "original" ? "replyOriginal" : "receipt",
+        reader.historyReceipt(session, item, extra === "original")));
     if (resource === undefined && method === "GET") return json(response, 200, envelope("run", commands ? await commands.run(session) : reader.run(session)));
     if (resource === "packets" && method === "GET" && item && idPattern.test(item) && extra === undefined)
       return json(response, 200, envelope("correspondence", reader.packet(session, item)));
@@ -253,15 +266,11 @@ export async function serveManualConsole(reader: ManualConsoleReader, origin: st
     if (commands && method === "GET" && item && extra === undefined) {
       if (resource === "requests" && requestIdPattern.test(item))
         return json(response, 200, envelope("operationView", await commands.lookup(session, item)));
-      if (resource === "receipts" && idPattern.test(item))
-        return json(response, 200, envelope("receipt", commands.receipt(session, item)));
     }
     if ((method === "POST" && item === undefined && commandPaths.includes(resource ?? "")) ||
-        (method === "GET" && (historyPage ||
-          (item && idPattern.test(item) && ((resource === "requests" && extra === undefined) ||
-            (resource === "receipts" && (extra === undefined || extra === "original"))))))) {
+        (method === "GET" && resource === "requests" && item && extra === undefined && idPattern.test(item))) {
       reader.run(session);
-      throw new ConsoleProblem(422, "unsupported-action", "This host supports run and current packet reads.");
+      throw new ConsoleProblem(422, "unsupported-action", "This host is configured for read-only use.");
     }
     throw notFound();
   }

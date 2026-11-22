@@ -77,6 +77,19 @@ not authorize new work, reviews, merges or lifecycle mutations.
   and [PR #45](https://github.com/Brain-Crumbs/Vibez/pull/45). The installed HTTP
   test observes native validation while the console remains responsive.
 
+## BP-006 Preserve native identities in read projections
+
+- **Status:** Active
+- **Added / latest revision:** 2026-11-21
+- **Rule and scope:** Bind historical output to its originating attempt and
+  exact evidence reference. Preserve native causal order and stable identities
+  across fresh reads, pagination and restarts.
+- **Rationale:** A current task's evidence can include several attempts at
+  different revisions. Guessing missing times or associations obscures legacy
+  gaps and can surface records in the wrong run.
+- **Evidence:** [Vibez #42](https://github.com/Brain-Crumbs/Vibez/issues/42)
+  and the [installed HTTP fixture](../../tests/manual-console-host.test.mjs).
+
 ## Change history
 
 | Date | ID | Change | Reason | Evidence |
@@ -88,3 +101,4 @@ not authorize new work, reviews, merges or lifecycle mutations.
 | 2026-11-20 | BP-003 | added | Validate published transport shapes and independent cross-document promises | [Vibez #39](https://github.com/Brain-Crumbs/Vibez/issues/39) |
 | 2026-11-20 | BP-004 | added | Establish exact read and native state preservation in a packed consumer | [Vibez #40](https://github.com/Brain-Crumbs/Vibez/issues/40) |
 | 2026-11-21 | BP-005 | added | Preserve selected-session isolation and replay in the shared inbox | [Vibez #41](https://github.com/Brain-Crumbs/Vibez/issues/41) |
+| 2026-11-21 | BP-006 | added | Keep history attempt-bound and stable across restarts | [Vibez #42](https://github.com/Brain-Crumbs/Vibez/issues/42) |
